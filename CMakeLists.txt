@@ -46,26 +46,37 @@ target_link_libraries(calculator PRIVATE calculator_ui calculator_uiplugin)
 
 if(BUILD_TESTING)
     find_package(Qt6 6.8 REQUIRED COMPONENTS QuickTest)
+    find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
+    set(ui_test_launcher "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py")
     qt_add_executable(calculator_ui_tests tests/quicktest.cpp)
     target_link_libraries(calculator_ui_tests PRIVATE calculator_ui calculator_uiplugin Qt6::QuickTest)
-    target_compile_definitions(calculator_ui_tests PRIVATE QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml")
+    target_compile_definitions(calculator_ui_tests PRIVATE
+        QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml"
+        CALCULATOR_TEST_PYTHON="${Python3_EXECUTABLE}"
+        CALCULATOR_TEST_LAUNCHER="${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py")
+    add_test(NAME calculator-test-isolation
+        COMMAND ${ui_test_launcher} "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ui_isolation.py"
+            --test-executable $<TARGET_FILE:calculator_ui_tests>)
+    set_tests_properties(calculator-test-isolation PROPERTIES TIMEOUT 60)
     add_test(NAME calculator-preferences-restart
-        COMMAND ${CMAKE_COMMAND}
+        COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
+            -DTEST_PYTHON=${Python3_EXECUTABLE}
+            -DTEST_LAUNCHER=${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py
             -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
             -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/preferences-restart.cmake)
     set_tests_properties(calculator-preferences-restart PROPERTIES TIMEOUT 100)
     foreach(theme light dark)
-        add_test(NAME calculator-ui-${theme} COMMAND calculator_ui_tests)
+        add_test(NAME calculator-ui-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
         set_tests_properties(calculator-ui-${theme} PROPERTIES
-            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_THEME=${theme}"
-            TIMEOUT 180
+            ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
+            TIMEOUT 300
         )
     endforeach()
-    add_test(NAME calculator-ui-zh-CN COMMAND calculator_ui_tests)
+    add_test(NAME calculator-ui-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
     set_tests_properties(calculator-ui-zh-CN PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
-        TIMEOUT 180
+        ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
+        TIMEOUT 300
     )
 endif()

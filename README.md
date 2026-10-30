@@ -1,6 +1,6 @@
 # Fluent Calculator
 
-A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–04 and 07**: the Standard arithmetic keypad, expression/result/error display, entry correction, reference error recovery, copying results, keyboard input, persistent theme/language settings, Scientific precedence/parentheses, and Programmer integer radix/word-width operations with mode navigation. Extended Scientific functions, history, memory, and other modes are separate implementation tickets.
+A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–05 and 07**: the Standard arithmetic keypad, expression/result/error display, entry correction, reference error recovery, copying results, keyboard input, persistent theme/language settings, Scientific precedence/parentheses, and Programmer integer radix/word-width operations with mode navigation. Scientific trigonometry/angle units, history, memory, and other modes are separate implementation tickets.
 
 The content follows the pinned Microsoft Standard keypad layout with Fluent controls and native system window decorations. Navigation is registered centrally in `qml/ModeRegistry.qml`. `MainWindow` owns one `CalculationSession`, which dispatches string command names to `CalculatorManager`, `CCalcEngine` and Ratpack. Arithmetic displays and expressions remain strings across C++/QML, including integers above JavaScript's safe integer range.
 
@@ -8,7 +8,7 @@ The content follows the pinned Microsoft Standard keypad layout with Fluent cont
 
 - CMake **3.21+**, a Make-compatible build tool, and a C++17 compiler with support for the upstream trailing-array extension.
 - Qt **6.8+** development libraries: Core, Gui, Qml, Quick, QuickControls2; QuickTest for tests. Install the runtime QML modules for Qt Quick, Controls, Layouts, and QtTest, plus the **FluentWinUI3** style. The minimum follows the selected Qt APIs/style; the version actually checked is 6.12.0.
-- A desktop session with an appropriate Qt platform plugin. Automated tests use the offscreen plugin and software rendering; no Vulkan SDK is needed for these checks.
+- For tests: Python **3.8+** (standard library only), and **dbus-run-session** on Linux. The test launcher refuses a Linux run if D-Bus isolation is unavailable. Qt offscreen/software rendering needs no desktop session or Vulkan SDK. Interactive production use needs the appropriate native Qt platform plugin.
 
 On Arch Linux, install `base-devel cmake qt6-base qt6-declarative`; on the checked host, `qt6-declarative` owns QuickControls2, FluentWinUI3 and QtTest. Distribution packaging varies: ensure its Qt Quick Controls installation includes FluentWinUI3 and QtTest. On Debian/Ubuntu use Qt 6 development/declarative tooling and QML packages from a distribution or Qt installation that provides at least 6.8; older distribution Qt releases do not meet this project's selected minimum. A Qt online/offline SDK is another option. Point `CMAKE_PREFIX_PATH` to the chosen SDK if CMake cannot locate it. Qt command-line tools on the checked host live in `/usr/lib/qt6/bin`.
 
@@ -26,15 +26,7 @@ cmake --build .build -j2
 
 If using another build generator, select its installed equivalent. On macOS/Windows, retain the same source/CMake structure and use the appropriate Qt SDK, platform plugin and generator. **Those platforms have not been built or run for this ticket.**
 
-Optional isolated app data for a Linux manual run:
-
-```sh
-mkdir -p .build/manual-data/config .build/manual-data/data .build/manual-data/cache
-XDG_CONFIG_HOME="$PWD/.build/manual-data/config" \
-XDG_DATA_HOME="$PWD/.build/manual-data/data" \
-XDG_CACHE_HOME="$PWD/.build/manual-data/cache" \
-QT_QUICK_BACKEND=software ./.build/calculator
-```
+The `calculator` executable is for normal interactive use. Acceptance validation must use the isolated test commands below; do not launch a visible app or native test window on the user's desktop. Historical native-check reports later in this file predate this explicit isolation policy.
 
 Open navigation → Settings to select Light, Dark, or Use system setting, and English, Simplified Chinese, or Use system setting. Changes apply immediately, including current core errors, without clearing a pending calculation. Unsupported system languages (including Traditional Chinese) fall back to English. Explicit choices override system changes. Theme, language choice and the most recent available mode persist in local Qt settings; an unavailable saved mode safely opens Standard. Ordinary restarts create a fresh calculation session; history and memory are never written by preferences.
 
@@ -70,13 +62,22 @@ The three main CTest entries run the real-QML behavior suite with controlled Eng
 - Navigation return with in-progress calculation retained, translated accessible labels, Tab focus, all current keys at 320×460 and 900×700, image capture, and normal window close.
 - Runtime theme/language selection, translated live/future core errors, pending `6 × 7` continued after translation, controlled system changes and explicit overrides, unsupported-language fallback, keyboard scrolling/focus retention through translated settings, and readable heading/result contrast in both themes.
 
-Screenshots `standard-{light,dark}-{narrow,wide}.png` and `settings-{light,dark}-{narrow,wide}.png` are saved in the test working/build directory. To run the same QML suite in an actual Wayland session, preserving the current desktop's runtime environment:
+Screenshots are captured by the offscreen renderer in the test working/build directory. All CTest entries, including preference restart helpers, run through `tests/run-ui-isolated.py`. It removes inherited display, IME, session-bus, accessibility-bus and legacy theme configuration; forces compose, offscreen/software and the generic platform theme; creates private 0700 settings/data/cache/runtime roots; and cleans them after normal exit. On Linux it starts `dbus-run-session` with a private socket/config and no host service activation directories. It neither queries nor controls the user's IME or session bus. System-bus access is pointed at an unavailable private path as well.
+
+Safe direct UI validation from this checkout:
 
 ```sh
 cd .build
-QT_QPA_PLATFORM=wayland QT_QUICK_BACKEND=software \
-CALCULATOR_TEST_THEME=light ./calculator_ui_tests
+python3 ../tests/run-ui-isolated.py ./calculator_ui_tests
+# A focused production-QML suite:
+python3 ../tests/run-ui-isolated.py ./calculator_ui_tests -input ../tests/qml/tst_scientific_extended.qml
+# This also re-enters the compiled-in launcher before QGuiApplication creation:
+./calculator_ui_tests
 ```
+
+The direct test executable validates its environment before constructing the Qt application; invalid/missing isolation causes a launcher restart, and failure to start it aborts the test. `--isolation-probe` reports the prepared environment before creating any GUI object. `calculator-test-isolation` seeds invalid inherited settings, checks child variables/private storage cleanup, authenticates only the private D-Bus socket, and verifies the direct executable's early restart. Restart test stages deliberately share only their temporary fixture data root, with a fresh runtime and bus for each process.
+
+Linux is the verified platform for private D-Bus validation. The launcher uses offscreen/compose and private test paths on other platforms but does not assume they have `dbus-run-session`; Windows/macOS behavior remains unverified. The current Qt settings tests explicitly redirect QSettings to their private fixture paths. No test changes production IME configuration.
 
 ## Local verification for ticket 01
 
@@ -140,3 +141,40 @@ The keypad retains the reference five-column arrangement with A–F at the left.
 Ticket 07 is merged and resolved with tickets 01–04 preserved. Programmer now uses the shared runtime Chinese translation catalog and disables keypad, radix and width shortcuts while Settings is visible. Real-QML regressions reproduced both integration issues before their fixes. Mode-switch tests also distinguish Programmer integer division from Scientific decimal division, and ordinary restart restores Programmer with fresh input and DEC/QWORD defaults while keeping theme/language preferences.
 
 The `.build-integration` Debug build, QML lint and all four CTest entries pass on Linux/Qt 6.12: **187 passed, 0 failed, 0 skipped** per main configuration, plus seven independent restart stages. The expanded combined UI suite uses a 180-second limit after the former 60-second limit timed out; final configurations completed in 139–148 seconds. Selected native Wayland Programmer checks pass **14/14**, including exact 64-bit conversions, signed boundaries, translation and Settings shortcut isolation. Light/dark narrow/default/wide captures were reviewed. The existing Standard Copy shortcut warning remains, with clipboard tests passing; Windows/macOS remain unverified. See the [ticket 07 tracker](.scratch/calculator/issues/07-programmer-radix-word-width.md) for commits and evidence. Final application-wide review remains pending.
+
+
+## Scientific extended operations — ticket 05
+
+Scientific now exposes the pinned Microsoft power/root/logarithm column, constants, factorial, modulo, reciprocal, absolute value, exponent entry, scientific notation and Function flyout. **2nd** changes the six extension buttons to cube, cube root, nth root, two to the power, logarithm with a chosen base and exponential. Selecting a secondary operation restores the primary column and returns focus to 2nd. An unused 2nd selection survives temporary mode navigation within the session, matching the pinned cached operator panel; an ordinary restart creates fresh toggle state. The Function flyout offers absolute value, floor, ceiling, random number, degrees/minutes/seconds and decimal degrees; selection closes it, and Tab/Space/Escape work with its real controls. Trigonometric functions and the angle-unit selector remain ticket 06.
+
+All arithmetic executes in the existing Microsoft manager/CEngine/Ratpack, including full Scientific precision for π, e and intermediate values. `exp` enters an exponent on the current operand; it is distinct from the `eˣ` operation. The core caps exponent entry at four digits. **F-E** toggles result notation without converting numbers in QML, and ordinary C/CE actions or leaving Scientific restore ordinary notation according to the reference UI flow. The shared C/CE button reads `CalculatorManager::IsInputEmpty()`: CE preserves a pending calculation, while Escape always clears it. Backspace remains in its reference position. Invalid domains and range errors display the core's translated message; unavailable operations/shortcuts stay disabled until recovery.
+
+| Scientific operation | Reference keyboard entry |
+| --- | --- |
+| Square / cube | Q / `#` |
+| Square root / cube root | `@` / B |
+| Power / nth root | Y or `^` / Ctrl+Y |
+| Ten to the power / two to the power | Ctrl+G / G |
+| Logarithm / logarithm with chosen base | L / Shift+L |
+| Natural logarithm / exponential | N / Ctrl+N |
+| π / e | P / Shift+E |
+| Factorial / modulo | `!` / `%` |
+| Reciprocal / absolute value | R / `\|` |
+| Floor / ceiling / random | `[` / `]` / Shift+R |
+| Degrees/minutes/seconds | M |
+| Exponent entry / scientific notation | E / V |
+| Negate / clear / clear entry / backspace | F9 / Escape / Delete / Backspace |
+
+The E accelerator follows the pinned `CalculatorScientificOperators` constructor, which overrides the older X resource entry. Secondary and flyout accelerators work with those panels closed. All Scientific shortcuts are inactive while Settings is visible. Decimal degrees has no direct accelerator in the reference and is available through the keyboard-accessible Function flyout.
+
+Scientific retains the reference five-column/seven-row keypad. At small window sizes its toolbar/keypad area scrolls, and keyboard focus reveals each control while the expression and result remain visible above it. Buttons stay at least 44×44; text, accessibility names, palettes and errors use the existing English/Chinese and theme hooks. The shared Scientific/restart tests now reveal focused keys before clicking, and reset with Escape so they exercise the real C/CE semantics.
+
+The real-QML suite `tests/qml/tst_scientific_extended.qml` covers all listed operations, both function layers, expression/result synchronization, exact Scientific constants/logarithms, compound precedence, exponent limits/editing, seven domain/range errors and all recovery routes, every reference shortcut, Function flyout focus/dismissal, Settings shortcut isolation, live translation and 320×540/900×800 layouts. No calculator mocks or alternate arithmetic implementation are used. Its addition raises the combined suite's timeout to 300 seconds; the independent restart check retains its existing timeout. Screenshots `scientific-{extended,second,function}-{light,dark}-{narrow,wide}.png` are generated in the test working directory.
+
+
+The isolated generic Qt platform can report an unknown color scheme or ignore native override hints. Explicit Light/Dark preferences therefore also select the app's inherited Fluent palette through `AppPreferences.effectiveTheme`; every mode shares readable semantic foreground/background/button/focus colors. System mode still follows the native scheme on platforms that report it, and uses a stable Light fallback for Unknown. Tests simulate system theme changes through the existing `SystemPreferences` boundary and assert visible colors, contrast and restored preferences rather than assuming a platform hint is supported.
+
+
+Ticket 05 final validation used the private `.build-ticket05` Debug/Make build on Linux x86_64, Qt 6.12/GCC 16.2, with `-j2` compilation. The frozen full suite passed **all five CTest entries** normally: **255 passed, 0 failed, 0 skipped** in each English/light, English/dark and Chinese/light configuration, three child-process isolation checks, and all seven independent restart stages. Every final GUI process used compose/generic/offscreen/software with private settings/runtime and D-Bus; no final native-desktop run is claimed. QML lint completed without warnings. Light/dark and English/Chinese offscreen screenshots at narrow/wide sizes were reviewed; short Scientific windows scroll the controls while keeping the result visible.
+
+The ticket's tracker records 22 red/green slices and their private logs, including the core notation/error synchronization fix, cached 2nd state across mode navigation, runtime Chinese captions, pre-GUI isolation bootstrap and generic-platform palette fallback. Earlier interrupted or failing runs are retained separately and are not counted as final passes. The inherited Standard Copy shortcut warning remains, with its real clipboard behavior tests passing. Windows/macOS are not built or run here; the independent integration reviewer still owns ticket closure and final application-wide review.

@@ -153,13 +153,21 @@ Item {
             navigate("settingsButton")
             mouseClick(findChild(application.contentItem, "theme_system"))
             testSystemPreferences.setSystemTheme("dark")
-            tryCompare(Application.styleHints, "colorScheme", Qt.Dark)
+            compareAppearance("dark")
             mouseClick(findChild(application.contentItem, "theme_light"))
             testSystemPreferences.setSystemTheme("light")
             testSystemPreferences.setSystemTheme("dark")
-            tryCompare(Application.styleHints, "colorScheme", Qt.Light)
+            compareAppearance("light")
             mouseClick(findChild(application.contentItem, "theme_system"))
-            tryCompare(Application.styleHints, "colorScheme", Qt.Dark)
+            compareAppearance("dark")
+            testSystemPreferences.setSystemTheme("unknown")
+            compareAppearance("light")
+            mouseClick(findChild(application.contentItem, "theme_dark"))
+            compareAppearance("dark")
+            mouseClick(findChild(application.contentItem, "theme_system"))
+            compareAppearance("light")
+            testSystemPreferences.setSystemTheme("dark")
+            compareAppearance("dark")
             mouseClick(findChild(application.contentItem, "language_system"))
             testSystemPreferences.setSystemLanguage("zh-CN")
             compare(findChild(application.contentItem, "pageTitle").text, "设置")
@@ -202,6 +210,15 @@ Item {
             verify(contrastRatio(result.color, application.color) >= 4.5, "Result has readable theme contrast")
         }
 
+        function compareAppearance(theme) {
+            tryVerify(function() {
+                const brightness = (application.color.r + application.color.g + application.color.b) / 3
+                return theme === "dark" ? brightness < 0.25 : brightness > 0.75
+            }, 5000, "Visible window background follows " + theme)
+            const heading = findChild(application.contentItem, "pageTitle")
+            verify(contrastRatio(heading.color, application.color) >= 4.5, "Visible heading contrast follows theme")
+        }
+
         function test_user_can_switch_theme_in_settings() {
             application.requestActivate()
             tryCompare(application, "active", true)
@@ -215,10 +232,10 @@ Item {
             const dark = findChild(application.contentItem, "theme_dark")
             verify(dark !== null, "Dark theme can be selected")
             mouseClick(dark)
-            tryCompare(Application.styleHints, "colorScheme", Qt.Dark)
+            compareAppearance("dark")
             compare(dark.checked, true)
             mouseClick(findChild(application.contentItem, "theme_light"))
-            tryCompare(Application.styleHints, "colorScheme", Qt.Light)
+            compareAppearance("light")
             compare(dark.checked, false)
         }
         function cleanupTestCase() { application.close() }

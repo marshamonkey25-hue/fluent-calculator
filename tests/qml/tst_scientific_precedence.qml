@@ -30,8 +30,16 @@ Item {
         }
 
         function clickCommands(commands) {
-            for (const command of commands)
-                mouseClick(button(command))
+            for (const command of commands) {
+                if (command === "clear") keyClick(Qt.Key_Escape)
+                else {
+                    const control = button(command)
+                    verify(waitForPolish(application))
+                    control.forceActiveFocus(Qt.TabFocusReason)
+                    verify(waitForPolish(application))
+                    mouseClick(control)
+                }
+            }
         }
 
         function result() {
@@ -99,9 +107,9 @@ Item {
         // Pinned Header Files/History.h MAXPRECDEPTH = 25; the next '(' is ignored.
         function test_parenthesis_depth_limit_and_clear_recovery() {
             for (let i = 0; i < 25; ++i)
-                mouseClick(button("openParenthesis"))
+                clickCommands(["openParenthesis"])
             compare(expression(), "(".repeat(25))
-            mouseClick(button("openParenthesis"))
+            clickCommands(["openParenthesis"])
             compare(expression(), "(".repeat(25))
             clickCommands(["1", "equals"])
             compare(result(), "1")
@@ -114,9 +122,9 @@ Item {
         // Pinned CalculatorManager.h ScientificModePrecision = 32; values remain strings.
         function test_scientific_32_digit_input_and_rational_precision() {
             for (const digit of "12345678901234567890123456789012")
-                mouseClick(button(digit))
+                clickCommands([digit])
             compare(result(), "12,345,678,901,234,567,890,123,456,789,012")
-            mouseClick(button("3"))
+            clickCommands(["3"])
             compare(result(), "12,345,678,901,234,567,890,123,456,789,012")
             clickCommands(["clear", "1", "divide", "3", "equals"])
             compare(result(), "0.33333333333333333333333333333333")
@@ -170,7 +178,7 @@ Item {
         function test_scientific_keys_and_title_are_accessible_at_window_sizes(data) {
             application.width = data.width
             application.height = data.height
-            waitForRendering(application.contentItem)
+            verify(waitForPolish(application))
             const title = findChild(application.contentItem, "pageTitle")
             verify(title !== null, "Current mode has a visible title")
             compare(title.text, Qt.locale().name.indexOf("zh") === 0 ? "科学" : "Scientific")
@@ -178,12 +186,18 @@ Item {
                               "4", "5", "6", "subtract", "1", "2", "3", "add", "0", "decimal", "equals"]
             for (const command of commands) {
                 const key = button(command)
-                const position = key.mapToItem(application.contentItem, 0, 0)
+                key.forceActiveFocus(Qt.TabFocusReason)
+                verify(waitForPolish(application))
                 verify(key.visible && key.enabled)
                 verify(key.width >= 44 && key.height >= 44)
-                verify(position.x >= 0 && position.y >= 0)
-                verify(position.x + key.width <= application.width + 1)
-                verify(position.y + key.height <= application.height + 1)
+                tryVerify(function() {
+                    const position = key.mapToItem(application.contentItem, 0, 0)
+                    return position.x >= 0 && position.x + key.width <= application.width + 1
+                }, 5000, command + " horizontal bounds after resize/focus layout settles")
+                tryVerify(function() {
+                    const position = key.mapToItem(application.contentItem, 0, 0)
+                    return position.y >= 0 && position.y + key.height <= application.height + 1
+                }, 5000, command + " vertical bounds after resize/focus layout settles")
             }
             compare(button("openParenthesis").Accessible.name, Qt.locale().name.indexOf("zh") === 0 ? "左括号" : "Open parenthesis")
             compare(button("closeParenthesis").Accessible.name, Qt.locale().name.indexOf("zh") === 0 ? "右括号" : "Close parenthesis")
@@ -194,7 +208,7 @@ Item {
             compare(expression(), "") // unmatched close remains harmless through focus activation
             clickCommands(["openParenthesis", "2", "add", "3", "closeParenthesis", "multiply", "4", "equals"])
             compare(result(), "20")
-            const scheme = Application.styleHints.colorScheme === Qt.Dark ? "dark" : "light"
+            const scheme = application.color.r < 0.5 ? "dark" : "light"
             grabImage(application.contentItem).save("scientific-" + scheme + "-" + data.tag + ".png")
             application.width = 360
             application.height = 560
@@ -219,7 +233,7 @@ Item {
             compare(findChild(application.contentItem, "pageTitle").text, "科学")
             compare(button("openParenthesis").Accessible.name, "左括号")
             compare(button("closeParenthesis").Accessible.name, "右括号")
-            compare(button("clear").Accessible.name, "清除")
+            compare(button("clearEntry").Accessible.name, "清除输入")
             clickCommands(["7", "closeParenthesis", "equals"])
             compare(result(), "42")
             compare(expression(), "(6 × 7) =")

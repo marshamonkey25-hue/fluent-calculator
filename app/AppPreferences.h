@@ -29,6 +29,7 @@ class AppPreferences : public QObject, public QQmlParserStatus
     Q_INTERFACES(QQmlParserStatus)
     Q_PROPERTY(SystemPreferences *systemPreferences READ systemPreferences WRITE setSystemPreferences NOTIFY systemPreferencesChanged)
     Q_PROPERTY(QString theme READ theme WRITE setTheme NOTIFY themeChanged)
+    Q_PROPERTY(QString effectiveTheme READ effectiveTheme NOTIFY themeChanged)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QString effectiveLanguage READ effectiveLanguage NOTIFY languageChanged)
     Q_PROPERTY(QString lastMode READ lastMode WRITE setLastMode NOTIFY lastModeChanged)
@@ -40,6 +41,11 @@ public:
     SystemPreferences *systemPreferences() const { return m_systemPreferences; }
     void setSystemPreferences(SystemPreferences *preferences);
     QString theme() const { return m_theme; }
+    QString effectiveTheme() const
+    {
+        // A stable light appearance when the platform cannot report a scheme.
+        return m_theme == "system" ? (m_systemPreferences->theme() == "dark" ? QStringLiteral("dark") : QStringLiteral("light")) : m_theme;
+    }
     QString language() const { return m_language; }
     QString effectiveLanguage() const { return m_effectiveLanguage; }
     QString lastMode() const { return m_lastMode; }

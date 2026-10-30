@@ -17,6 +17,9 @@ class CalculationSession : public QObject, private ICalcDisplay
     Q_PROPERTY(bool error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QString mode READ mode NOTIFY modeChanged)
+    Q_PROPERTY(bool inputEmpty READ inputEmpty NOTIFY inputChanged)
+    Q_PROPERTY(bool scientificNotation READ scientificNotation NOTIFY scientificNotationChanged)
+    Q_PROPERTY(bool secondFunction READ secondFunction WRITE setSecondFunction NOTIFY secondFunctionChanged)
     Q_PROPERTY(int radix READ radix NOTIFY radixChanged)
     Q_PROPERTY(int wordWidth READ wordWidth NOTIFY wordWidthChanged)
     Q_PROPERTY(QStringList radixDisplays READ radixDisplays NOTIFY radixDisplaysChanged)
@@ -29,6 +32,10 @@ public:
     QString language() const { return m_language; }
     void setLanguage(const QString &language);
     QString mode() const { return m_mode; }
+    bool inputEmpty() const { return !m_manager || m_manager->IsInputEmpty(); }
+    bool scientificNotation() const { return m_scientificNotation; }
+    bool secondFunction() const { return m_secondFunction; }
+    void setSecondFunction(bool enabled);
     int radix() const { return m_radix; }
     QStringList radixDisplays() const { return m_radixDisplays; }
     int wordWidth() const { return m_wordWidth; }
@@ -39,6 +46,8 @@ public:
     Q_INVOKABLE void selectMode(const QString &mode);
 
 signals:
+    void scientificNotationChanged();
+    void secondFunctionChanged();
     void languageChanged();
     void modeChanged();
     void radixChanged();
@@ -57,6 +66,7 @@ signals:
     void inputChanged();
 
 private:
+    void setScientificNotation(bool enabled);
     void updateRadixDisplays();
     void SetPrimaryDisplay(const std::wstring &text, bool isError) override;
     void SetIsInError(bool isError) override;
@@ -72,6 +82,8 @@ private:
     void MemoryItemChanged(unsigned int index) override;
     void InputChanged() override;
 
+    bool m_scientificNotation = false;
+    bool m_secondFunction = false;
     int m_wordWidth = 64;
     int m_radix = 10;
     QStringList m_radixDisplays { "0", "0", "0", "0" };

@@ -274,7 +274,7 @@ Item {
                 verify(position.x >= 0 && position.x + control.width <= application.width + 1, name + " fits horizontally")
                 verify(position.y >= 0 && position.y + control.height <= application.height + 1, name + " can be reached vertically")
             }
-            const scheme = Application.styleHints.colorScheme === Qt.Dark ? "dark" : "light"
+            const scheme = application.color.r < 0.5 ? "dark" : "light"
             grabImage(application.contentItem).save("programmer-" + scheme + "-" + data.tag + "-keypad.png")
             const scroll = item("programmerScroll")
             mouseWheel(scroll, scroll.width / 2, scroll.height / 2, 0, 2400)
@@ -381,7 +381,8 @@ Item {
             navigate("scientific")
             clickCommands(["7", "divide", "2", "equals"])
             compare(item("resultDisplay").text, "3.5")
-            clickCommands(["clear", "openParenthesis", "2", "add", "3", "closeParenthesis", "multiply", "4", "equals"])
+            keyClick(Qt.Key_Escape)
+            clickCommands(["openParenthesis", "2", "add", "3", "closeParenthesis", "multiply", "4", "equals"])
             compare(item("resultDisplay").text, "20")
             navigate("programmer")
             compare(item("radix_10").checked, true)
