@@ -19,6 +19,8 @@ qt_add_qml_module(calculator_ui
         app/SystemPreferences.h app/SystemPreferences.cpp
         app/CalculationSession.h app/CalculationSession.cpp
         app/EngineResources.h app/EngineResources.cpp
+        app/ConversionSession.h app/ConversionSession.cpp
+        app/LengthDataLoader.h app/LengthDataLoader.cpp
     QML_FILES
         qml/MainWindow.qml
         qml/StandardPage.qml
@@ -30,9 +32,12 @@ qt_add_qml_module(calculator_ui
         qml/HistoryPanel.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
+        qml/ConverterPage.qml
+        qml/ConverterValue.qml
+        qml/ConverterUnitSelector.qml
 )
 target_include_directories(calculator_ui PUBLIC app)
-target_link_libraries(calculator_ui PUBLIC Qt6::Quick Qt6::QuickControls2 microsoft_calculator_core)
+target_link_libraries(calculator_ui PUBLIC Qt6::Quick Qt6::QuickControls2 microsoft_calculator_core microsoft_unit_converter)
 qt_add_resources(calculator_ui ui_translations
     PREFIX /ui
     BASE resources/ui
@@ -70,6 +75,15 @@ if(BUILD_TESTING)
             -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/history-restart.cmake)
     set_tests_properties(calculator-history-restart PROPERTIES TIMEOUT 100)
+    add_test(NAME calculator-length-restart
+        COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
+            -DTEST_PYTHON=${Python3_EXECUTABLE}
+            -DTEST_LAUNCHER=${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py
+            -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
+            -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/length-restart.cmake)
+    set_tests_properties(calculator-length-restart PROPERTIES TIMEOUT 100)
     add_test(NAME calculator-preferences-restart
         COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
             -DTEST_PYTHON=${Python3_EXECUTABLE}
@@ -83,9 +97,11 @@ if(BUILD_TESTING)
         add_test(NAME calculator-ui-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
         add_test(NAME calculator-programmer-bits-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+        add_test(NAME calculator-length-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+            -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
         add_test(NAME calculator-history-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
-        set_tests_properties(calculator-ui-${theme} calculator-programmer-bits-${theme} calculator-history-${theme} PROPERTIES
+        set_tests_properties(calculator-ui-${theme} calculator-programmer-bits-${theme} calculator-history-${theme} calculator-length-${theme} PROPERTIES
             ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
             TIMEOUT 600
         )
@@ -93,9 +109,11 @@ if(BUILD_TESTING)
     add_test(NAME calculator-ui-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
     add_test(NAME calculator-programmer-bits-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+    add_test(NAME calculator-length-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
     add_test(NAME calculator-history-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
-    set_tests_properties(calculator-ui-zh-CN calculator-programmer-bits-zh-CN calculator-history-zh-CN PROPERTIES
+    set_tests_properties(calculator-ui-zh-CN calculator-programmer-bits-zh-CN calculator-history-zh-CN calculator-length-zh-CN PROPERTIES
         ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
         TIMEOUT 600
     )

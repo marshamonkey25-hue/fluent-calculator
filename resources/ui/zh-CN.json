@@ -8,7 +8,8 @@
   "ModeRegistry": {
     "Standard": "标准",
     "Scientific": "科学",
-    "Programmer": "程序员"
+    "Programmer": "程序员",
+    "Length": "长度"
   },
   "SettingsPage": {
     "Appearance": "外观",
@@ -180,5 +181,38 @@
     "Clear all history": "清除所有历史记录",
     "Close": "关闭",
     "Delete": "删除"
+  },
+  "ConverterUnits": {
+    "Angstroms": "埃",
+    "Nanometers": "纳米",
+    "Microns": "微米",
+    "Millimeters": "毫米",
+    "Centimeters": "厘米",
+    "Meters": "米",
+    "Kilometers": "公里",
+    "Inches": "英寸",
+    "Feet": "英尺",
+    "Yards": "码",
+    "Miles": "英里",
+    "Nautical miles": "海里",
+    "paperclips": "曲别针",
+    "hands": "手",
+    "jumbo jets": "大型喷气式客机"
+  },
+  "ConverterPage": {
+    "Clear entry": "清除输入",
+    "Backspace": "退格",
+    "Decimal separator": "小数点",
+    "Digit %1": "数字 %1",
+    "First unit": "第一个单位",
+    "Second unit": "第二个单位",
+    "Maximum 15 digits": "最多输入 15 位数字",
+    "Paste": "粘贴",
+    "Length cannot be negative": "长度不能为负值",
+    "Result cannot be displayed": "无法显示结果",
+    "Invalid input": "无效输入",
+    "Copy": "复制",
+    "Input: %1 %2": "输入：%1 %2",
+    "Result: %1 %2": "结果：%1 %2"
   }
 }

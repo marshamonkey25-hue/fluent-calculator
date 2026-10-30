@@ -31,3 +31,11 @@ add_library(microsoft_calculator_core STATIC
 )
 target_include_directories(microsoft_calculator_core PUBLIC src/CalcManager)
 set_target_properties(microsoft_calculator_core PROPERTIES AUTOMOC OFF AUTOUIC OFF)
+
+# Selected portable noncurrency converter and original numeric formatting.
+add_library(microsoft_unit_converter STATIC
+    src/CalcManager/UnitConverter.cpp
+    src/CalcManager/NumberFormattingUtils.cpp
+)
+target_include_directories(microsoft_unit_converter PUBLIC src/CalcManager)
+set_target_properties(microsoft_unit_converter PROPERTIES AUTOMOC OFF AUTOUIC OFF)
