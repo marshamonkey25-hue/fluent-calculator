@@ -2,7 +2,7 @@
 
 This delivery contains all 18 functional entries. Arithmetic uses the pinned Microsoft CalculatorManager → CEngine → Ratpack; the 13 converters use its portable UnitConverter with actual category metadata or validated Frankfurter observations. Date operations use civil calendar dates. Graphing evaluates and samples editable functions, including multiple curves, domain gaps, pan/zoom and coordinate inspection. No page is backed by a fixed demonstration result.
 
-The [ticket evidence](../.scratch/calculator/issues/22-integrated-delivery-verification.md) records the final commands, results and TDD evidence. Ticket status remains `ready-for-agent` until independent merge validation. This report describes verification of the implemented product, separately from older tool probes and incremental ticket reports.
+The [ticket evidence](../.scratch/calculator/issues/22-integrated-delivery-verification.md) records the commands, results and TDD evidence. Ticket 22 is resolved after independent integration validation: the combined Debug build and warning-free QML lint pass, followed by one frozen **49/49 CTest run in 2687.58 seconds** with **2858 QtTest outcomes passed, 0 failed and 0 skipped**. Integration logs and startup/capture evidence are recorded in the ticket; the implementation-branch results below remain historical evidence. This report describes verification of the implemented product, separately from older tool probes and incremental ticket reports.
 
 ## Recorded results
 

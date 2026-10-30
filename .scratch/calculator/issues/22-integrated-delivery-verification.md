@@ -4,26 +4,26 @@
 
 **Blocked by:** 02: 补齐标准模式按键与错误恢复; 03: 切换主题、语言并保存偏好; 05: 使用科学模式的幂、对数及扩展运算; 06: 使用三角函数与角度单位; 08: 执行位运算并操作位显示; 09: 查看、复用和清理计算历史; 10: 跨算术模式使用内存值; 12: 对日期增加或减少年月日; 14: 换算体积、面积、重量和质量; 15: 换算能量、速度、时间和压力; 16: 换算温度、功率和角度; 17: 换算数据量; 19: 离线使用汇率缓存; 21: 比较多条曲线并浏览坐标。
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Spec:** Windows 11 风格跨平台计算器。
 
 **User stories:** 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 66, 67, 68。
 
-- [ ] 全部 18 个导航入口均有对应真实功能，分别为五种计算模式和十三种换算；不存在以空页面、固定示例值、静态曲线或未接命令按钮代替范围内功能的情况。
-- [ ] 集成检查覆盖跨模式切换、历史隔离、内存共享、键盘焦点、复制、错误后恢复及汇率缓存；解决功能分支组合后产生的真实问题，而非将各任务的基础验证全部推迟到本任务。
-- [ ] 按固定源码对照内容布局、按钮和参考交互，检查浅色/深色/跟随系统主题、中文/英文/跟随系统语言及宽窄窗口；补齐已接入页面的未翻译文案、不可辨状态和不可访问操作。
-- [ ] 主题、语言、最近模式和汇率缓存按约定跨启动保留，历史与内存按普通重启语义清空，且各类状态不会互相污染。
-- [ ] 从说明中的步骤在当前 Linux 环境实际完成构建、启动和适当自动测试，记录依赖版本、最低 Qt 要求、运行方法及必要的平台条件，交付可运行构建。
-- [ ] 授权与第三方说明涵盖微软核心、移植来源及实际引入的绘图/汇率等依赖，明确汇率数据来源、日期含义和服务差异。
-- [ ] 完成真实界面操作和必要截图对照，报告中分别说明自动测试、人工检查、软件渲染或其他实际渲染环境及已知差异；不把工具探针结果当作产品验证。
-- [ ] 如实列出 Windows/macOS 或其他尚未实测的系统、架构与构建组合，不声称已完成三平台验证，不扩展为安装包、签名或商店发布任务。
-- [ ] 将完整规格的用户故事与实际验证结果核对，绘图按已接受的函数绘图边界验收，汇率按独立每日参考数据验收；未完成项必须明确记录，不能静默缩减后宣称完成。
+- [x] 全部 18 个导航入口均有对应真实功能，分别为五种计算模式和十三种换算；不存在以空页面、固定示例值、静态曲线或未接命令按钮代替范围内功能的情况。
+- [x] 集成检查覆盖跨模式切换、历史隔离、内存共享、键盘焦点、复制、错误后恢复及汇率缓存；解决功能分支组合后产生的真实问题，而非将各任务的基础验证全部推迟到本任务。
+- [x] 按固定源码对照内容布局、按钮和参考交互，检查浅色/深色/跟随系统主题、中文/英文/跟随系统语言及宽窄窗口；补齐已接入页面的未翻译文案、不可辨状态和不可访问操作。
+- [x] 主题、语言、最近模式和汇率缓存按约定跨启动保留，历史与内存按普通重启语义清空，且各类状态不会互相污染。
+- [x] 从说明中的步骤在当前 Linux 环境实际完成构建、启动和适当自动测试，记录依赖版本、最低 Qt 要求、运行方法及必要的平台条件，交付可运行构建。
+- [x] 授权与第三方说明涵盖微软核心、移植来源及实际引入的绘图/汇率等依赖，明确汇率数据来源、日期含义和服务差异。
+- [x] 完成真实界面操作和必要截图对照，报告中分别说明自动测试、人工检查、软件渲染或其他实际渲染环境及已知差异；不把工具探针结果当作产品验证。
+- [x] 如实列出 Windows/macOS 或其他尚未实测的系统、架构与构建组合，不声称已完成三平台验证，不扩展为安装包、签名或商店发布任务。
+- [x] 将完整规格的用户故事与实际验证结果核对，绘图按已接受的函数绘图边界验收，汇率按独立每日参考数据验收；未完成项必须明确记录，不能静默缩减后宣称完成。
 
 
-## Ticket 22 implementation evidence (independent merge validation pending)
+## Ticket 22 implementation evidence (recorded before integration validation)
 
-Scope remains integrated delivery. The parent specification and tickets 01–21 are unchanged. Status and acceptance checkboxes above remain for the integration reviewer.
+Scope remains integrated delivery. The parent specification and tickets 01–21 are unchanged. The implementation report below predates independent merge validation; current Status and acceptance checkboxes above reflect the integration result appended at the end.
 
 - Added `tests/integration/tst_integrated_delivery.qml` and four isolated CTest configurations (English/Simplified Chinese × Light/Dark). The real application journey performs actual operations in all 18 modes, checks reference navigation order and focused-mode visibility at 320/900 px, exercises cross-mode history/memory/error/currency-cache isolation, and observes Copy through real clipboard paste. Existing per-feature and independent-process restart tests remain registered.
 - Fixed integration gaps found through the public UI: Scientific and Programmer now copy current results through a translated context menu and all platform Copy shortcuts; Standard binds all platform Copy shortcuts; navigation restores visibility of its focused row after reopen/resize and follows the pinned Microsoft manifest order. Numeric Copy uses the existing native string path; no arithmetic/data algorithms changed.
@@ -65,3 +65,14 @@ All UI runs, captures and helper/restart processes use the repository's compose/
 - Thus all **49 registered entries** have passing final results across the broad run and replay, with all affected entries rerun on final code. No claim is made of one frozen all-green 49-entry run. No test or functional assertion was skipped, removed or weakened; the graph change requests a frame while retaining every coordinate/gap assertion.
 - Final production build and warning-free lint pass after merging the latest integration tip (still `c839f1660e640806202430199a74a3bed1c51f45`, already up to date). The final production executable also passes a fresh isolated three-second startup smoke, followed by task-owned SIGTERM cleanup. New documentation links resolve, the Chinese QML catalog has no missing owned UI strings, and all 68 user stories are mapped. Eight committed captures/contact sheets cover the 18 pages and Copy contrast in both themes; all 144 per-mode captures are reproducible from the delivery tests.
 - The implementation satisfies this ticket's nine acceptance areas through the linked delivery report and executable tests. Independent integration review still owns the checklist and Status transition; this ticket remains **ready-for-agent**. Windows/macOS, other architectures, Qt 6.8 runtime/native desktop/hardware rendering are unverified; accepted graph-sampling and daily-reference-rate differences remain explicit. No remote push, PR, installer, deployment or parent-spec edit was performed.
+
+
+## Independent integration verification and closure
+
+Merged source commit `53f9792319523a9d29c1b1ca409ff18de37aa9ba` with `git merge --no-ff` into the initially clean `integration/calculator` checkout as **`f37d2ea260ccf506d55223858d3b011345cc632b`**. No conflicts or integration code fixes were necessary. Review confirmed the shared arithmetic Copy menu/native string path, pinned navigation order and focus reveal, preserved application-owned calculator/converter sessions, additive CMake/test wiring, translations, source notices and all nine acceptance areas. The parent spec and other ticket files are unchanged.
+
+The integration Debug/Unix Makefiles configure and `cmake --build .build-integration -j2` pass. QML lint is warning-free. A single frozen `ctest --test-dir .build-integration --output-on-failure -j2` run passes **49/49 entries in 2687.58 seconds**, including all 45 inherited entries and all four new English/Chinese × Light/Dark delivery entries. The retained QtTest summaries total **2858 passed, 0 failed, 0 skipped**: delivery **30/0/0** per configuration, main arithmetic **298/0/0** per configuration, graphing **55/0/0** per configuration. All restart/isolation checks pass. Logs: `.build-integration/merge22-{configure,build,qmllint,ctest,LastTest}.log` and `merge22-validation-summary.log`.
+
+The production executable `.build-integration/calculator` also remains running for three seconds without startup/import diagnostics under the repository launcher, followed by cleanup of only its verified task-owned process with SIGTERM (`merge22-standalone-startup.log`, `merge22-startup-result.log`). Normal close and fresh-process state retention/clearing are separately covered by the passing UI/restart suites. A context-aware audit finds **291 literal QML strings with no missing Chinese translations**, all delivery/source-document links resolve, and all **68 user stories** appear in the delivery traceability table (`merge22-static-audit.log`). The delivery run generates **144 per-mode captures plus 12 Copy-menu captures**; independent visual review covered committed contact sheets and fresh integration narrow/wide, English/Chinese and Light/Dark examples against the pinned reference content.
+
+Every UI process and screenshot uses `tests/run-ui-isolated.py` before GUI construction: compose/generic/offscreen/software, private settings/data/cache/runtime and private Linux D-Bus. No active-desktop windows/input/IME/host session-bus use, remote push, PR or deployment occurred. Linux x86_64/Qt 6.12 is verified; Windows/macOS, other architectures, Qt 6.8 runtime, native desktop/hardware rendering and live host theme integration remain unverified. Accepted finite `y=f(x)` sampling and independent daily-reference currency limits remain explicit. Ticket **22 is resolved**; the parent workflow's final application-wide review remains separate.
