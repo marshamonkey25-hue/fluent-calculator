@@ -33,10 +33,10 @@ Item {
                 verify(application.color.r < 0.25, "Dark theme is restored")
                 const source = findChild(application.contentItem, "converterUnit1")
                 const target = findChild(application.contentItem, "converterUnit2")
-                compare(source.currentText, "英寸")
-                compare(target.currentText, "厘米")
+                compare(source.currentText, "厘米")
+                compare(target.currentText, "英寸")
                 mouseClick(findChild(application.contentItem, "converterKey_1"))
-                compare(findChild(application.contentItem, "converterValue2").text, "2.54")
+                compare(findChild(application.contentItem, "converterValue2").text, "0.3937008")
             }
         }
 

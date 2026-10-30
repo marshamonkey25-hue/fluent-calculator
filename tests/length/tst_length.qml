@@ -53,6 +53,14 @@ Item {
             compare(combo.currentValue, id)
         }
 
+        function test_000_reference_region_defaults() {
+            const chinese = Qt.locale().name.indexOf("zh") === 0
+            compare(control("converterUnit1").currentValue, chinese ? 32 : 30,
+                    "Pinned SI regions start with inches; US starts with centimeters")
+            compare(control("converterUnit2").currentValue, chinese ? 30 : 32,
+                    "Pinned SI regions target centimeters; US targets inches")
+        }
+
         function test_inches_to_centimeters_through_navigation_and_keypad() {
             const chinese = Qt.locale().name.indexOf("zh") === 0
             compare(control("pageTitle").text, chinese ? "长度" : "Length")

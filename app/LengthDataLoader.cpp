@@ -46,8 +46,8 @@ public:
             || region == QLocale::MarshallIslands || region == QLocale::Palau || region == QLocale::Liberia;
         for (const auto &definition : definitions)
             m_units.emplace_back(definition.id, definition.name, definition.abbreviation,
-                                 definition.id == (customary ? 32 : 30),
-                                 definition.id == (customary ? 30 : 32), definition.whimsical);
+                                 definition.id == (customary ? 30 : 32),
+                                 definition.id == (customary ? 32 : 30), definition.whimsical);
     }
     void LoadData() override {}
     std::vector<Category> GetOrderedCategories() override { return {{5, L"Length", false}}; }
