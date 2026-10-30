@@ -6,12 +6,13 @@ import QtQuick.Layouts
 FocusScope {
     id: page
     required property CalculationSession session
+    property string category: "length"
     implicitHeight: 428
     focus: true
-    ConversionSession { id: converter; language: page.session.language }
+    ConversionSession { id: converter; language: page.session.language; category: page.category }
     readonly property bool landscape: width >= height
-    readonly property var keySequences: ({ clear: ["Escape", "Delete"], backspace: ["Backspace"], decimal: ["."] })
-    readonly property var commandNames: ({ clear: qsTr("Clear entry"), backspace: qsTr("Backspace"), decimal: qsTr("Decimal separator") })
+    readonly property var keySequences: ({ clear: ["Escape", "Delete"], backspace: ["Backspace"], decimal: ["."], negate: ["-", "F9"] })
+    readonly property var commandNames: ({ clear: qsTr("Clear entry"), backspace: qsTr("Backspace"), decimal: qsTr("Decimal separator"), negate: qsTr("Positive negative") })
 
     Shortcut {
         enabled: page.visible && page.enabled && page.activeFocus
@@ -130,6 +131,7 @@ FocusScope {
                     {command: "1", label: "1", row: 3, column: 0},
                     {command: "2", label: "2", row: 3, column: 1},
                     {command: "3", label: "3", row: 3, column: 2},
+                    {command: "negate", label: "±", row: 4, column: 0},
                     {command: "0", label: "0", row: 4, column: 1},
                     {command: "decimal", label: ".", row: 4, column: 2}
                 ]
@@ -137,6 +139,7 @@ FocusScope {
                     id: keyButton
                     required property var modelData
                     objectName: "converterKey_" + modelData.command
+                    visible: modelData.command !== "negate" || converter.supportsNegative
                     text: modelData.label
                     Accessible.name: page.commandNames[modelData.command] || qsTr("Digit %1").arg(text)
                     Layout.row: modelData.row
@@ -148,7 +151,7 @@ FocusScope {
                     numeric: modelData.command.length === 1
                     onClicked: converter.send(modelData.command)
                     Shortcut {
-                        enabled: page.visible && page.enabled
+                        enabled: page.visible && page.enabled && keyButton.visible
                         sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
                         context: Qt.WindowShortcut
                         onActivated: converter.send(keyButton.modelData.command)

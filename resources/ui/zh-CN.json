@@ -12,7 +12,10 @@
     "Programmer": "程序员",
     "Date calculation": "日期计算",
     "Length": "长度",
-    "Graphing": "函数绘图"
+    "Graphing": "函数绘图",
+    "Temperature": "温度",
+    "Power": "功率",
+    "Angle": "角度"
   },
   "SettingsPage": {
     "Appearance": "外观",
@@ -242,7 +245,18 @@
     "Nautical miles": "海里",
     "paperclips": "曲别针",
     "hands": "手",
-    "jumbo jets": "大型喷气式客机"
+    "jumbo jets": "大型喷气式客机",
+    "Celsius": "摄氏度",
+    "Fahrenheit": "华氏度",
+    "Kelvin": "开尔文",
+    "Watts": "瓦特",
+    "Kilowatts": "千瓦",
+    "Horsepower (US)": "马力(美制)",
+    "Foot-pounds/minute": "英尺磅/分钟",
+    "BTUs/minute": "BTU/分钟",
+    "Degrees": "度",
+    "Radians": "弧度",
+    "Gradians": "百分度"
   },
   "ConverterPage": {
     "Clear entry": "清除输入",
@@ -258,7 +272,8 @@
     "Invalid input": "无效输入",
     "Copy": "复制",
     "Input: %1 %2": "输入：%1 %2",
-    "Result: %1 %2": "结果：%1 %2"
+    "Result: %1 %2": "结果：%1 %2",
+    "Positive negative": "正负"
   },
   "GraphingPage": {
     "Function graph": "函数图形",

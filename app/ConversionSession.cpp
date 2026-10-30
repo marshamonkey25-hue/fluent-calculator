@@ -1,6 +1,7 @@
 #include "ConversionSession.h"
 #include "Command.h"
 #include "LengthDataLoader.h"
+#include "TemperaturePowerAngleDataLoader.h"
 #include <QClipboard>
 #include <QCoreApplication>
 #include <QGuiApplication>
@@ -42,7 +43,20 @@ void ConversionSession::MaxDigitsReached() { setStatus(QStringLiteral("limit"));
 
 ConversionSession::ConversionSession(QObject *parent) : QObject(parent)
 {
-    m_converter = std::make_shared<UnitConverter>(createLengthDataLoader());
+    setCategory(QStringLiteral("length"));
+}
+
+void ConversionSession::setCategory(const QString &category)
+{
+    if (category == m_category || (category != "length" && category != "temperature" && category != "power" && category != "angle"))
+        return;
+    m_category = category;
+    m_activeSide = 1;
+    setStatus({});
+    const auto loader = category == "length" ? createLengthDataLoader()
+        : category == "temperature" ? createTemperatureDataLoader()
+        : category == "power" ? createPowerDataLoader() : createAngleDataLoader();
+    m_converter = std::make_shared<UnitConverter>(loader);
     const auto selection = m_converter->SetCurrentCategory(m_converter->GetCategories().front());
     m_units = std::get<0>(selection);
     m_unit1 = std::get<1>(selection).id;
@@ -50,6 +64,10 @@ ConversionSession::ConversionSession(QObject *parent) : QObject(parent)
     // The QObject owns the converter and outlives its non-owning callback.
     m_converter->SetViewModelCallback(std::shared_ptr<IUnitConverterVMCallback>(static_cast<IUnitConverterVMCallback *>(this), [](auto *) {}));
     selectUnits();
+    emit categoryChanged();
+    emit unitModelChanged();
+    emit unitsChanged();
+    emit activeSideChanged();
 }
 
 void ConversionSession::setLanguage(const QString &language)
@@ -58,6 +76,7 @@ void ConversionSession::setLanguage(const QString &language)
         return;
     m_language = language;
     emit languageChanged();
+    emit unitModelChanged();
 }
 
 QVariantList ConversionSession::units() const
@@ -114,7 +133,7 @@ void ConversionSession::send(const QString &command)
         {"0", Command::Zero}, {"1", Command::One}, {"2", Command::Two}, {"3", Command::Three},
         {"4", Command::Four}, {"5", Command::Five}, {"6", Command::Six}, {"7", Command::Seven},
         {"8", Command::Eight}, {"9", Command::Nine}, {"decimal", Command::Decimal},
-        {"clear", Command::Clear}, {"backspace", Command::Backspace}
+        {"clear", Command::Clear}, {"backspace", Command::Backspace}, {"negate", Command::Negate}
     };
     const auto entry = commands.constFind(command);
     if (entry != commands.cend()) {
@@ -133,11 +152,12 @@ void ConversionSession::copy()
 void ConversionSession::paste()
 {
     auto input = QGuiApplication::clipboard()->text().trimmed();
-    if (input.startsWith('-')) {
+    const bool negative = input.startsWith('-');
+    if (negative && !supportsNegative()) {
         setStatus(QStringLiteral("negative"));
         return;
     }
-    static const QRegularExpression decimal(QStringLiteral(R"(^[+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$)"));
+    static const QRegularExpression decimal(QStringLiteral(R"(^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$)"));
     if (!decimal.match(input).hasMatch()) {
         setStatus(QStringLiteral("invalid"));
         return;
@@ -148,7 +168,7 @@ void ConversionSession::paste()
         setStatus(QStringLiteral("unavailable"));
         return;
     }
-    if (input.startsWith('+'))
+    if (negative || input.startsWith('+'))
         input.remove(0, 1);
     const auto point = input.indexOf('.');
     const auto integerEnd = point < 0 ? input.size() : point;
@@ -165,6 +185,8 @@ void ConversionSession::paste()
     send(QStringLiteral("clear"));
     for (const auto character : input)
         send(character == '.' ? QStringLiteral("decimal") : QString(character));
+    if (negative)
+        send(QStringLiteral("negate"));
 }
 
 void ConversionSession::DisplayCallback(const std::wstring &from, const std::wstring &to)

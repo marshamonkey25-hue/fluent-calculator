@@ -24,6 +24,7 @@ qt_add_qml_module(calculator_ui
         app/DateCalculation.h app/DateCalculation.cpp
         app/ConversionSession.h app/ConversionSession.cpp
         app/LengthDataLoader.h app/LengthDataLoader.cpp
+        app/TemperaturePowerAngleDataLoader.h app/TemperaturePowerAngleDataLoader.cpp
     QML_FILES
         qml/MainWindow.qml
         qml/StandardPage.qml
@@ -101,6 +102,15 @@ if(BUILD_TESTING)
             -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/length-restart.cmake)
     set_tests_properties(calculator-length-restart PROPERTIES TIMEOUT 100)
+    add_test(NAME calculator-temperature-power-angle-restart
+        COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
+            -DTEST_PYTHON=${Python3_EXECUTABLE}
+            -DTEST_LAUNCHER=${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py
+            -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
+            -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/signed-conversions-restart.cmake)
+    set_tests_properties(calculator-temperature-power-angle-restart PROPERTIES TIMEOUT 200)
     add_test(NAME calculator-preferences-restart
         COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
             -DTEST_PYTHON=${Python3_EXECUTABLE}
@@ -114,6 +124,11 @@ if(BUILD_TESTING)
         add_test(NAME calculator-ui-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
         add_test(NAME calculator-programmer-bits-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+        add_test(NAME calculator-temperature-power-angle-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+            -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/signed-conversions)
+        set_tests_properties(calculator-temperature-power-angle-${theme} PROPERTIES
+            ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
+            TIMEOUT 180)
         add_test(NAME calculator-length-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
 
@@ -136,6 +151,11 @@ if(BUILD_TESTING)
     add_test(NAME calculator-ui-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
     add_test(NAME calculator-programmer-bits-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+    add_test(NAME calculator-temperature-power-angle-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/signed-conversions)
+    set_tests_properties(calculator-temperature-power-angle-zh-CN PROPERTIES
+        ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
+        TIMEOUT 180)
     add_test(NAME calculator-length-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
 

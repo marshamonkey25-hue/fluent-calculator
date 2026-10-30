@@ -64,7 +64,11 @@ ApplicationWindow {
 
     function loadMode() {
         calculator.selectMode(ModeRegistry.modes[currentMode].key)
-        page.setSource(ModeRegistry.modes[currentMode].source, { session: calculator })
+        const mode = ModeRegistry.modes[currentMode]
+        const properties = { session: calculator }
+        if (mode.conversionCategory)
+            properties.category = mode.conversionCategory
+        page.setSource(mode.source, properties)
     }
     onCurrentModeChanged: {
         memorySelected = false
