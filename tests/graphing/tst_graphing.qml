@@ -133,10 +133,12 @@ Item {
             mouseClick(control("graphPanUpButton"))
             const graph = control("functionGraph")
             mouseClick(graph, graph.width / 2, graph.height / 2)
+            keyClick(Qt.Key_Space) // Inspect the exact center, independent of integer pointer rounding.
             compare(control("graphCoordinates").text, "x: 2.5; y: 2.5; F1(x): 6.25")
             mouseClick(control("addFunctionButton"))
             draw("sqrt(-1)", true)
             mouseClick(graph, graph.width / 2, graph.height / 2)
+            keyClick(Qt.Key_Space)
             compare(control("graphCoordinates").text, localized("x: 2.5; y: 2.5; F2(x): Undefined", "x: 2.5; y: 2.5; F2(x): 无定义"))
             mouseClick(control("selectFunction_1"))
             compare(control("graphCoordinates").text, "x: 2.5; y: 2.5; F1(x): 6.25")
@@ -276,6 +278,7 @@ Item {
             mouseClick(control("graphPanRightButton"))
             const graph = control("functionGraph")
             mouseClick(graph, graph.width / 2, graph.height / 2)
+            keyClick(Qt.Key_Space)
             const coordinates = control("graphCoordinates").text
             verify(coordinates.indexOf("F1(x): " + localized("Undefined", "无定义")) !== -1, coordinates)
             verify(waitForRendering(application.contentItem))
@@ -303,6 +306,7 @@ Item {
             fuzzyCompare(limits[1] - limits[0], 0.000001, 0.0000001)
             const graph = control("functionGraph")
             mouseClick(graph, graph.width / 2, graph.height / 2)
+            keyClick(Qt.Key_Space)
             compare(control("graphCoordinates").text, "x: 1000000; y: 0; F1(x): 1000001")
             mouseClick(control("graphResetButton"))
         }
