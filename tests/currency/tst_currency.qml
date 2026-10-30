@@ -187,6 +187,14 @@ Item {
             wait(650)
             compare(control("converterValue2").text, "20")
             verify(control("currencyDate").text.indexOf("2026-04-14") >= 0)
+            testCurrencySource.setResponse("rates?base=EUR&quotes=USD", "", 600, false)
+            testCurrencySource.setResponse("rates?base=GBP&quotes=USD", "", 600, false)
+            restartApplication()
+            keyClick("1")
+            keyClick("0")
+            selectCurrency("converterUnit1", "GBP")
+            compare(control("converterValue2").text, "20", "Stale asynchronous replies cannot contaminate the disk cache")
+            verify(control("currencyDate").text.indexOf("2026-04-14") >= 0)
         }
         function test_invalid_or_missing_quote_never_becomes_a_conversion_data() {
             const good = {date: "2026-04-10", base: "EUR", quote: "USD", rate: 1.25}
@@ -343,10 +351,22 @@ Item {
             return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
         }
         function test_layout_keyboard_focus_and_readable_status_data() {
-            return [{tag: "narrow", width: 320, height: 640}, {tag: "wide", width: 900, height: 640}]
+            return [{tag: "narrow", width: 320, height: 640}, {tag: "wide", width: 900, height: 640},
+                {tag: "narrow-unsaved", width: 320, height: 640, unsaved: true}]
         }
         function test_layout_keyboard_focus_and_readable_status(data) {
             openCurrency()
+            if (data.unsaved) {
+                verify(testCurrencySource.setCacheWritable(false))
+                mouseClick(control("currencyRefresh"))
+                tryCompare(control("currencyCache"), "text", chinese ? "汇率无法保存，离线数据可能较旧。" : "Rates could not be saved. Offline data may be older.")
+                verify(testCurrencySource.setCacheWritable(true))
+            } else {
+                testCurrencySource.setResponse("rates?base=EUR&quotes=USD", "", 10, false)
+                mouseClick(control("currencyRefresh"))
+                tryCompare(control("currencyStatus"), "text", chinese ? "刷新失败，请重试。" : "Refresh failed. Try again.")
+            }
+            verify(control("currencyCache").visible)
             application.width = data.width
             application.height = data.height
             mouseClick(control("converterKey_clear"))
@@ -368,7 +388,7 @@ Item {
                 verify(point.x >= 0 && point.x + item.width <= application.width + 1, names[index] + " fits width")
                 verify(point.y >= 40 && point.y + item.height <= application.height + 1, names[index] + " fits height")
             }
-            for (const name of ["currencySource", "currencyDate", "currencyRefreshed", "currencyStatus"]) {
+            for (const name of ["currencySource", "currencyDate", "currencyRefreshed", "currencyStatus", "currencyCache"]) {
                 const label = control(name), point = label.mapToItem(application.contentItem, 0, 0)
                 verify(point.y + label.height <= application.height + 1, name + " fits height")
                 verify(contrastRatio(label.color, application.color) >= 4.5, name + " text has 4.5:1 contrast")
@@ -386,6 +406,111 @@ Item {
             keyClick("0")
             compare(control("converterValue1").contentItem.text, "€ 10")
             compare(control("converterValue2").contentItem.text, "$ 12.5")
+        }
+        function test_corrupt_or_missing_cache_has_no_offline_quote_data() {
+            const good = {version: 1, source: "https://api.frankfurter.dev/v2/",
+                currencies: [{iso_code: "EUR", name: "Euro"}, {iso_code: "USD", name: "US Dollar"}],
+                observations: [{base: "EUR", quote: "USD", date: "2026-04-10", rate: 1.25, refreshedAt: "2026-04-15T12:34:56Z"}]}
+            function changed(field, value) {
+                const fixture = JSON.parse(JSON.stringify(good))
+                fixture.observations[0][field] = value
+                return JSON.stringify(fixture)
+            }
+            return [
+                {tag: "missing", contents: null},
+                {tag: "truncated", contents: '{"version":1,"currencies":['},
+                {tag: "wrong-shape", contents: "[]"},
+                {tag: "unknown-version", contents: JSON.stringify(Object.assign({}, good, {version: 2}))},
+                {tag: "wrong-source", contents: JSON.stringify(Object.assign({}, good, {source: "other-provider"}))},
+                {tag: "invalid-catalog", contents: JSON.stringify(Object.assign({}, good, {currencies: [{iso_code: "eur", name: "Euro"}]}))},
+                {tag: "unknown-pair", contents: changed("quote", "GBP")},
+                {tag: "invalid-date", contents: changed("date", "2026-02-30")},
+                {tag: "invalid-refresh", contents: changed("refreshedAt", "yesterday")},
+                {tag: "zero-rate", contents: changed("rate", 0)},
+                {tag: "negative-rate", contents: changed("rate", -1)},
+                {tag: "string-rate", contents: changed("rate", "1.25")},
+                {tag: "duplicate-observation", contents: JSON.stringify(Object.assign({}, good, {observations: [good.observations[0], good.observations[0]]}))}
+            ]
+        }
+        function test_corrupt_or_missing_cache_has_no_offline_quote(data) {
+            testCurrencySource.reset()
+            if (data.contents !== null) testCurrencySource.writeCacheFixture(data.contents)
+            restartApplication()
+            navigate("mode_currency")
+            tryCompare(control("currencyStatus"), "text", chinese ? "刷新失败，请重试。" : "Refresh failed. Try again.")
+            keyClick("8")
+            compare(control("converterValue2").text, "—")
+            verify(!control("converterValue2").enabled)
+            verify(!control("currencyCache").visible)
+            compare(control("currencyDate").text, chinese ? "暂无数据日期" : "No observation date")
+        }
+        function test_invalid_refresh_and_unfinished_file_preserve_complete_cache_across_reopen() {
+            openCurrency()
+            testCurrencySource.setResponse("rates?base=EUR&quotes=USD", '[{"base":"GBP","quote":"USD","date":"2026-04-14","rate":9}]')
+            mouseClick(control("currencyRefresh"))
+            tryCompare(control("currencyStatus"), "text", chinese ? "此货币对暂无有效汇率，请重试。" : "No valid quote for this currency pair. Try again.")
+            testCurrencySource.writeCacheFixture('{"version":1,"currencies":[', true)
+            testCurrencySource.setResponse("rates?base=EUR&quotes=USD", "", 500, false)
+            restartApplication()
+            keyClick("8")
+            compare(control("converterValue2").text, "10")
+            verify(control("currencyDate").text.indexOf("2026-04-10") >= 0)
+            verify(control("currencyCache").visible)
+            // A catalog entry without an observation must remain unavailable.
+            testCurrencySource.setResponse("rates?base=GBP&quotes=USD", "", 10, false)
+            selectCurrency("converterUnit1", "GBP")
+            tryCompare(control("currencyStatus"), "text", chinese ? "刷新失败，请重试。" : "Refresh failed. Try again.")
+            compare(control("converterValue2").text, "—")
+            compare(control("currencyDate").text, chinese ? "暂无数据日期" : "No observation date")
+            verify(!control("currencyCache").visible)
+        }
+        function restartApplication() {
+            application.close()
+            application.destroy()
+            application = null
+            wait(0)
+            application = windowFactory.createObject(null)
+            verify(application !== null)
+            application.requestActivate()
+            tryCompare(application, "active", true)
+        }
+        function test_failed_atomic_save_keeps_previous_disk_observation_and_reports_unsaved_rate() {
+            openCurrency()
+            keyClick("8")
+            compare(control("converterValue2").text, "10")
+            verify(testCurrencySource.setCacheWritable(false))
+            quote("EUR", "USD", 1.5, 10, "2026-04-14")
+            mouseClick(control("currencyRefresh"))
+            tryCompare(control("converterValue2"), "text", "12")
+            verify(control("currencyCache").visible)
+            compare(control("currencyCache").text, chinese ? "汇率无法保存，离线数据可能较旧。" : "Rates could not be saved. Offline data may be older.")
+            verify(testCurrencySource.setCacheWritable(true))
+            testCurrencySource.setResponse("rates?base=EUR&quotes=USD", "", 600, false)
+            restartApplication()
+            keyClick("8")
+            compare(control("converterValue2").text, "10", "Failed replacement preserves the last complete disk cache")
+            verify(control("currencyDate").text.indexOf("2026-04-10") >= 0)
+        }
+        function test_returning_to_cached_pair_keeps_its_date_and_converts_during_offline_refresh() {
+            openCurrency()
+            quote("EUR", "GBP", 0.8, 10, "2026-04-09")
+            selectCurrency("converterUnit2", "GBP")
+            tryVerify(function() { return control("currencyDate").text.indexOf("2026-04-09") >= 0 })
+            testCurrencySource.setResponse("rates?base=EUR&quotes=USD", "", 600, false)
+            selectCurrency("converterUnit2", "USD")
+            mouseClick(control("converterKey_clear"))
+            keyClick("8")
+            compare(control("converterValue2").text, "10", "Selected pair's saved rate is usable during refresh")
+            verify(control("currencyDate").text.indexOf("2026-04-10") >= 0)
+            verify(control("currencyCache").visible)
+            compare(control("currencyCache").text, chinese ? "正在使用缓存汇率" : "Using cached rates")
+            tryCompare(control("currencyStatus"), "text", chinese ? "刷新失败，请重试。" : "Refresh failed. Try again.")
+            compare(control("converterValue2").text, "10")
+            verify(control("currencyCache").visible)
+            quote("EUR", "USD", 1.5, 10, "2026-04-14")
+            mouseClick(control("currencyRefresh"))
+            tryCompare(control("converterValue2"), "text", "12")
+            verify(!control("currencyCache").visible, "A fresh observation is distinct from cache fallback")
         }
         function test_refresh_failure_preserves_last_valid_session_observation() {
             openCurrency()
@@ -449,6 +574,7 @@ Item {
             compare(control("converterValue1").text, "1")
         }
         function cleanup() {
+            testCurrencySource.setCacheWritable(true)
             clipboardProvider.visible = false
             navigate("mode_standard")
             application.close()

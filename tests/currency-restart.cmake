@@ -2,7 +2,7 @@ string(RANDOM LENGTH 12 ALPHABET 0123456789abcdef run_id)
 set(data_root "${BUILD_DIR}/currency-restart-data-${run_id}")
 file(MAKE_DIRECTORY "${data_root}")
 file(CHMOD "${data_root}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
-foreach(stage write restore)
+foreach(stage write restore recover restore-recovered)
     execute_process(
         COMMAND "${TEST_PYTHON}" "${TEST_LAUNCHER}" "${CMAKE_COMMAND}" -E env
             "CALCULATOR_TEST_THEME=light" "CALCULATOR_TEST_LANGUAGE=en-US"

@@ -163,6 +163,16 @@ FocusScope {
                     font.pixelSize: 12
                     Accessible.role: Accessible.AlertMessage
                 }
+                Label {
+                    objectName: "currencyCache"
+                    visible: page.converter.currency.usingCached || page.converter.currency.cacheWriteFailed
+                    text: page.converter.currency.cacheWriteFailed ? qsTr("Rates could not be saved. Offline data may be older.")
+                        : qsTr("Using cached rates")
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    font.pixelSize: 12
+                    Accessible.role: Accessible.AlertMessage
+                }
                 Button {
                     objectName: "currencyRefresh"
                     text: qsTr("Refresh rates")

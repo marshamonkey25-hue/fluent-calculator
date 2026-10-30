@@ -1,5 +1,11 @@
 #include "CurrencyRates.h"
+#include <QCoreApplication>
 #include <QDate>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QSaveFile>
+#include <QSettings>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -16,9 +22,98 @@ int currencyId(const QString &code)
 {
     return 10000 + (code[0].unicode() - 'A') * 26 * 26 + (code[1].unicode() - 'A') * 26 + code[2].unicode() - 'A';
 }
+
+QString cachePath()
+{
+    // Resolve a filesystem settings path even on platforms whose native
+    // QSettings backend is a registry. Tests redirect this same INI root.
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                       QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    return QFileInfo(settings.fileName()).dir().filePath("currency-rates-v1.json");
 }
 
-CurrencyRates::CurrencyRates(QObject *parent) : QObject(parent) { setSource(&m_defaultSource); }
+QVariantList parseCatalog(const QJsonArray &items)
+{
+    QVariantList catalog;
+    QSet<QString> seen;
+    static const QRegularExpression iso(QStringLiteral("^[A-Z]{3}$"));
+    for (const auto &value : items) {
+        const auto row = value.toObject();
+        const auto code = row.value("iso_code").toString();
+        const auto name = row.value("name").toString().trimmed();
+        if (!value.isObject() || !iso.match(code).hasMatch() || name.isEmpty() || seen.contains(code))
+            return {};
+        seen.insert(code);
+        catalog.append(QVariantMap {{"id", currencyId(code)}, {"code", code}, {"name", name}, {"symbol", row.value("symbol").toString()}});
+    }
+    std::sort(catalog.begin(), catalog.end(), [](const QVariant &a, const QVariant &b) {
+        return a.toMap().value("code").toString() < b.toMap().value("code").toString();
+    });
+    return catalog;
+}
+
+bool validObservation(const QJsonObject &row, const QString &base, const QString &quote)
+{
+    const auto dateText = row.value("date").toString();
+    const auto date = QDate::fromString(dateText, Qt::ISODate);
+    const auto rate = row.value("rate").toDouble(0);
+    return row.value("base").toString() == base && row.value("quote").toString() == quote
+        && date.isValid() && date.toString(Qt::ISODate) == dateText
+        && row.value("rate").isDouble() && std::isfinite(rate) && rate > 0;
+}
+}
+
+CurrencyRates::CurrencyRates(QObject *parent) : QObject(parent)
+{
+    loadCache();
+    setSource(&m_defaultSource);
+}
+
+void CurrencyRates::loadCache()
+{
+    QFile file(cachePath());
+    if (!file.open(QIODevice::ReadOnly)) return;
+    const auto root = QJsonDocument::fromJson(file.readAll()).object();
+    if (root.value("version").toInt() != 1 || root.value("source").toString() != "https://api.frankfurter.dev/v2/"
+        || !root.value("currencies").isArray() || !root.value("observations").isArray()) return;
+    const auto catalog = parseCatalog(root.value("currencies").toArray());
+    if (catalog.isEmpty()) return;
+    QSet<QString> codes;
+    for (const auto &item : catalog) codes.insert(item.toMap().value("code").toString());
+    QHash<QString, QJsonObject> observations;
+    for (const auto &value : root.value("observations").toArray()) {
+        const auto row = value.toObject();
+        const auto base = row.value("base").toString(), quote = row.value("quote").toString();
+        const auto key = base + "/" + quote;
+        const auto refreshed = row.value("refreshedAt").toString();
+        if (!codes.contains(base) || !codes.contains(quote) || observations.contains(key)
+            || !validObservation(row, base, quote) || !QDateTime::fromString(refreshed, Qt::ISODate).isValid()) return;
+        observations.insert(key, row);
+    }
+    m_catalog = catalog;
+    m_observations = observations;
+}
+
+void CurrencyRates::saveCache()
+{
+    QJsonArray catalog, observations;
+    for (const auto &item : m_catalog) {
+        const auto row = item.toMap();
+        catalog.append(QJsonObject {{"iso_code", row.value("code").toString()}, {"name", row.value("name").toString()},
+                                    {"symbol", row.value("symbol").toString()}});
+    }
+    for (const auto &row : m_observations) observations.append(row);
+    const auto bytes = QJsonDocument(QJsonObject {{"version", 1}, {"source", "https://api.frankfurter.dev/v2/"},
+                                                 {"currencies", catalog}, {"observations", observations}}).toJson();
+    QDir().mkpath(QFileInfo(cachePath()).absolutePath());
+    QSaveFile file(cachePath());
+    // QSaveFile's default forbids direct-write fallback: a failed or interrupted
+    // write must leave the last complete cache intact.
+    m_cacheWriteFailed = true;
+    if (!file.open(QIODevice::WriteOnly)) return;
+    if (file.write(bytes) != bytes.size()) { file.cancelWriting(); return; }
+    m_cacheWriteFailed = !file.commit();
+}
 
 void CurrencyRates::setSource(CurrencySource *source)
 {
@@ -95,6 +190,13 @@ void CurrencyRates::selectPair(int first, int second)
     m_rate = 0;
     m_date.clear();
     m_refreshedAt.clear();
+    const auto cached = m_observations.value(m_base + "/" + m_quote);
+    m_usingCached = !cached.isEmpty();
+    if (!cached.isEmpty()) {
+        m_rate = cached.value("rate").toDouble();
+        m_date = cached.value("date").toString();
+        m_refreshedAt = cached.value("refreshedAt").toString();
+    }
     requestRate();
 }
 
@@ -118,6 +220,7 @@ void CurrencyRates::requestRate()
     }
     m_rateRequest = ++m_generation;
     m_state = "loading";
+    m_usingCached = available();
     emit changed();
     m_source->request(m_rateRequest, "rates?base=" + m_base + "&quotes=" + m_quote);
 }
@@ -131,27 +234,10 @@ void CurrencyRates::receive(quint64 requestId, const QByteArray &body, bool succ
     const bool validJson = success && error.error == QJsonParseError::NoError && document.isArray();
     if (requestId == m_catalogRequest) {
         m_catalogRequest = 0;
-        QVariantList catalog;
-        QSet<QString> seen;
-        static const QRegularExpression iso(QStringLiteral("^[A-Z]{3}$"));
-        if (validJson) {
-            for (const auto &value : document.array()) {
-                const auto row = value.toObject();
-                const auto code = row.value("iso_code").toString();
-                const auto name = row.value("name").toString().trimmed();
-                if (!value.isObject() || !iso.match(code).hasMatch() || name.isEmpty() || seen.contains(code)) {
-                    catalog.clear();
-                    break;
-                }
-                seen.insert(code);
-                catalog.append(QVariantMap {{"id", currencyId(code)}, {"code", code}, {"name", name}, {"symbol", row.value("symbol").toString()}});
-            }
-        }
+        const auto catalog = validJson ? parseCatalog(document.array()) : QVariantList();
         if (catalog.isEmpty()) { m_state = "failed"; emit changed(); return; }
-        std::sort(catalog.begin(), catalog.end(), [](const QVariant &a, const QVariant &b) {
-            return a.toMap().value("code").toString() < b.toMap().value("code").toString();
-        });
         m_catalog = catalog;
+        saveCache();
         emit dataChanged();
         return;
     }
@@ -160,19 +246,19 @@ void CurrencyRates::receive(quint64 requestId, const QByteArray &body, bool succ
     // partially matching quote. Never substitute download time for observation.
     if (!validJson || document.array().size() != 1) { m_state = success ? "invalid" : "failed"; emit changed(); return; }
     const auto row = document.array().first().toObject();
-    const auto dateText = row.value("date").toString();
-    const auto date = QDate::fromString(dateText, Qt::ISODate);
-    const auto rate = row.value("rate").toDouble(0);
-    if (row.value("base").toString() != m_base || row.value("quote").toString() != m_quote
-        || !date.isValid() || date.toString(Qt::ISODate) != dateText
-        || !row.value("rate").isDouble() || !std::isfinite(rate) || rate <= 0) {
+    if (!validObservation(row, m_base, m_quote)) {
         m_state = "invalid";
         emit changed();
         return;
     }
-    m_rate = rate;
-    m_date = dateText;
+    m_rate = row.value("rate").toDouble();
+    m_date = row.value("date").toString();
+    auto observation = row;
+    observation.insert("refreshedAt", m_refreshedAt);
+    m_observations.insert(m_base + "/" + m_quote, observation);
+    saveCache();
     m_state = "ready";
+    m_usingCached = false;
     emit dataChanged();
     emit changed();
 }
