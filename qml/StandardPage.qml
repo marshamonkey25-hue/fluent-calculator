@@ -23,12 +23,6 @@ FocusScope {
         equals: qsTr("Equals")
     })
     focus: true
-    Shortcut {
-        enabled: page.visible
-        sequence: StandardKey.Copy
-        context: Qt.WindowShortcut
-        onActivated: page.session.copyResult()
-    }
     function revealControl(control: Item) {
         const viewport = scroll.contentItem as Flickable
         if (!viewport)
@@ -68,20 +62,7 @@ FocusScope {
                 text: page.session.display
                 Accessible.role: Accessible.StaticText
                 Accessible.name: page.session.error ? qsTr("Error: %1").arg(text) : qsTr("Result: %1").arg(text)
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.RightButton
-                    onClicked: resultMenu.popup()
-                }
-                Menu {
-                    id: resultMenu
-                    objectName: "resultContextMenu"
-                    MenuItem {
-                        objectName: "copyResultItem"
-                        text: qsTr("Copy")
-                        onTriggered: page.session.copyResult()
-                    }
-                }
+                ResultCopyMenu { anchors.fill: parent; session: page.session }
             }
             Label {
                 objectName: "errorIndicator"

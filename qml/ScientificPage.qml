@@ -68,7 +68,7 @@ FocusScope {
             required property string modelData
             sequences: page.keySequences[modelData] || [modelData]
             enabled: page.visible && page.enabled && page.Window.window.active && page.commandEnabled(modelData)
-                     && (modelData !== "clear" || (!trigonometry.popupOpen && !functionPopup.visible))
+                     && (modelData !== "clear" || (!trigonometry.popupOpen && !functionPopup.visible && !resultCopy.popupOpen))
             context: Qt.ApplicationShortcut
             onActivated: page.activate(modelData)
         }
@@ -111,6 +111,7 @@ FocusScope {
             text: page.session.display
             Accessible.role: Accessible.StaticText
             Accessible.name: page.session.error ? qsTr("Error: %1").arg(text) : qsTr("Result: %1").arg(text)
+            ResultCopyMenu { id: resultCopy; anchors.fill: parent; session: page.session }
         }
         Label {
             objectName: "errorIndicator"

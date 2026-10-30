@@ -104,6 +104,7 @@ FocusScope {
                 padding: 8
                 text: page.session.display
                 Accessible.name: page.session.error ? qsTr("Error: %1").arg(text) : qsTr("Result: %1").arg(text)
+                ResultCopyMenu { anchors.fill: parent; session: page.session }
             }
             Label {
                 objectName: "errorIndicator"

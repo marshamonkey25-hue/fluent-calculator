@@ -235,6 +235,7 @@ ApplicationWindow {
         objectName: "navigationDrawer"
         width: Math.min(window.width - 40, 280)
         height: window.height
+        onOpened: navigationList.revealFocusedMode()
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 12
@@ -248,11 +249,23 @@ ApplicationWindow {
                 contentHeight: navigationModes.implicitHeight
                 contentWidth: width
                 boundsBehavior: Flickable.StopAtBounds
+                function revealFocusedMode() {
+                    for (let index = 0; index < modeButtons.count; ++index) {
+                        const entry = modeButtons.itemAt(index)
+                        if (!entry || !entry.activeFocus) continue
+                        if (entry.y < contentY)
+                            contentY = entry.y
+                        else if (entry.y + entry.height > contentY + height)
+                            contentY = entry.y + entry.height - height
+                    }
+                }
+                onHeightChanged: revealFocusedMode()
                 ScrollBar.vertical: ScrollBar {}
                 ColumnLayout {
                     id: navigationModes
                     width: navigationList.width
                     Repeater {
+                        id: modeButtons
                         model: ModeRegistry.modes
                         delegate: ItemDelegate {
                             required property var modelData
@@ -262,14 +275,7 @@ ApplicationWindow {
                             text: modelData.title
                             focusPolicy: Qt.StrongFocus
                             highlighted: !window.settingsOpen && index === window.currentMode
-                            onActiveFocusChanged: {
-                                if (activeFocus) {
-                                    if (y < navigationList.contentY)
-                                        navigationList.contentY = y
-                                    else if (y + height > navigationList.contentY + navigationList.height)
-                                        navigationList.contentY = y + height - navigationList.height
-                                }
-                            }
+                            onActiveFocusChanged: if (activeFocus) navigationList.revealFocusedMode()
                             onClicked: {
                                 window.settingsOpen = false
                                 window.currentMode = index
