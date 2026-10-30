@@ -23,12 +23,18 @@ Item {
             for (const command of sequence) {
                 // Scientific's shared C/CE button changes with input state; Escape is always clear-all.
                 if (command === "clear") keyClick(Qt.Key_Escape)
-                else mouseClick(findChild(application.contentItem, "key_" + command))
+                else {
+                    const control = findChild(application.contentItem, "key_" + command)
+                    control.forceActiveFocus(Qt.TabFocusReason)
+                    waitForRendering(application.contentItem)
+                    mouseClick(control)
+                }
             }
         }
         function openHistory() {
             const button = findChild(application.contentItem, "historyButton")
             verify(button !== null, "History is available from the calculator header")
+            waitForRendering(application.contentItem)
             mouseClick(button)
             const drawer = findChild(application, "historyDrawer")
             tryCompare(drawer, "opened", true)
@@ -247,7 +253,7 @@ Item {
             const result = findChild(sidebar, "historyResult_0")
             compare(result.text, expected)
             const key = findChild(application.contentItem, "key_equals")
-            verify(key.mapToItem(application.contentItem, key.width, 0).x <= sidebar.x)
+            verify(key.mapToItem(application.contentItem, key.width, 0).x <= sidebar.mapToItem(application.contentItem, 0, 0).x)
             const record = findChild(sidebar, "historyItem_0")
             record.forceActiveFocus(Qt.TabFocusReason)
             keyClick(Qt.Key_Space)
@@ -300,7 +306,7 @@ Item {
             const key = findChild(application.contentItem, "key_equals")
             verify(key.width >= 44)
             verify(sidebar.width <= 320)
-            verify(key.mapToItem(application.contentItem, key.width, 0).x <= sidebar.x)
+            verify(key.mapToItem(application.contentItem, key.width, 0).x <= sidebar.mapToItem(application.contentItem, 0, 0).x)
             application.width = 900
             waitForRendering(application.contentItem)
             fuzzyCompare(sidebar.width, 320, 1)

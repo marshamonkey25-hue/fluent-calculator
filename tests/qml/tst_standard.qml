@@ -28,8 +28,12 @@ Item {
         }
 
         function clickCommands(commands) {
-            for (const command of commands)
-                mouseClick(button(command))
+            for (const command of commands) {
+                const key = button(command)
+                key.forceActiveFocus(Qt.TabFocusReason)
+                waitForRendering(application.contentItem)
+                mouseClick(key)
+            }
         }
 
         function init() {
@@ -182,6 +186,8 @@ Item {
                               "percent", "sign", "square", "squareRoot", "reciprocal", "clearEntry", "backspace"]
             for (const command of commands) {
                 const key = button(command)
+                key.forceActiveFocus(Qt.TabFocusReason)
+                waitForRendering(application.contentItem)
                 const position = key.mapToItem(application.contentItem, 0, 0)
                 verify(key.visible && key.enabled)
                 verify(key.width >= 44 && key.height >= 44)

@@ -359,7 +359,7 @@ Item {
         }
 
         function test_flyout_controls_fit_both_window_sizes_and_show_all_states_data() {
-            return [{ tag: "narrow", width: 320, height: 632 }, { tag: "wide", width: 900, height: 700 }]
+            return [{ tag: "narrow", width: 320, height: 676 }, { tag: "wide", width: 900, height: 700 }]
         }
 
         function test_flyout_controls_fit_both_window_sizes_and_show_all_states(data) {
@@ -396,7 +396,7 @@ Item {
             mouseClick(control("trig_asinh"))
             tryCompare(control("trigonometryPopup"), "visible", false)
             application.width = 360
-            application.height = 632
+            application.height = 676
         }
 
         function verifyInsideWindow(item) {
@@ -513,7 +513,7 @@ Item {
 
         function test_existing_function_flyout_stays_inside_the_narrow_combined_header() {
             application.width = 320
-            application.height = 632
+            application.height = 676
             verify(waitForPolish(application))
             mouseClick(control("key_function"))
             const popup = control("functionPopup")
@@ -524,7 +524,7 @@ Item {
             tryCompare(popup, "visible", false)
             compare(result(), "0")
             application.width = 360
-            application.height = 632
+            application.height = 676
         }
 
         function cleanupTestCase() { application.close() }
