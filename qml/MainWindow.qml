@@ -163,6 +163,7 @@ ApplicationWindow {
 
     Connections {
         target: page.item
+        ignoreUnknownSignals: true
         function onMemoryRequested() {
             if (window.sidebarVisible)
                 window.memorySelected = true

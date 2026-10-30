@@ -29,6 +29,7 @@ Item {
         }
 
         function test_date_navigation_opens_from_to_and_same_date_result() {
+            failOnWarning(/onMemoryRequested/)
             selectDateMode()
             verify(findChild(application.contentItem, "fromDatePicker") !== null)
             verify(findChild(application.contentItem, "toDatePicker") !== null)
