@@ -24,6 +24,7 @@ class CalculationSession : public QObject, private ICalcDisplay
     Q_PROPERTY(int radix READ radix NOTIFY radixChanged)
     Q_PROPERTY(int wordWidth READ wordWidth NOTIFY wordWidthChanged)
     Q_PROPERTY(QStringList radixDisplays READ radixDisplays NOTIFY radixDisplaysChanged)
+    Q_PROPERTY(QString binaryBits READ binaryBits NOTIFY radixDisplaysChanged)
 
 public:
     explicit CalculationSession(QObject *parent = nullptr);
@@ -42,6 +43,8 @@ public:
     int radix() const { return m_radix; }
     QStringList radixDisplays() const { return m_radixDisplays; }
     int wordWidth() const { return m_wordWidth; }
+    QString binaryBits() const { return m_binaryBits; }
+    Q_INVOKABLE void toggleBit(int position);
     Q_INVOKABLE void selectWordWidth(int width);
     Q_INVOKABLE void selectRadix(int radix);
     Q_INVOKABLE void send(const QString &command);
@@ -89,6 +92,7 @@ private:
     bool m_scientificNotation = false;
     bool m_secondFunction = false;
     QString m_angleUnit = QStringLiteral("DEG");
+    QString m_binaryBits = QString(64, QLatin1Char('0'));
     int m_wordWidth = 64;
     int m_radix = 10;
     QStringList m_radixDisplays { "0", "0", "0", "0" };

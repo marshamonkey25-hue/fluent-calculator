@@ -6,13 +6,59 @@ import QtQuick.Layouts
 FocusScope {
     id: page
     required property CalculationSession session
+    property bool bitPanelVisible: false
+    property string shiftMode: "arithmetic"
+    readonly property var shiftModes: [
+        { key: "arithmetic", name: qsTr("Arithmetic shift") },
+        { key: "logical", name: qsTr("Logical shift") },
+        { key: "circular", name: qsTr("Rotate circular shift") },
+        { key: "carry", name: qsTr("Rotate through carry shift") }
+    ]
+    readonly property var shiftCommands: ({
+        arithmetic: ["shiftLeft", "shiftRight"], logical: ["shiftLeft", "shiftRightLogical"],
+        circular: ["rotateLeft", "rotateRight"], carry: ["rotateCarryLeft", "rotateCarryRight"]
+    })
+    readonly property var bitwiseOperations: [
+        { command: "and", label: "AND", name: qsTr("And"), shortcut: "&" },
+        { command: "or", label: "OR", name: qsTr("Or"), shortcut: "|" },
+        { command: "not", label: "NOT", name: qsTr("Not"), shortcut: "~" },
+        { command: "nand", label: "NAND", name: qsTr("Nand"), shortcut: "." },
+        { command: "nor", label: "NOR", name: qsTr("Nor"), shortcut: "\\" },
+        { command: "xor", label: "XOR", name: qsTr("Exclusive or"), shortcut: "^" }
+    ]
+    Instantiator {
+        model: page.bitwiseOperations
+        delegate: Shortcut {
+            required property var modelData
+            sequence: modelData.shortcut
+            enabled: page.visible && !page.session.error
+            onActivated: {
+                page.session.send(modelData.command)
+                bitwisePopup.close()
+            }
+        }
+    }
+    Instantiator {
+        model: [{ command: "clear", shortcut: "Escape" }, { command: "clearEntry", shortcut: "Delete" }]
+        delegate: Shortcut {
+            required property var modelData
+            sequence: modelData.shortcut
+            enabled: page.visible && !bitwisePopup.visible && !bitShiftPopup.visible
+            onActivated: page.session.send(modelData.command)
+        }
+    }
     readonly property var keySequences: ({
         clear: ["Escape"], clearEntry: ["Delete"], backspace: ["Backspace"], negate: ["F9"],
         open: ["("], close: [")"], mod: ["%"], divide: ["/"], multiply: ["*"],
+        shift_left: ["<"], shift_right: [">"],
         subtract: ["-"], add: ["+"], equals: ["=", "Return", "Enter"]
     })
     readonly property var commandNames: ({
         clear: qsTr("Clear"), clearEntry: qsTr("Clear entry"), backspace: qsTr("Backspace"),
+        shiftLeft: qsTr("Left shift"), shiftRight: qsTr("Arithmetic right shift"),
+        shiftRightLogical: qsTr("Logical right shift"), rotateLeft: qsTr("Rotate left"),
+        rotateRight: qsTr("Rotate right"), rotateCarryLeft: qsTr("Rotate left through carry"),
+        rotateCarryRight: qsTr("Rotate right through carry"),
         negate: qsTr("Negate"), open: qsTr("Open parenthesis"), close: qsTr("Close parenthesis"),
         mod: qsTr("Modulo"), divide: qsTr("Divide"), multiply: qsTr("Multiply"),
         decimal: qsTr("Decimal separator"),
@@ -115,14 +161,40 @@ FocusScope {
                     }
                 }
             }
-            ToolButton {
-                id: wordWidthButton
-                objectName: "wordWidthButton"
-                text: ({64: "QWORD", 32: "DWORD", 16: "WORD", 8: "BYTE"})[page.session.wordWidth]
-                Accessible.name: qsTr("Word size: %1 bits").arg(page.session.wordWidth)
-                enabled: !page.session.error
-                onActiveFocusChanged: if (activeFocus) page.revealControl(wordWidthButton)
-                onClicked: page.session.selectWordWidth(({64: 32, 32: 16, 16: 8, 8: 64})[page.session.wordWidth])
+            RowLayout {
+                Layout.fillWidth: true
+                ToolButton {
+                    id: fullKeypadButton
+                    objectName: "fullKeypadButton"
+                    text: qsTr("Keypad")
+                    Accessible.name: qsTr("Full keypad")
+                    checkable: true
+                    autoExclusive: true
+                    checked: !page.bitPanelVisible
+                    onActiveFocusChanged: if (activeFocus) page.revealControl(fullKeypadButton)
+                    onClicked: page.bitPanelVisible = false
+                }
+                ToolButton {
+                    id: bitPanelButton
+                    objectName: "bitPanelButton"
+                    text: qsTr("Bits")
+                    Accessible.name: qsTr("Bit toggling keypad")
+                    checkable: true
+                    autoExclusive: true
+                    checked: page.bitPanelVisible
+                    onActiveFocusChanged: if (activeFocus) page.revealControl(bitPanelButton)
+                    onClicked: page.bitPanelVisible = true
+                }
+                Item { Layout.fillWidth: true }
+                ToolButton {
+                    id: wordWidthButton
+                    objectName: "wordWidthButton"
+                    text: ({64: "QWORD", 32: "DWORD", 16: "WORD", 8: "BYTE"})[page.session.wordWidth]
+                    Accessible.name: qsTr("Word size: %1 bits").arg(page.session.wordWidth)
+                    enabled: !page.session.error
+                    onActiveFocusChanged: if (activeFocus) page.revealControl(wordWidthButton)
+                    onClicked: page.session.selectWordWidth(({64: 32, 32: 16, 16: 8, 8: 64})[page.session.wordWidth])
+                }
             }
             Instantiator {
                 model: [
@@ -136,8 +208,84 @@ FocusScope {
                     onActivated: page.session.selectWordWidth(modelData.width)
                 }
             }
+            RowLayout {
+                Layout.fillWidth: true
+                visible: !page.bitPanelVisible
+                ToolButton {
+                    id: bitwiseButton
+                    objectName: "bitwiseButton"
+                    text: qsTr("Bitwise") + " ▾"
+                    enabled: !page.session.error
+                    onActiveFocusChanged: if (activeFocus) page.revealControl(bitwiseButton)
+                    onClicked: bitwisePopup.open()
+                    Popup {
+                        id: bitwisePopup
+                        objectName: "bitwisePopup"
+                        y: parent.height
+                        focus: true
+                        contentItem: GridLayout {
+                            columns: 3
+                            Repeater {
+                                model: page.bitwiseOperations
+                                delegate: CalculatorButton {
+                                    required property var modelData
+                                    objectName: "key_" + modelData.command
+                                    text: modelData.label
+                                    Accessible.name: modelData.name
+                                    implicitWidth: 80
+                                    implicitHeight: 44
+                                    font.pixelSize: 14
+                                    enabled: !page.session.error
+                                    onClicked: {
+                                        page.session.send(modelData.command)
+                                        bitwisePopup.close()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                ToolButton {
+                    id: bitShiftButton
+                    objectName: "bitShiftButton"
+                    text: qsTr("Bit shift") + " ▾"
+                    enabled: !page.session.error
+                    onActiveFocusChanged: if (activeFocus) page.revealControl(bitShiftButton)
+                    onClicked: bitShiftPopup.open()
+                    Popup {
+                        id: bitShiftPopup
+                        objectName: "bitShiftPopup"
+                        y: parent.height
+                        focus: true
+                        contentItem: ColumnLayout {
+                            Repeater {
+                                model: page.shiftModes
+                                delegate: RadioButton {
+                                    required property var modelData
+                                    objectName: "shiftMode_" + modelData.key
+                                    text: modelData.name
+                                    checked: page.shiftMode === modelData.key
+                                    enabled: !page.session.error
+                                    onClicked: {
+                                        page.shiftMode = modelData.key
+                                        bitShiftPopup.close()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Item { Layout.fillWidth: true }
+            }
+            ProgrammerBitPanel {
+                visible: page.bitPanelVisible
+                Layout.fillWidth: true
+                session: page.session
+                onRevealControl: control => page.revealControl(control)
+            }
             Item { Layout.fillHeight: true }
             GridLayout {
+                visible: !page.bitPanelVisible
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 columns: 5
@@ -147,8 +295,9 @@ FocusScope {
                 Repeater {
                     model: [
                         { command: "A", label: "A", row: 0, column: 0 },
-                        { command: "clearEntry", label: "CE", row: 0, column: 2 },
-                        { command: "clear", label: "C", row: 0, column: 3 },
+                        { command: "shift_left", label: "≪", row: 0, column: 1 },
+                        { command: "shift_right", label: "≫", row: 0, column: 2 },
+                        { command: "clearSlot", label: "", row: 0, column: 3 },
                         { command: "backspace", label: "⌫", row: 0, column: 4 },
                         { command: "B", label: "B", row: 1, column: 0 },
                         { command: "open", label: "(", row: 1, column: 1 },
@@ -179,9 +328,14 @@ FocusScope {
                     delegate: CalculatorButton {
                         id: keyButton
                         required property var modelData
-                        objectName: "key_" + modelData.command
-                        text: modelData.label
-                        Accessible.name: page.commandNames[modelData.command] || qsTr("Digit %1").arg(modelData.label)
+                        readonly property string command: modelData.command === "clearSlot"
+                                                          ? (page.session.inputEmpty ? "clear" : "clearEntry")
+                                                          : modelData.command === "shift_left" ? page.shiftCommands[page.shiftMode][0]
+                                                          : modelData.command === "shift_right" ? page.shiftCommands[page.shiftMode][1]
+                                                          : modelData.command
+                        objectName: "key_" + (modelData.command.startsWith("shift_") ? modelData.command : command)
+                        text: modelData.command === "clearSlot" ? (page.session.inputEmpty ? "C" : "CE") : modelData.label
+                        Accessible.name: page.commandNames[command] || qsTr("Digit %1").arg(modelData.label)
                         Layout.row: modelData.row
                         Layout.column: modelData.column
                         Layout.fillWidth: true
@@ -190,16 +344,17 @@ FocusScope {
                         Layout.minimumWidth: 44
                         numeric: modelData.command.length === 1
                         enabled: modelData.command !== "decimal" && (numeric ? "0123456789ABCDEF".indexOf(modelData.command) < page.session.radix
-                                         : !page.session.error || ["clear", "clearEntry", "backspace", "equals"].indexOf(modelData.command) !== -1)
+                                         : !page.session.error || ["clear", "clearEntry", "backspace", "equals"].indexOf(command) !== -1)
                         opacity: enabled ? 1 : 0.4
                         accent: modelData.command === "equals"
                         onActiveFocusChanged: if (activeFocus) page.revealControl(keyButton)
-                        onClicked: page.session.send(modelData.command)
+                        onClicked: page.session.send(command)
                         Shortcut {
-                            sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
+                            sequences: keyButton.modelData.command === "clearSlot" ? []
+                                       : page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
                             context: Qt.WindowShortcut
                             enabled: page.visible && keyButton.enabled
-                            onActivated: page.session.send(keyButton.modelData.command)
+                            onActivated: page.session.send(keyButton.command)
                         }
                     }
                 }
