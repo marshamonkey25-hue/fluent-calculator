@@ -15,6 +15,9 @@ QtObject {
         { key: "programmer", title: qsTr("Programmer"), source: Qt.resolvedUrl("ProgrammerPage.qml") },
         { key: "graphing", title: qsTr("Graphing"), source: Qt.resolvedUrl("GraphingPage.qml") },
         { key: "date", title: qsTr("Date calculation"), source: Qt.resolvedUrl("DatePage.qml") },
-        { key: "length", title: qsTr("Length"), source: Qt.resolvedUrl("ConverterPage.qml") }
+        { key: "volume", title: qsTr("Volume"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "volume" },
+        { key: "length", title: qsTr("Length"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "length" },
+        { key: "weight", title: qsTr("Weight and Mass"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "weight" },
+        { key: "area", title: qsTr("Area"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "area" }
     ]
 }

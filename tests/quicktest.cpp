@@ -82,9 +82,8 @@ public slots:
         QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, dataRoot + "/config");
         QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope, dataRoot + "/system-config");
         QStandardPaths::setTestModeEnabled(true);
-        QLocale::setDefault(qEnvironmentVariable("CALCULATOR_TEST_LANGUAGE") == "zh-CN"
-                            ? QLocale(QLocale::Chinese, QLocale::China)
-                            : QLocale(QLocale::English, QLocale::UnitedStates));
+        QLocale::setDefault(QLocale(qEnvironmentVariable("CALCULATOR_TEST_LOCALE",
+            qEnvironmentVariable("CALCULATOR_TEST_LANGUAGE") == "zh-CN" ? "zh_CN" : "en_US")));
         QGuiApplication::styleHints()->setColorScheme(
             qEnvironmentVariable("CALCULATOR_TEST_THEME") == "dark" ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light);
         QQuickStyle::setStyle("FluentWinUI3");

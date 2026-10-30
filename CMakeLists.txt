@@ -24,6 +24,7 @@ qt_add_qml_module(calculator_ui
         app/DateCalculation.h app/DateCalculation.cpp
         app/ConversionSession.h app/ConversionSession.cpp
         app/LengthDataLoader.h app/LengthDataLoader.cpp
+        app/MeasurementDataLoader.h app/MeasurementDataLoader.cpp
     QML_FILES
         qml/MainWindow.qml
         qml/StandardPage.qml
@@ -114,6 +115,11 @@ if(BUILD_TESTING)
         add_test(NAME calculator-ui-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
         add_test(NAME calculator-programmer-bits-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+        add_test(NAME calculator-volume-area-mass-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+            -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/volume-area-mass)
+        set_tests_properties(calculator-volume-area-mass-${theme} PROPERTIES
+            ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
+            TIMEOUT 180)
         add_test(NAME calculator-length-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
 
@@ -136,6 +142,18 @@ if(BUILD_TESTING)
     add_test(NAME calculator-ui-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
     add_test(NAME calculator-programmer-bits-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+    add_test(NAME calculator-volume-area-mass-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/volume-area-mass)
+    set_tests_properties(calculator-volume-area-mass-zh-CN PROPERTIES
+        ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
+        TIMEOUT 180)
+    add_test(NAME calculator-volume-area-mass-ja-JP COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/volume-area-mass
+        VolumeAreaMassConversion::test_reference_unit_catalog_and_ratios
+        VolumeAreaMassConversion::test_reference_defaults)
+    set_tests_properties(calculator-volume-area-mass-ja-JP PROPERTIES
+        ENVIRONMENT "CALCULATOR_TEST_LOCALE=ja_JP;CALCULATOR_TEST_THEME=light"
+        TIMEOUT 120)
     add_test(NAME calculator-length-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
 

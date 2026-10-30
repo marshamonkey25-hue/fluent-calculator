@@ -1,6 +1,7 @@
 #include "ConversionSession.h"
 #include "Command.h"
 #include "LengthDataLoader.h"
+#include "MeasurementDataLoader.h"
 #include <QClipboard>
 #include <QCoreApplication>
 #include <QGuiApplication>
@@ -42,7 +43,28 @@ void ConversionSession::MaxDigitsReached() { setStatus(QStringLiteral("limit"));
 
 ConversionSession::ConversionSession(QObject *parent) : QObject(parent)
 {
-    m_converter = std::make_shared<UnitConverter>(createLengthDataLoader());
+    initializeConverter();
+}
+
+void ConversionSession::setCategory(const QString &category)
+{
+    if (category == m_category || (category != "length" && category != "volume" && category != "area" && category != "weight"))
+        return;
+    m_category = category;
+    m_activeSide = 1;
+    setStatus({});
+    initializeConverter();
+    emit categoryChanged();
+    emit unitCatalogChanged();
+    emit unitsChanged();
+    emit activeSideChanged();
+}
+
+void ConversionSession::initializeConverter()
+{
+    const int categoryId = m_category == "area" ? 9 : m_category == "weight" ? 6 : 4;
+    const auto loader = m_category == "length" ? createLengthDataLoader() : createMeasurementDataLoader(categoryId);
+    m_converter = std::make_shared<UnitConverter>(loader);
     const auto selection = m_converter->SetCurrentCategory(m_converter->GetCategories().front());
     m_units = std::get<0>(selection);
     m_unit1 = std::get<1>(selection).id;
@@ -58,6 +80,7 @@ void ConversionSession::setLanguage(const QString &language)
         return;
     m_language = language;
     emit languageChanged();
+    emit unitCatalogChanged();
 }
 
 QVariantList ConversionSession::units() const
