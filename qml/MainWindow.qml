@@ -38,18 +38,36 @@ ApplicationWindow {
     property int currentMode: 0
     property bool settingsOpen: false
     readonly property bool historyAvailable: !settingsOpen && ["standard", "scientific"].indexOf(ModeRegistry.modes[currentMode].key) !== -1
-    readonly property bool historySidebarVisible: historyAvailable && width >= 560
+    readonly property bool memoryAvailable: !settingsOpen && ["standard", "scientific", "programmer"].indexOf(ModeRegistry.modes[currentMode].key) !== -1
+    readonly property bool sidebarVisible: memoryAvailable && width >= 560
+    readonly property bool historySidebarVisible: historyAvailable && sidebarVisible
+    property bool memorySelected: false
+    onSidebarVisibleChanged: if (sidebarVisible) memoryDrawer.close()
+    onMemoryAvailableChanged: if (!memoryAvailable) memoryDrawer.close()
     onHistorySidebarVisibleChanged: if (historySidebarVisible) historyDrawer.close()
     onHistoryAvailableChanged: if (!historyAvailable) historyDrawer.close()
     property SystemPreferences systemPreferences
     AppPreferences { id: appPreferences; systemPreferences: window.systemPreferences }
     CalculationSession { id: calculator; language: appPreferences.effectiveLanguage }
 
+    function focusMemoryInput() {
+        const standardPage = page.item as StandardPage
+        const scientificPage = page.item as ScientificPage
+        const programmerPage = page.item as ProgrammerPage
+        if (standardPage)
+            standardPage.focusMemoryInput()
+        else if (scientificPage)
+            scientificPage.focusMemoryInput()
+        else if (programmerPage)
+            programmerPage.focusMemoryInput()
+    }
+
     function loadMode() {
         calculator.selectMode(ModeRegistry.modes[currentMode].key)
         page.setSource(ModeRegistry.modes[currentMode].source, { session: calculator })
     }
     onCurrentModeChanged: {
+        memorySelected = false
         loadMode()
         appPreferences.lastMode = ModeRegistry.modes[currentMode].key
     }
@@ -94,18 +112,92 @@ ApplicationWindow {
                 Loader {
                     id: page
                     focus: true
-                    enabled: !navigation.visible && !historyDrawer.visible
+                    enabled: !navigation.visible && !historyDrawer.visible && !memoryDrawer.visible
                     Component.onCompleted: window.loadMode()
                 }
                 SettingsPage { preferences: appPreferences }
             }
-            HistoryPanel {
-                objectName: "historySidebar"
-                session: calculator
-                visible: window.historySidebarVisible
-                // Pinned Calculator.xaml: 320:240 columns from 560px, history capped at 320px.
+            ColumnLayout {
+                visible: window.sidebarVisible
+                // Pinned Calculator.xaml: 320:240 columns from 560px, capped at 320px.
                 Layout.preferredWidth: Math.min(320, (window.width - 12) * 240 / 560)
+                Layout.minimumWidth: Layout.preferredWidth
+                Layout.maximumWidth: Layout.preferredWidth
                 Layout.fillHeight: true
+                RowLayout {
+                    Layout.fillWidth: true
+                    TabButton {
+                        objectName: "historyTab"
+                        text: qsTr("History")
+                        visible: window.historyAvailable
+                        checked: !window.memorySelected
+                        Layout.fillWidth: true
+                        onClicked: window.memorySelected = false
+                    }
+                    TabButton {
+                        objectName: "memoryTab"
+                        text: qsTr("Memory")
+                        checked: window.memorySelected || !window.historyAvailable
+                        Layout.fillWidth: true
+                        onClicked: window.memorySelected = true
+                    }
+                }
+                HistoryPanel {
+                    objectName: "historySidebar"
+                    session: calculator
+                    visible: window.historySidebarVisible && !window.memorySelected
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                }
+                MemoryPanel {
+                    objectName: "memorySidebar"
+                    session: calculator
+                    onMemoryEmptied: window.focusMemoryInput()
+                    visible: window.sidebarVisible && (window.memorySelected || !window.historyAvailable)
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: page.item
+        function onMemoryRequested() {
+            if (window.sidebarVisible)
+                window.memorySelected = true
+            else
+                memoryDrawer.open()
+        }
+    }
+
+    Drawer {
+        id: memoryDrawer
+        objectName: "memoryDrawer"
+        edge: Qt.BottomEdge
+        width: window.width
+        height: window.height * 0.7
+        modal: true
+        interactive: window.memoryAvailable && !window.sidebarVisible
+        property bool returnFocusToMemory: false
+        onClosed: {
+            if (returnFocusToMemory) {
+                returnFocusToMemory = false
+                window.focusMemoryInput()
+            } else {
+                page.forceActiveFocus()
+            }
+        }
+        onOpened: contentItem.forceActiveFocus()
+        MemoryPanel {
+            anchors.fill: parent
+            session: calculator
+            dismissible: true
+            onCloseRequested: memoryDrawer.close()
+            onValueRecalled: memoryDrawer.close()
+            onMemoryEmptied: {
+                memoryDrawer.returnFocusToMemory = true
+                memoryDrawer.close()
             }
         }
     }

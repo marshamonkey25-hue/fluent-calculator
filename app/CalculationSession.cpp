@@ -45,6 +45,7 @@ void CalculationSession::selectMode(const QString &mode)
     } else
         return;
     m_mode = mode;
+    m_manager->SetMemorizedNumbersString();
     updateRadixDisplays();
     emit modeChanged();
     emit inputChanged();
@@ -61,6 +62,7 @@ void CalculationSession::setScientificNotation(bool enabled)
         m_manager->SendCommand(Command::CommandCLEAR);
     m_manager->SendCommand(Command::CommandFE);
     m_scientificNotation = enabled;
+    m_manager->SetMemorizedNumbersString();
     emit scientificNotationChanged();
 }
 
@@ -87,6 +89,35 @@ void CalculationSession::selectAngleUnit(const QString &unit)
     m_manager->SendCommand(command.value());
     m_angleUnit = unit;
     emit angleUnitChanged();
+}
+
+void CalculationSession::memoryAction(const QString &action, int index)
+{
+    // The reference panel keeps clear-all available even in an error state.
+    if (action == "clear") {
+        m_manager->MemorizedNumberClearAll();
+        return;
+    }
+    if (m_error)
+        return;
+    if (action == "save")
+        m_manager->MemorizeNumber();
+    else if ((action == "add" || action == "subtract") && index >= 0
+             && (index < m_memory.size() || (index == 0 && m_memory.isEmpty()))) {
+        if (action == "add")
+            m_manager->MemorizedNumberAdd(static_cast<unsigned int>(index));
+        else
+            m_manager->MemorizedNumberSubtract(static_cast<unsigned int>(index));
+    }
+    else if (action == "delete" && index >= 0 && index < m_memory.size()) {
+        m_manager->MemorizedNumberClear(static_cast<unsigned int>(index));
+        // The upstream indexed clear does not publish the revised list.
+        m_manager->SetMemorizedNumbersString();
+    }
+    else if (action == "recall" && index >= 0 && index < m_memory.size()) {
+        m_manager->MemorizedNumberLoad(static_cast<unsigned int>(index));
+        updateRadixDisplays();
+    }
 }
 
 QVariantList CalculationSession::history() const
@@ -194,6 +225,7 @@ void CalculationSession::selectWordWidth(int width)
     m_manager->SendCommand(command);
     m_wordWidth = width;
     emit wordWidthChanged();
+    m_manager->SetMemorizedNumbersString();
     updateRadixDisplays();
 }
 
@@ -212,6 +244,7 @@ void CalculationSession::selectRadix(int radix)
     m_manager->SendCommand(command);
     m_radix = radix;
     emit radixChanged();
+    m_manager->SetMemorizedNumbersString();
     updateRadixDisplays();
 }
 
@@ -403,5 +436,7 @@ void CalculationSession::SetMemorizedNumbers(const std::vector<std::wstring> &nu
     QStringList strings;
     for (const auto &number : numbers)
         strings.append(QString::fromStdWString(number));
+    m_memory = strings;
+    emit memoryChanged();
     emit memorizedNumbersChanged(strings);
 }

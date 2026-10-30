@@ -6,6 +6,8 @@ import QtQuick.Layouts
 FocusScope {
     id: page
     required property CalculationSession session
+    signal memoryRequested()
+    function focusMemoryInput() { memoryBar.focusInput() }
     property bool bitPanelVisible: false
     property string shiftMode: "arithmetic"
     readonly property var shiftModes: [
@@ -160,6 +162,13 @@ FocusScope {
                         onActivated: page.session.selectRadix(radixButton.modelData.radix)
                     }
                 }
+            }
+            MemoryBar {
+                id: memoryBar
+                session: page.session
+                onListRequested: page.memoryRequested()
+                onControlFocused: control => page.revealControl(control)
+                Layout.fillWidth: true
             }
             RowLayout {
                 Layout.fillWidth: true

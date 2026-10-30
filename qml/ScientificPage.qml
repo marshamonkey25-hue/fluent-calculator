@@ -6,7 +6,9 @@ import QtQuick.Layouts
 FocusScope {
     id: page
     required property CalculationSession session
-    implicitHeight: 580
+    signal memoryRequested()
+    function focusMemoryInput() { memoryBar.focusInput() }
+    implicitHeight: 624
     readonly property var keySequences: ({
         clear: ["Escape"], clearEntry: ["Delete"], backspace: ["Backspace"], divide: ["/"], multiply: ["*"],
         subtract: ["-"], add: ["+"], decimal: ["."],
@@ -127,6 +129,13 @@ FocusScope {
                 width: scroll.availableWidth
                 height: Math.max(implicitHeight, scroll.availableHeight)
                 spacing: 4
+                MemoryBar {
+                    id: memoryBar
+                    session: page.session
+                    onListRequested: page.memoryRequested()
+                    onControlFocused: control => page.revealControl(control)
+                    Layout.fillWidth: true
+                }
                 RowLayout {
                     Layout.fillWidth: true
                     ScientificTrigonometry {

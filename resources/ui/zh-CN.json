@@ -3,7 +3,8 @@
     "Calculator": "计算器",
     "Open navigation": "打开导航",
     "Settings": "设置",
-    "History": "历史记录"
+    "History": "历史记录",
+    "Memory": "内存"
   },
   "ModeRegistry": {
     "Standard": "标准",
@@ -180,5 +181,23 @@
     "Clear all history": "清除所有历史记录",
     "Close": "关闭",
     "Delete": "删除"
+  },
+  "MemoryBar": {
+    "Clear all memory": "清除所有内存",
+    "Memory recall": "内存调用",
+    "Memory add": "内存加",
+    "Memory subtract": "内存减",
+    "Memory store": "内存存储",
+    "Show memory": "显示内存"
+  },
+  "MemoryPanel": {
+    "Memory": "内存",
+    "Close": "关闭",
+    "There's nothing saved in memory": "内存中未保存任何内容",
+    "Recall %1": "调用 %1",
+    "Clear memory item": "清除此内存项",
+    "Add to memory item": "加到此内存项",
+    "Subtract from memory item": "从此内存项减去",
+    "Clear all memory": "清除所有内存"
   }
 }

@@ -24,6 +24,7 @@ class CalculationSession : public QObject, private ICalcDisplay
     Q_PROPERTY(QString angleUnit READ angleUnit NOTIFY angleUnitChanged)
     Q_PROPERTY(int radix READ radix NOTIFY radixChanged)
     Q_PROPERTY(int wordWidth READ wordWidth NOTIFY wordWidthChanged)
+    Q_PROPERTY(QStringList memory READ memory NOTIFY memoryChanged)
     Q_PROPERTY(QVariantList history READ history NOTIFY historyChanged)
     Q_PROPERTY(QStringList radixDisplays READ radixDisplays NOTIFY radixDisplaysChanged)
     Q_PROPERTY(QString binaryBits READ binaryBits NOTIFY radixDisplaysChanged)
@@ -47,6 +48,8 @@ public:
     int wordWidth() const { return m_wordWidth; }
     QString binaryBits() const { return m_binaryBits; }
     Q_INVOKABLE void toggleBit(int position);
+    QStringList memory() const { return m_memory; }
+    Q_INVOKABLE void memoryAction(const QString &action, int index = 0);
     QVariantList history() const;
     Q_INVOKABLE void removeHistory(int index);
     Q_INVOKABLE void reuseHistory(int index);
@@ -75,6 +78,7 @@ signals:
     void binaryOperatorReceived();
     void historyChanged();
     void historyItemAdded(uint index);
+    void memoryChanged();
     void memorizedNumbersChanged(const QStringList &numbers);
     void memoryItemChanged(uint index);
     void inputChanged();
@@ -109,6 +113,7 @@ private:
     bool m_error = false;
     std::vector<std::pair<std::wstring, int>> m_tokens;
     std::vector<std::shared_ptr<IExpressionCommand>> m_expressionCommands;
+    QStringList m_memory;
     QString m_language;
     EngineResources m_resources;
     std::unique_ptr<CalculationManager::CalculatorManager> m_manager;
