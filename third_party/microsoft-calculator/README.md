@@ -1,8 +1,8 @@
-# Microsoft Calculator arithmetic core
+# Microsoft Calculator core sources
 
 Pinned upstream: [microsoft/calculator](https://github.com/microsoft/calculator/tree/79e1ac53bba690cdf930e5dcd6ed9dbc4cbfb128), commit `79e1ac53bba690cdf930e5dcd6ed9dbc4cbfb128`.
 
-`src/CalcManager` contains the selected arithmetic sources and their headers, copied from that revision. The explicit 27-translation-unit manifest is in [CMakeLists.txt](CMakeLists.txt). The production path is `CalculatorManager → CCalcEngine → Ratpack`. It does not build the Windows project, forced precompiled header, UWP/WinRT bridges, unit converter or proprietary graphing components. Existing algorithms and fixed-width mantissas are retained.
+`src/CalcManager` contains the selected arithmetic and noncurrency converter sources and their headers, copied from that revision. The explicit 27-translation-unit manifest is in [CMakeLists.txt](CMakeLists.txt). The production path is `CalculatorManager → CCalcEngine → Ratpack`. The arithmetic target does not build the Windows project, forced precompiled header, UWP/WinRT bridges, unit converter or proprietary graphing components. The separate portable converter target is described below. Existing algorithms and fixed-width mantissas are retained.
 
 The upstream [LICENSE](LICENSE), [NOTICE.txt](NOTICE.txt), and per-file copyright notices are preserved. NOTICE includes Microsoft's distributed third-party notice, including the Hebrew OpenType MIT attribution; retaining it does not imply this arithmetic subset uses that font code.
 
@@ -38,3 +38,16 @@ Do not fill these IDs from `Resources.resw`: its numeric IDs are unrelated bit-p
 ## Layout reference
 
 The current Standard subset preserves number/operator positions from `Views/NumberPad.xaml` and `Views/CalculatorStandardOperators.xaml`, including C in row 0, column 2; division in row 1, column 3; digits in rows 2–5; and equals at the bottom right. Missing positions are intentionally empty until later tickets implement those operations. No inactive feature page is registered as working navigation.
+
+
+## Noncurrency unit conversion — ticket 13
+
+`microsoft_unit_converter` builds the pinned `UnitConverter.cpp/.h` and `NumberFormattingUtils.cpp/.h`, independently of the arbitrary-precision arithmetic target. It keeps the original decimal command input, double conversion ratios/offsets, active-field switching, 15-digit input cap, preferred seven-digit output, adaptive precision up to 15 digits, and scientific output below `1e-14` or beyond 15 whole-number digits. Scientific output uses the upstream stream precision (seven significant digits). Converter doubles are intentional and are never described as Ratpack values.
+
+The selected noncurrency subset removes the Windows PPL async currency interfaces, Bing currency-loader constructor/branches, currency callbacks and currency-only formatting branch. It does not add task stubs or implement a currency service. Currency remains a separate ticket. Standard headers replace the PCH/PPL transitive dependencies: `<string>`, `<string_view>`, `<tuple>`, `<cstdint>`, `<algorithm>`, `<cmath>` and `<sstream>`. Default `Unit`/`Category` IDs are initialized to the existing empty sentinel `-1`, so startup validity comparisons do not read indeterminate IDs.
+
+One behavior repair is covered through real QML: `TrimTrailingZeros` leaves scientific text intact. The upstream routine could trim the final zero in an exponent, turning `1.000000e-20` into `1.000000e-2` after the user selected that result as input and chose the same unit. Ordinary decimal trimming and the upstream conversion/rounding algorithms remain intact.
+
+`../../app/LengthDataLoader.cpp` ports length IDs, selectable order, region defaults, metre factors and whimsical metadata from `src/Calculator.ViewModels/DataLoaders/UnitConverterDataLoader.cs` at the same pinned revision (lines 348–363 and 551–568). Category serialization ID **5** comes from `Common/NavCategory.cs`. English and Chinese unit names in the UI catalog come from the matching `Resources.resw` tables. There are 12 selectable units, from Angstroms through nautical miles; the three whimsical units stay outside the selectors as in upstream.
+
+The Qt `ConversionSession` and QML `ConverterPage` share one input/conversion/formatting path for keypad and keyboard. Category metadata is separate from that interaction, so subsequent noncurrency tickets can supply their data without copying the input or formatting logic. Values stay strings across QML. Both supported UI locales use `.` and comma grouping; grouping does not round the core text. Paste validates a complete nonnegative decimal before sending commands, showing explicit malformed/negative/range/limit states instead of silently filtering bad input. This is an intentional validation adaptation to the ticket's error-recovery criteria. Ordinary conversion entry remains the pinned command path.

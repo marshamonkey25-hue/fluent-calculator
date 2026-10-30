@@ -17,3 +17,43 @@
 - [ ] 换算交互能够复用于后续类别而不复制整套输入和格式逻辑，但本任务必须先完整交付长度换算，不能只交付抽象框架。
 - [ ] 页面沿用主题、可翻译单位名称与说明，以及宽窄窗口布局。
 - [ ] 通过真实界面验证已知比例、往返转换、同单位、小数、非法负值、输入位数和显示边界，容差按数值策略明确规定。
+
+
+## Implementation evidence (ticket 13; pending merge review)
+
+Status remains **ready-for-agent**. The integration reviewer owns checklist closure.
+
+- `app/LengthDataLoader.cpp` ports the pinned length serialization ID, all 12 selectable units, ordering, region defaults and metre factors. Metadata is separate from `ConversionSession`, which uses the real Microsoft `UnitConverter` / `NumberFormattingUtils` noncurrency path. The selected sources retain MIT provenance; PPL/Bing currency interfaces are explicitly excluded, without stubs. See `third_party/microsoft-calculator/README.md`.
+- `ConverterPage` provides the reference two value/unit pairs, selectable input side, three-column/five-row keypad, CE, Backspace and keyboard equivalents, live conversion and same-unit conversion. `ConverterValue` / `ConverterUnitSelector` share semantic palettes, visible focus and translated accessible names. The stable `length` registry entry uses existing navigation, language, theme and recent-mode hooks.
+- Entry/formatting preserves the upstream converter's double policy, 15-digit cap, seven preferred display digits, adaptive precision and scientific thresholds. Numeric values cross QML as strings. Complete-decimal paste validation supplies visible negative, malformed, limit and unrepresentable-value states; new input recovers. Copy/Paste works from the selected side and the context menu. Scientific exponent zeroes are preserved when a result becomes the opposite input and same-unit conversion is selected.
+- `tests/length/tst_length.qml` exercises the real QML controls and actual conversion data/core. Coverage includes every selectable unit's independently known metre equivalent, both input sides and input methods, decimal and same-unit/round-trip cases, negative/malformed/overflow input and recovery, digit caps/backspace/clear, adaptive rounding, tiny/large scientific output, exponent reuse, clipboard operations, hidden shortcuts, dropdown isolation, live English/Chinese and theme changes, readable indicator contrast, keyboard focus and 320×560 / 900×600 layouts. Approximate results use at most 0.5 ppm (seven significant digits); exact known displayed values also have literal assertions. No converter mocks or private-method tests were added.
+- `tests/length-restart` and its CMake driver verify the recent Length mode and Chinese/dark preferences across ordinary separate-process restarts, with fresh entry and working conversion. All UI processes use the shared isolated launcher before QGuiApplication, private storage/runtime/D-Bus, compose/generic/offscreen/software rendering and no host display.
+
+### TDD red → green evidence
+
+Each numbered log pair is `/tmp/ticket13-red-N.log` and `/tmp/ticket13-green-N.log`:
+
+1. Missing `mode_length` navigation → visible inches-to-centimeters conversion.
+2. Only two units instead of 12 → complete pinned selectable catalog and known ratios.
+3. Second value could not become input → mouse/Space input-side switching and reverse/same-unit conversion.
+4. Missing grouped 15-digit display → non-rounding text grouping, digit-cap notice and editing recovery.
+5. Missing invalid-input state/context paste → complete-decimal paste validation and translated recovery states.
+6. Missing selected-value Copy → raw-text keyboard/context Copy, including scientific output.
+7. Blue active-value surface → neutral reference surface, bold active value and equal landscape columns.
+8. Stale “To” accessibility label → Input/Result names with the current unit after switching sides.
+9. Same-unit scientific reuse changed `e-20` to `e-2` → minimal upstream trailing-zero guard for scientific text.
+10. Pale dropdown indicator failed rendered 3:1 contrast → vector chevron using semantic text color.
+
+Additional rounding/boundary and settings/navigation tests confirmed already-supported behavior and are not claimed as new red cycles. Context7 successfully verified current Qt ComboBox model roles and QuickTest image/pixel APIs; no fallback was needed. UI skill search verified visible keyboard-focus guidance; the pinned Microsoft layout remained the design baseline.
+
+### Checked validation
+
+Private Make/Debug build: `.build-ticket13`, Linux x86_64, Qt 6.12.0, GCC 16.2.1; compile concurrency `-j2`.
+
+- `cmake --build .build-ticket13 -j2`: passed; production executable and QML tests link successfully (`/tmp/ticket13-final-build.log`).
+- `cmake --build .build-ticket13 --target calculator_ui_qmllint -j2`: passed without warnings (`/tmp/ticket13-final-qmllint.log`).
+- Full regression invocation `ctest --test-dir .build-ticket13 --output-on-failure -j2`: all **12 existing** isolation/restart/main/Programmer-bit/history CTest entries passed. This development-time run also observed two Length failures while the final accessibility/indicator slices were being completed; it is not represented as a single all-green run (`/tmp/ticket13-ctest.log`).
+- After the final integration-tip merge check and rebuild, `ctest --test-dir .build-ticket13 --output-on-failure -R '^calculator-length-' -j2`: **4/4 passed**, with **44 passed, 0 failed, 0 skipped** in each English/light, English/dark and Chinese/light suite; both independent restart stages passed. Final targeted run took 109.97 s (`/tmp/ticket13-final-length.log`; detailed outcomes in the private build's `Testing/Temporary/LastTest.log`). Together these runs check all 16 current CTest entries.
+- Final English light/dark and Chinese offscreen narrow/wide captures were reviewed in the private build. `git diff --check` passed. Integration tip `d327f2de0e09bca87e02416e42374db91a506883` was merged/confirmed already present before final affected checks.
+
+Windows/macOS and native desktop interaction are unverified. No native desktop GUI was opened, no remote push/PR/deployment occurred, and independent merge review remains required.
