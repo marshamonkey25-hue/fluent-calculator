@@ -23,6 +23,7 @@ qt_add_qml_module(calculator_ui
         app/EngineResources.h app/EngineResources.cpp
         app/DateCalculation.h app/DateCalculation.cpp
         app/ConversionSession.h app/ConversionSession.cpp
+        app/DataConversionDataLoader.h app/DataConversionDataLoader.cpp
         app/LengthDataLoader.h app/LengthDataLoader.cpp
         app/TemperaturePowerAngleDataLoader.h app/TemperaturePowerAngleDataLoader.cpp
         app/MeasurementDataLoader.h app/MeasurementDataLoader.cpp
@@ -122,7 +123,19 @@ if(BUILD_TESTING)
             -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/preferences-restart.cmake)
     set_tests_properties(calculator-preferences-restart PROPERTIES TIMEOUT 100)
+    add_test(NAME calculator-data-restart
+        COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
+            -DTEST_PYTHON=${Python3_EXECUTABLE}
+            -DTEST_LAUNCHER=${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py
+            -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
+            -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/data-restart.cmake)
+    set_tests_properties(calculator-data-restart PROPERTIES TIMEOUT 100)
     foreach(variant light dark zh-CN)
+        add_test(NAME calculator-data-${variant}
+            COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+                -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/data)
         add_test(NAME calculator-energy-speed-time-pressure-${variant}
             COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
                 -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/energy-speed-time-pressure)
@@ -131,6 +144,8 @@ if(BUILD_TESTING)
         else()
             set(conversion_test_environment "CALCULATOR_TEST_THEME=${variant}")
         endif()
+        set_tests_properties(calculator-data-${variant} PROPERTIES
+            ENVIRONMENT "${conversion_test_environment}" TIMEOUT 180)
         set_tests_properties(calculator-energy-speed-time-pressure-${variant} PROPERTIES
             ENVIRONMENT "${conversion_test_environment}" TIMEOUT 600)
     endforeach()
@@ -145,9 +160,10 @@ if(BUILD_TESTING)
             TIMEOUT 180)
         add_test(NAME calculator-temperature-power-angle-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/signed-conversions)
+        # Full converter journeys scroll the expanding mode list repeatedly.
         set_tests_properties(calculator-temperature-power-angle-${theme} PROPERTIES
             ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
-            TIMEOUT 180)
+            TIMEOUT 600)
         add_test(NAME calculator-length-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
 
@@ -186,7 +202,7 @@ if(BUILD_TESTING)
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/signed-conversions)
     set_tests_properties(calculator-temperature-power-angle-zh-CN PROPERTIES
         ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
-        TIMEOUT 180)
+        TIMEOUT 600)
     add_test(NAME calculator-length-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
 

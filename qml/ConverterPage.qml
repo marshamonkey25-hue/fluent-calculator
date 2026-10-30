@@ -13,6 +13,7 @@ FocusScope {
     readonly property string negativeInputMessage: category === "energy" ? qsTr("Energy cannot be negative")
         : category === "speed" ? qsTr("Speed cannot be negative")
         : category === "time" ? qsTr("Time cannot be negative")
+        : category === "data" ? qsTr("Data cannot be negative")
         : category === "pressure" ? qsTr("Pressure cannot be negative")
         : category === "volume" ? qsTr("Volume cannot be negative")
         : category === "area" ? qsTr("Area cannot be negative")
