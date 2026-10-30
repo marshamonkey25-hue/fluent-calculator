@@ -69,7 +69,7 @@ FocusScope {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 44
-                enabled: page.category !== "currency" || page.converter.activeSide === 1 || (page.converter.currency.available && text !== "—")
+                enabled: page.converter.activeSide === 1 || (text !== "—" && (page.category !== "currency" || page.converter.currency.available))
                 checked: page.converter.activeSide === 1
                 Accessible.name: (page.converter.activeSide === 1 ? qsTr("Input: %1 %2") : qsTr("Result: %1 %2")).arg(text).arg(firstUnit.currentText)
                 onClicked: page.converter.activate(1)
@@ -94,7 +94,7 @@ FocusScope {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 44
-                enabled: page.category !== "currency" || page.converter.activeSide === 2 || (page.converter.currency.available && text !== "—")
+                enabled: page.converter.activeSide === 2 || (text !== "—" && (page.category !== "currency" || page.converter.currency.available))
                 checked: page.converter.activeSide === 2
                 Accessible.name: (page.converter.activeSide === 2 ? qsTr("Input: %1 %2") : qsTr("Result: %1 %2")).arg(text).arg(secondUnit.currentText)
                 onClicked: page.converter.activate(2)

@@ -64,6 +64,24 @@ ApplicationWindow {
             programmerPage.focusMemoryInput()
     }
 
+    function toggleHistory() {
+        if (historyDrawer.visible)
+            historyDrawer.close()
+        else
+            historyDrawer.open()
+    }
+    Shortcut {
+        sequence: "Ctrl+H"
+        enabled: window.historyAvailable && !window.historySidebarVisible && !navigation.visible && !memoryDrawer.visible && !historyDrawer.visible
+        onActivated: window.toggleHistory()
+    }
+    Shortcut {
+        sequence: "Ctrl+Shift+D"
+        enabled: window.historyAvailable && !navigation.visible && !memoryDrawer.visible
+            && window.historySidebarVisible && !window.memorySelected
+        onActivated: calculator.clearHistory()
+    }
+
     function loadMode() {
         const mode = ModeRegistry.modes[currentMode]
         calculator.selectMode(mode.key)
@@ -107,7 +125,7 @@ ApplicationWindow {
                 objectName: "historyButton"
                 text: qsTr("History")
                 visible: window.historyAvailable && !window.historySidebarVisible
-                onClicked: historyDrawer.open()
+                onClicked: window.toggleHistory()
             }
         }
         RowLayout {
@@ -214,6 +232,16 @@ ApplicationWindow {
     Drawer {
         id: historyDrawer
         objectName: "historyDrawer"
+        Shortcut {
+            sequence: "Ctrl+H"
+            enabled: historyDrawer.visible
+            onActivated: historyDrawer.close()
+        }
+        Shortcut {
+            sequence: "Ctrl+Shift+D"
+            enabled: historyDrawer.visible
+            onActivated: calculator.clearHistory()
+        }
         edge: Qt.BottomEdge
         width: window.width
         height: window.height * 0.7

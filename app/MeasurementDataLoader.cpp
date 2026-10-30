@@ -5,7 +5,7 @@
 // Category serialization IDs (4 volume, 6 weight, 9 area) come from Common/NavCategory.cs.
 #include "MeasurementDataLoader.h"
 #include <QLocale>
-#include <algorithm>
+#include "ProportionalRatios.h"
 #include <iterator>
 
 using namespace UnitConversionManager;
@@ -123,12 +123,7 @@ public:
     bool SupportsCategory(const Category &category) override { return category.id == m_category.id; }
     std::unordered_map<Unit, ConversionData, UnitHash> LoadOrderedRatios(const Unit &unit) override
     {
-        const auto source = std::find_if(m_definitions.begin(), m_definitions.end(),
-                                         [&unit](const MeasurementUnit &item) { return item.id == unit.id; });
-        std::unordered_map<Unit, ConversionData, UnitHash> ratios;
-        for (size_t index = 0; index < m_units.size(); ++index)
-            ratios.emplace(m_units[index], ConversionData(source->factor / m_definitions[index].factor, 0, false));
-        return ratios;
+        return loadProportionalRatios(unit, m_units, [this](size_t index) { return m_definitions[index].factor; });
     }
 };
 }

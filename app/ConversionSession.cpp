@@ -157,8 +157,8 @@ void ConversionSession::setCategory(const QString &category)
     m_units = std::get<0>(selection);
     m_unit1 = (m_activeSide == 1 ? std::get<1>(selection) : std::get<2>(selection)).id;
     m_unit2 = (m_activeSide == 1 ? std::get<2>(selection) : std::get<1>(selection)).id;
-    selectUnits();
     setStatus({});
+    selectUnits();
     emit categoryChanged();
     emit unitCatalogChanged();
     emit unitsChanged();
@@ -224,7 +224,9 @@ void ConversionSession::selectUnits()
 
 void ConversionSession::activate(int side)
 {
-    if ((side != 1 && side != 2) || side == m_activeSide || (m_category == "currency" && (!m_currency->available() || (side == 1 ? m_value1 : m_value2).isEmpty())))
+    if ((side != 1 && side != 2) || side == m_activeSide
+        || (side == 1 ? m_value1 : m_value2).isEmpty()
+        || (m_category == "currency" && !m_currency->available()))
         return;
     m_activeSide = side;
     m_converter->SwitchActive((side == 1 ? m_value1 : m_value2).toStdWString());
@@ -297,7 +299,7 @@ void ConversionSession::DisplayCallback(const std::wstring &from, const std::wst
 {
     m_value1 = QString::fromStdWString(m_activeSide == 1 ? from : to);
     m_value2 = QString::fromStdWString(m_activeSide == 1 ? to : from);
-    if (m_category == "currency" && m_currency->available()) {
+    if (m_category != "currency" || m_currency->available()) {
         if ((m_activeSide == 1 ? m_value2 : m_value1).isEmpty())
             setStatus(QStringLiteral("unavailable"));
         else if (m_status == "unavailable")

@@ -4,6 +4,8 @@
 #include <cassert>
 #include <cstdint>
 #include <cmath>
+#include <cwchar>
+#include <optional>
 #include <sstream>
 #include <algorithm> // for std::sort
 #include "Command.h"
@@ -27,6 +29,22 @@ static constexpr wchar_t RIGHTESCAPECHAR = L'}';
 
 static const double OPTIMALDECIMALALLOWED = 1e-6;  // pow(10, -1 * (OPTIMALDIGITSALLOWED - 1));
 static const double MINIMUMDECIMALALLOWED = 1e-14; // pow(10, -1 * (MAXIMUMDIGITSALLOWED - 1));
+
+namespace
+{
+    // stod throws on ERANGE even for finite subnormal results. Preserve those
+    // doubles when a displayed result becomes input, and reject invalid text.
+    optional<double> ParseConverterValue(const wstring& text)
+    {
+        wchar_t* end = nullptr;
+        const double value = std::wcstod(text.c_str(), &end);
+        if (end == text.c_str() || *end != L'\0' || !std::isfinite(value))
+        {
+            return nullopt;
+        }
+        return value;
+    }
+}
 
 unordered_map<wchar_t, wstring> quoteConversions;
 unordered_map<wstring, wchar_t> unquoteConversions;
@@ -544,6 +562,11 @@ vector<tuple<wstring, Unit>> UnitConverter::CalculateSuggested()
 {
 
     vector<tuple<wstring, Unit>> returnVector;
+    const auto currentValue = ParseConverterValue(m_currentDisplay);
+    if (!currentValue)
+    {
+        return returnVector;
+    }
     vector<SuggestedValueIntermediate> intermediateVector;
     vector<SuggestedValueIntermediate> intermediateWhimsicalVector;
     unordered_map<Unit, ConversionData, UnitHash> ratios = m_ratioMap[m_fromType];
@@ -552,7 +575,7 @@ vector<tuple<wstring, Unit>> UnitConverter::CalculateSuggested()
     {
         if (cur.first != m_fromType && cur.first != m_toType)
         {
-            double convertedValue = Convert(stod(m_currentDisplay), cur.second);
+            double convertedValue = Convert(*currentValue, cur.second);
             SuggestedValueIntermediate newEntry;
             newEntry.magnitude = log10(convertedValue);
             newEntry.value = convertedValue;
@@ -842,8 +865,15 @@ void UnitConverter::Calculate()
     }
     else
     {
-        double currentValue = stod(m_currentDisplay);
-        const double returnValue = Convert(currentValue, conversion->second);
+        const auto currentValue = ParseConverterValue(m_currentDisplay);
+        if (!currentValue)
+        {
+            m_returnDisplay.clear();
+            m_returnHasDecimal = false;
+            UpdateViewModel();
+            return;
+        }
+        const double returnValue = Convert(*currentValue, conversion->second);
         if (!std::isfinite(returnValue))
         {
             m_returnDisplay.clear();

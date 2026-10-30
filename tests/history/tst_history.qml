@@ -54,6 +54,49 @@ Item {
             }
             commands(["clear"])
         }
+        function test_history_shortcuts_toggle_clear_and_restore_calculator_focus_data() {
+            return [{tag: "standard", mode: "standard"}, {tag: "scientific", mode: "scientific"}]
+        }
+        function test_history_shortcuts_toggle_clear_and_restore_calculator_focus(data) {
+            navigate("mode_" + data.mode)
+            commands(["4", "2", "equals", "clear", "6", "multiply"])
+            const drawer = findChild(application, "historyDrawer")
+            keyClick(Qt.Key_H, Qt.ControlModifier)
+            tryCompare(drawer, "opened", true)
+            keyClick("9")
+            compare(findChild(application.contentItem, "resultDisplay").text, "6")
+            keyClick(Qt.Key_D, Qt.ControlModifier | Qt.ShiftModifier)
+            tryCompare(findChild(drawer.contentItem, "historyList"), "count", 0)
+            verify(findChild(drawer.contentItem, "historyEmpty").visible)
+            keyClick(Qt.Key_H, Qt.ControlModifier)
+            tryCompare(drawer, "visible", false)
+            verify(application.currentPage.activeFocus)
+            keyClick("7"); keyClick("=")
+            compare(findChild(application.contentItem, "resultDisplay").text, "42")
+            application.width = 900
+            const sidebar = findChild(application.contentItem, "historySidebar")
+            tryCompare(sidebar, "visible", true)
+            keyClick(Qt.Key_H, Qt.ControlModifier)
+            verify(!drawer.visible, "Pinned toggle leaves the docked layout in place")
+            keyClick(Qt.Key_D, Qt.ControlModifier | Qt.ShiftModifier)
+            tryCompare(findChild(sidebar, "historyList"), "count", 0)
+            application.width = 360
+            commands(["clear", "2", "equals"])
+            mouseClick(findChild(application.contentItem, "navigationButton"))
+            const navigation = findChild(application, "navigationDrawer")
+            tryCompare(navigation, "opened", true)
+            keyClick(Qt.Key_H, Qt.ControlModifier)
+            keyClick(Qt.Key_D, Qt.ControlModifier | Qt.ShiftModifier)
+            verify(!drawer.visible)
+            navigation.close()
+            tryCompare(navigation, "visible", false)
+            keyClick(Qt.Key_H, Qt.ControlModifier)
+            tryCompare(drawer, "opened", true)
+            compare(findChild(drawer.contentItem, "historyList").count, 1, "Navigation blocks history commands")
+            drawer.close()
+            tryCompare(drawer, "visible", false)
+        }
+
         function test_standard_history_reuse_keeps_scientific_angle_on_return() {
             navigate("mode_scientific")
             const angle = findChild(application.contentItem, "angleUnitButton")

@@ -203,12 +203,16 @@ void CurrencyRates::selectPair(int first, int second)
 void CurrencyRates::refresh()
 {
     if (!m_source) { m_state = "failed"; emit changed(); return; }
-    if (m_catalog.isEmpty()) {
-        m_state = "loading";
-        m_catalogRequest = ++m_generation;
-        emit changed();
-        m_source->request(m_catalogRequest, QStringLiteral("currencies"));
-    } else requestRate();
+    m_rateRequest = 0;
+    m_catalogRefreshFailed = false;
+    m_state = "loading";
+    m_usingCached = available();
+    m_catalogRequest = ++m_generation;
+    emit changed();
+    m_source->request(m_catalogRequest, QStringLiteral("currencies"));
+    // A catalog outage must not prevent refreshing a pair we already know.
+    if (!m_catalog.isEmpty())
+        requestRate();
 }
 
 void CurrencyRates::requestRate()
@@ -235,9 +239,26 @@ void CurrencyRates::receive(quint64 requestId, const QByteArray &body, bool succ
     if (requestId == m_catalogRequest) {
         m_catalogRequest = 0;
         const auto catalog = validJson ? parseCatalog(document.array()) : QVariantList();
-        if (catalog.isEmpty()) { m_state = "failed"; emit changed(); return; }
+        if (catalog.isEmpty()) {
+            m_catalogRefreshFailed = true;
+            if (!m_rateRequest && m_state != "invalid")
+                m_state = "failed";
+            emit changed();
+            return;
+        }
         m_catalog = catalog;
+        QSet<QString> codes;
+        for (const auto &item : m_catalog)
+            codes.insert(item.toMap().value("code").toString());
+        for (auto it = m_observations.begin(); it != m_observations.end();) {
+            if (!codes.contains(it->value("base").toString()) || !codes.contains(it->value("quote").toString()))
+                it = m_observations.erase(it);
+            else
+                ++it;
+        }
         saveCache();
+        // Publishing an initial or changed catalog can select a new pair
+        // synchronously; a retained pair already has its own refresh in flight.
         emit dataChanged();
         return;
     }
@@ -257,7 +278,7 @@ void CurrencyRates::receive(quint64 requestId, const QByteArray &body, bool succ
     observation.insert("refreshedAt", m_refreshedAt);
     m_observations.insert(m_base + "/" + m_quote, observation);
     saveCache();
-    m_state = "ready";
+    m_state = m_catalogRefreshFailed ? "failed" : "ready";
     m_usingCached = false;
     emit dataChanged();
     emit changed();

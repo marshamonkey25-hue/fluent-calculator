@@ -14,6 +14,12 @@ MouseArea {
         context: Qt.WindowShortcut
         onActivated: root.session.copyResult()
     }
+    Shortcut {
+        enabled: root.visible && root.enabled
+        sequences: [StandardKey.Paste]
+        context: Qt.WindowShortcut
+        onActivated: root.session.paste()
+    }
     Menu {
         id: resultMenu
         objectName: "resultContextMenu"
@@ -28,6 +34,11 @@ MouseArea {
             objectName: "copyResultItem"
             text: qsTr("Copy")
             onTriggered: root.session.copyResult()
+        }
+        MenuItem {
+            objectName: "pasteResultItem"
+            text: qsTr("Paste")
+            onTriggered: root.session.paste()
         }
     }
 }
