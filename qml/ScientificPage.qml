@@ -151,9 +151,12 @@ FocusScope {
                         onActiveFocusChanged: if (activeFocus) page.revealControl(keyButton)
                         onClicked: page.session.send(modelData.command)
                         Shortcut {
-                            enabled: page.visible && !trigonometry.popupOpen
+                            enabled: page.visible && page.Window.window.active
+                                     && (keyButton.modelData.command !== "clear" || !trigonometry.popupOpen)
                             sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
-                            context: Qt.WindowShortcut
+                            // Keep the reference's per-window accelerators active
+                            // while its flyout owns focus. Escape still dismisses it.
+                            context: Qt.ApplicationShortcut
                             onActivated: page.session.send(keyButton.modelData.command)
                         }
                     }

@@ -58,10 +58,11 @@ Item {
         function initTestCase() {
             application.requestActivate()
             tryCompare(application, "active", true)
+            selectMode("scientific")
+            compare(control("angleUnitButton").text, "DEG", "A fresh Scientific session starts in degrees")
         }
 
         function init() {
-            selectMode("standard")
             selectMode("scientific")
             mouseClick(control("key_clear"))
             const angle = control("angleUnitButton")
@@ -418,6 +419,19 @@ Item {
             tryCompare(popup, "visible", false)
             compare(result(), "0.5")
             verify(control("expressionDisplay").text.indexOf("30") >= 0)
+        }
+
+        function test_keyboard_entry_remains_available_while_flyout_is_open() {
+            keyClick("3")
+            mouseClick(control("trigonometryButton"))
+            const popup = control("trigonometryPopup")
+            tryCompare(popup, "opened", true)
+            keyClick("0")
+            compare(result(), "30", "The flyout keeps Scientific digit shortcuts available")
+            verify(popup.opened)
+            keyClick(Qt.Key_S)
+            tryCompare(popup, "visible", false)
+            compare(result(), "0.5")
         }
 
         function cleanupTestCase() { application.close() }

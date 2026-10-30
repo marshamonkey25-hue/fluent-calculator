@@ -41,22 +41,26 @@ ColumnLayout {
             required property string modelData
             property Shortcut circular: Shortcut {
                 sequence: ["S", "O", "T", "U", "I", "J"][functionShortcuts.index]
-                enabled: panel.visible && !panel.session.error
+                context: Qt.ApplicationShortcut
+                enabled: panel.visible && panel.Window.window.active && !panel.session.error
                 onActivated: panel.sendFunction(functionShortcuts.modelData)
             }
             property Shortcut inverse: Shortcut {
                 sequence: "Shift+" + ["S", "O", "T", "U", "I", "J"][functionShortcuts.index]
-                enabled: panel.visible && !panel.session.error
+                context: Qt.ApplicationShortcut
+                enabled: panel.visible && panel.Window.window.active && !panel.session.error
                 onActivated: panel.sendFunction("a" + functionShortcuts.modelData)
             }
             property Shortcut hyperbolic: Shortcut {
                 sequence: "Ctrl+" + ["S", "O", "T", "U", "I", "J"][functionShortcuts.index]
-                enabled: panel.visible && !panel.session.error
+                context: Qt.ApplicationShortcut
+                enabled: panel.visible && panel.Window.window.active && !panel.session.error
                 onActivated: panel.sendFunction(functionShortcuts.modelData + "h")
             }
             property Shortcut inverseHyperbolic: Shortcut {
                 sequence: "Ctrl+Shift+" + ["S", "O", "T", "U", "I", "J"][functionShortcuts.index]
-                enabled: panel.visible && !panel.session.error
+                context: Qt.ApplicationShortcut
+                enabled: panel.visible && panel.Window.window.active && !panel.session.error
                 onActivated: panel.sendFunction("a" + functionShortcuts.modelData + "h")
             }
         }
