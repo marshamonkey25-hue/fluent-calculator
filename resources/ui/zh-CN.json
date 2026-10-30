@@ -2,7 +2,8 @@
   "MainWindow": {
     "Calculator": "计算器",
     "Open navigation": "打开导航",
-    "Settings": "设置"
+    "Settings": "设置",
+    "History": "历史记录"
   },
   "ModeRegistry": {
     "Standard": "标准",
@@ -81,5 +82,12 @@
     "%1: %2": "%1：%2",
     "Word size: %1 bits": "字长：%1 位",
     "Digit %1": "数字 %1"
+  },
+  "HistoryPanel": {
+    "History": "历史记录",
+    "There's no history yet": "尚无历史记录",
+    "Clear all history": "清除所有历史记录",
+    "Close": "关闭",
+    "Delete": "删除"
   }
 }

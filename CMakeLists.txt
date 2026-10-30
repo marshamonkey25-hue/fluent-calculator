@@ -25,6 +25,7 @@ qt_add_qml_module(calculator_ui
         qml/SettingsPage.qml
         qml/ScientificPage.qml
         qml/ProgrammerPage.qml
+        qml/HistoryPanel.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
 )
@@ -49,6 +50,13 @@ if(BUILD_TESTING)
     qt_add_executable(calculator_ui_tests tests/quicktest.cpp)
     target_link_libraries(calculator_ui_tests PRIVATE calculator_ui calculator_uiplugin Qt6::QuickTest)
     target_compile_definitions(calculator_ui_tests PRIVATE QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml")
+    add_test(NAME calculator-history-restart
+        COMMAND ${CMAKE_COMMAND}
+            -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
+            -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/history-restart.cmake)
+    set_tests_properties(calculator-history-restart PROPERTIES TIMEOUT 100)
     add_test(NAME calculator-preferences-restart
         COMMAND ${CMAKE_COMMAND}
             -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
@@ -57,15 +65,25 @@ if(BUILD_TESTING)
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/preferences-restart.cmake)
     set_tests_properties(calculator-preferences-restart PROPERTIES TIMEOUT 100)
     foreach(theme light dark)
-        add_test(NAME calculator-ui-${theme} COMMAND calculator_ui_tests)
-        set_tests_properties(calculator-ui-${theme} PROPERTIES
+        add_test(NAME calculator-history-${theme} COMMAND calculator_ui_tests -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
+        set_tests_properties(calculator-history-${theme} PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_THEME=${theme}"
             TIMEOUT 180
         )
+        add_test(NAME calculator-ui-${theme} COMMAND calculator_ui_tests)
+        set_tests_properties(calculator-ui-${theme} PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_THEME=${theme}"
+            TIMEOUT 300
+        )
     endforeach()
+    add_test(NAME calculator-history-zh-CN COMMAND calculator_ui_tests -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
+    set_tests_properties(calculator-history-zh-CN PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
+        TIMEOUT 180
+    )
     add_test(NAME calculator-ui-zh-CN COMMAND calculator_ui_tests)
     set_tests_properties(calculator-ui-zh-CN PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
-        TIMEOUT 180
+        TIMEOUT 300
     )
 endif()

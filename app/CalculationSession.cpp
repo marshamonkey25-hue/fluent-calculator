@@ -41,6 +41,94 @@ void CalculationSession::selectMode(const QString &mode)
     m_mode = mode;
     updateRadixDisplays();
     emit modeChanged();
+    emit historyChanged();
+}
+
+QVariantList CalculationSession::history() const
+{
+    QVariantList rows;
+    if (m_mode != "standard" && m_mode != "scientific")
+        return rows;
+    const auto &items = m_manager->GetHistoryItems();
+    for (auto it = items.rbegin(); it != items.rend(); ++it) {
+        const auto &item = (*it)->historyItemVector;
+        rows.append(QVariantMap{{"expression", QString::fromStdWString(item.expression).simplified()},
+                                {"result", QString::fromStdWString(item.result)}});
+    }
+    return rows;
+}
+
+void CalculationSession::removeHistory(int index)
+{
+    if (m_mode != "standard" && m_mode != "scientific")
+        return;
+    const auto count = m_manager->GetHistoryItems().size();
+    if (index < 0 || static_cast<size_t>(index) >= count)
+        return;
+    m_manager->RemoveHistoryItem(static_cast<unsigned int>(count - 1 - index));
+    emit historyChanged();
+}
+
+void CalculationSession::reuseHistory(int index)
+{
+    if (m_mode != "standard" && m_mode != "scientific")
+        return;
+    const auto &items = m_manager->GetHistoryItems();
+    if (index < 0 || static_cast<size_t>(index) >= items.size())
+        return;
+    const auto item = items[items.size() - 1 - index]->historyItemVector;
+    std::vector<int> replay;
+    // Match the pinned StandardCalculatorViewModel.GetCommandsFromExpressionCommands.
+    // Replay native operand commands; parsing displayed results would lose precision.
+    for (const auto &command : *item.spCommands) {
+        switch (command->GetCommandType()) {
+        case CalculationManager::CommandType::UnaryCommand: {
+            const auto &codes = *static_cast<IUnaryCommand *>(command.get())->GetCommands();
+            replay.insert(replay.end(), codes.begin(), codes.end());
+            break;
+        }
+        case CalculationManager::CommandType::BinaryCommand:
+            replay.push_back(static_cast<IBinaryCommand *>(command.get())->GetCommand());
+            break;
+        case CalculationManager::CommandType::Parentheses:
+            replay.push_back(static_cast<IParenthesisCommand *>(command.get())->GetCommand());
+            break;
+        case CalculationManager::CommandType::OperandCommand: {
+            const auto operand = static_cast<IOpndCommand *>(command.get());
+            bool needsSign = operand->IsNegative();
+            for (const int code : *operand->GetCommands()) {
+                replay.push_back(code);
+                if (needsSign && code != static_cast<int>(Command::Command0)) {
+                    replay.push_back(static_cast<int>(Command::CommandSIGN));
+                    needsSign = false;
+                }
+            }
+            break;
+        }
+        }
+    }
+    const auto degree = m_manager->GetCurrentDegreeMode();
+    m_manager->SetInHistoryItemLoadMode(true);
+    m_manager->Reset(false);
+    if (m_mode == "scientific")
+        m_manager->SetScientificMode();
+    m_manager->SendCommand(degree);
+    for (const int code : replay)
+        m_manager->SendCommand(static_cast<Command>(code));
+    // The reference forces evaluation by toggling F-E twice; '=' would add history.
+    m_manager->SendCommand(Command::CommandFE);
+    m_manager->SendCommand(Command::CommandFE);
+    m_manager->SetInHistoryItemLoadMode(false);
+    SetExpressionDisplay(item.spTokens, item.spCommands);
+    SetPrimaryDisplay(item.result, false);
+}
+
+void CalculationSession::clearHistory()
+{
+    if (m_mode != "standard" && m_mode != "scientific")
+        return;
+    m_manager->ClearHistory();
+    emit historyChanged();
 }
 
 void CalculationSession::selectWordWidth(int width)
@@ -192,7 +280,11 @@ void CalculationSession::SetParenthesisNumber(unsigned int count) { emit parenth
 void CalculationSession::OnNoRightParenAdded() { emit noRightParenthesisAdded(); }
 void CalculationSession::MaxDigitsReached() { emit maxDigitsReached(); }
 void CalculationSession::BinaryOperatorReceived() { emit binaryOperatorReceived(); }
-void CalculationSession::OnHistoryItemAdded(unsigned int index) { emit historyItemAdded(index); }
+void CalculationSession::OnHistoryItemAdded(unsigned int index)
+{
+    emit historyItemAdded(index);
+    emit historyChanged();
+}
 void CalculationSession::MemoryItemChanged(unsigned int index) { emit memoryItemChanged(index); }
 void CalculationSession::InputChanged() { emit inputChanged(); }
 void CalculationSession::SetMemorizedNumbers(const std::vector<std::wstring> &numbers)
