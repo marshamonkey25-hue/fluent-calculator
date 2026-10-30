@@ -4,20 +4,20 @@
 
 **Blocked by:** 04: 使用科学模式的优先级与括号。
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Spec:** Windows 11 风格跨平台计算器。
 
 **User stories:** 35, 36, 37, 40。
 
-- [ ] 标准与科学模式分别记录表达式和结果，每种模式最多 20 条，超出上限删除最旧记录，顺序和收录时机遵循固定参考行为。
-- [ ] 历史面板展示真实计算记录，选择记录后按参考语义恢复或复用相应计算状态，用户能够继续运算。
-- [ ] 提供参考允许的清理操作，清理后列表及空状态及时更新，不误删另一模式的数据。
-- [ ] 普通模式切换保留各自历史，普通退出后重新打开不自动恢复；程序员模式不生成或展示计算历史。
-- [ ] 宽窗口侧栏与窄窗口访问方式均可操作，显示长表达式和结果时不遮挡必要操作；沿用主题和翻译机制。
-- [ ] 通过真实计算和界面操作验证历史隔离、顺序、第 20/21 条边界、记录复用、清理和普通重启行为；其他模式存在时检查导航不会错误显示历史。
+- [x] 标准与科学模式分别记录表达式和结果，每种模式最多 20 条，超出上限删除最旧记录，顺序和收录时机遵循固定参考行为。
+- [x] 历史面板展示真实计算记录，选择记录后按参考语义恢复或复用相应计算状态，用户能够继续运算。
+- [x] 提供参考允许的清理操作，清理后列表及空状态及时更新，不误删另一模式的数据。
+- [x] 普通模式切换保留各自历史，普通退出后重新打开不自动恢复；程序员模式不生成或展示计算历史。
+- [x] 宽窗口侧栏与窄窗口访问方式均可操作，显示长表达式和结果时不遮挡必要操作；沿用主题和翻译机制。
+- [x] 通过真实计算和界面操作验证历史隔离、顺序、第 20/21 条边界、记录复用、清理和普通重启行为；其他模式存在时检查导航不会错误显示历史。
 
-## Implementation evidence (awaiting integration validation)
+## Implementation evidence (implementer handoff)
 
 - Implemented a shared `HistoryPanel.qml` backed by the real Microsoft manager's separate Standard/Scientific history collectors. The UI shows newest first; the core retains its 20-entry limit and collection timing. Programmer and Settings do not expose history. A wide window uses a side panel; a narrow window uses a modal bottom sheet with an explicit Close action. Wrapped expression/result text and a scrolling list leave clearing controls accessible. Labels use the existing theme palette and English/Chinese translation mechanism.
 - History reuse replays native operand/unary/binary/parenthesis commands following pinned `StandardCalculatorViewModel.GetCommandsFromExpressionCommands`, `SetHistoryExpressionDisplay` and `Recalculate`. It preserves rational precision and memory via `Reset(false)`, restores the current angle, and uses the reference's F-E double toggle instead of adding an equals/history entry. The displayed expression/result are restored, and subsequent operations continue through the actual core. Clear-all and contextual per-record Delete map newest-first UI rows to oldest-first core storage and notify the list immediately.
@@ -27,3 +27,12 @@
 - Validation evidence and final integration ancestry are recorded in the implementation handoff artifact. Ticket status and acceptance checkboxes intentionally remain pending the required independent merger validation. Windows/macOS are not verified on this Linux host.
 - Final Linux Qt 6.12/GCC 16.2 Debug verification in private `.build-ticket09` (Make `-j2`): all eight CTest entries pass across the full run and retries. History is **18/18** per English/light, English/dark and Chinese/light configuration; existing regression suites are **187/187** per configuration. Four history-restart and seven existing preference-restart processes each pass **3/3**. No failures/skips remain. Shared-host load pushed the existing dark/Chinese suites beyond their former 180s budget without assertion failures; their budget is now 300s, and retries completed in 203.61/206.40s. See `ticket09-final-ctest.log`, `ticket09-retry-ctest.log`, `ticket09-full-LastTest.log` and `ticket09-retry-LastTest.log` in the private build directory.
 - `calculator_ui_qmllint`, final build and `git diff --check` pass. Native Wayland 20/21-boundary and resize-layout subsets pass **4/4** and **3/3**; a standalone native app launches without diagnostics. A full native run encountered shared-desktop focus failures and was interrupted, so full native automation is not claimed. Both-theme narrow/wide history captures were reviewed. Final integration merge reports already up to date at `06ffcdfa4f0006ba36496e6210bd870b2fad2c1e`; final affected layout and lint checks were rerun afterward. Independent merger review remains required before resolving the ticket.
+
+
+## Merger completion and acceptance — 2026-10-30
+
+- Independently inspected the full spec, glossary, ADR 0001, ticket criteria, external handoff/implementation notes, pinned replay behavior and commit diff. Root checkout was clean on `integration/calculator`. Merged `c5e1ce65835b86d4b4753c08e83df8f1e314fdf0` with `git merge --no-ff`; merge commit `8c465032142bc7441c4bcd0d2ce234534d8684ca` preserves the existing scientific functions, trigonometry, Programmer bit operations, palette fallback, navigation input guard, translations and isolated tests. New history/restart tests use the existing isolated launcher, including each restart subprocess.
+- Integration fixes `7b3c540` preserve the selected F-E setting during native replay and restore Scientific's retained angle when returning after Standard history replay. Real QML regression tests first failed with `84` instead of `8.4e+1`, and `sin(90 RAD) = 1` instead of approximately `0.8939966636005579`; both then passed. Commit `4c84aa0` adapts the history helper to Scientific's existing dynamic C/CE button by using the reference Escape clear-all shortcut. Its 20/21-entry checks pass in both modes. Capture filenames now use the observable application theme so the generic platform's unknown color-scheme hint cannot overwrite dark/light evidence.
+- Linux Qt 6.12/GCC 16.2 Debug build passes in `.build-integration` with Make `-j2`; `calculator_ui_qmllint` and `git diff --check` pass. All **12 CTest entries pass across the full run and corrected light-history retry**. History: **20/20** per English/light, English/dark and Chinese/light. Existing UI: **298/298** per configuration. Programmer bits: **35/35** per configuration. All four history-restart and seven preference-restart subprocesses pass **3/3** each; the isolation boundary tests pass. An additional complete English/light UI run against the final binary passes **298/298**, with no failures/skips. The initial light-history run's three failures were obsolete C/CE key lookups; the corrected retry passes in 91.83s.
+- Evidence: `.build-integration/merge09-{configure,build,fix-build,final-build,qmllint,ctest,retry-ctest,final-ui-light}.log`, `merge09-full-LastTest.log`, `merge09-retry-LastTest.log`, `merge09-notation-red.log`, `merge09-angle-red.log`, `merge09-replay-green.log` and `merge09-boundary-green.log`. Reviewed offscreen `history-{narrow,wide}-{light,dark}.png`: wrapped long records, visible close/clear controls and accessible calculator keys at 320/900px. All merger UI runs used software offscreen rendering, private storage/runtime roots and a fresh private D-Bus session; no active-desktop or native-display checks were run.
+- All six ticket acceptance criteria are fulfilled. Only this ticket's status/checklist was closed; the parent spec remains unchanged. Windows/macOS and native display behavior remain unverified by this merger; final application-wide independent review remains part of the parent workflow. No push, PR or deployment was performed.
