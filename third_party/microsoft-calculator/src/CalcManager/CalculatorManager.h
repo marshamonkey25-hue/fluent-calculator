@@ -86,6 +86,8 @@ namespace CalculationManager
         CalculatorManager(_In_ ICalcDisplay* displayCallback, _In_ IResourceProvider* resourceProvider);
 
         void Reset(bool clearMemory = true);
+        // Reload localized resources without resetting Ratpack or session values.
+        void RefreshResources();
         void SetStandardMode();
         void SetScientificMode();
         void SetProgrammerMode();

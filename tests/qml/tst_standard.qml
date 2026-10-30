@@ -3,7 +3,7 @@ import QtTest
 import Calculator
 
 Item {
-    MainWindow { id: application }
+    MainWindow { id: application; systemPreferences: testSystemPreferences }
     // Receive a real clipboard paste as another editable UI control would.
     TextEdit {
         id: clipboardReceiver
@@ -108,13 +108,17 @@ Item {
         }
 
         function test_operator_labels_and_keyboard_focus_are_accessible() {
-            compare(button("multiply").Accessible.name, "Multiply")
-            compare(button("divide").Accessible.name, "Divide")
-            compare(button("clear").Accessible.name, "Clear")
-            compare(button("decimal").Accessible.name, "Decimal separator")
-            compare(button("equals").Accessible.name, "Equals")
-            const names = { percent: "Percent", sign: "Negate", square: "Square", squareRoot: "Square root",
-                            reciprocal: "Reciprocal", clearEntry: "Clear entry", backspace: "Backspace" }
+            const chinese = Qt.locale().name.indexOf("zh") === 0
+            compare(button("multiply").Accessible.name, chinese ? "乘" : "Multiply")
+            compare(button("divide").Accessible.name, chinese ? "除" : "Divide")
+            compare(button("clear").Accessible.name, chinese ? "清除" : "Clear")
+            compare(button("decimal").Accessible.name, chinese ? "小数点" : "Decimal separator")
+            compare(button("equals").Accessible.name, chinese ? "等于" : "Equals")
+            const names = chinese
+                ? { percent: "百分比", sign: "取反", square: "平方", squareRoot: "平方根",
+                    reciprocal: "倒数", clearEntry: "清除输入", backspace: "退格" }
+                : { percent: "Percent", sign: "Negate", square: "Square", squareRoot: "Square root",
+                    reciprocal: "Reciprocal", clearEntry: "Clear entry", backspace: "Backspace" }
             for (const command in names)
                 compare(button(command).Accessible.name, names[command])
             waitForRendering(application.contentItem)
@@ -392,6 +396,7 @@ Item {
                 tryCompare(menu, "opened", true)
                 const copy = findChild(menu.contentItem, "copyResultItem")
                 verify(copy !== null && copy.enabled, "Copy is available")
+                compare(copy.text, Qt.locale().name.indexOf("zh") === 0 ? "复制" : "Copy")
                 mouseClick(copy)
                 tryCompare(menu, "visible", false)
             }

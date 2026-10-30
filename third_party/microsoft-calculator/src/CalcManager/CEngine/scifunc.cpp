@@ -295,6 +295,7 @@ CalcEngine::Rational CCalcEngine::SciCalcFunctions(CalcEngine::Rational const& r
 
 void CCalcEngine::DisplayError(uint32_t nError)
 {
+    m_lastErrorCode = nError;
     wstring errorString{ GetString(IDS_ERRORS_FIRST + SCODE_CODE(nError)) };
 
     SetPrimaryDisplay(errorString, true /*isError*/);

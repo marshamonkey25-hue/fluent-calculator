@@ -76,6 +76,7 @@ public:
         return m_bRecord;
     }
     void SettingsChanged();
+    void RefreshResources(bool updateDisplay);
     bool IsCurrentTooBigForTrig();
     uint32_t GetCurrentRadix();
     std::wstring GetCurrentResultForRadix(uint32_t radix, int32_t precision, bool groupDigitsPerRadix);
@@ -135,6 +136,7 @@ private:
     std::array<CalcEngine::Rational, MAXPRECDEPTH> m_parenVals;      // Holding array for parenthesis values.
     std::array<CalcEngine::Rational, MAXPRECDEPTH> m_precedenceVals; // Holding array for precedence values.
     bool m_bError;                                                   // Error flag.
+    uint32_t m_lastErrorCode = 0;                                     // Retained for language-only redisplay.
     bool m_bInv;                                                     // Inverse on/off flag.
     bool m_bNoPrevEqu;                                               /* Flag for previous equals.          */
 

@@ -6,10 +6,16 @@
 
 EngineResources::EngineResources()
 {
+    setLanguage(QLocale().language() == QLocale::Chinese ? QStringLiteral("zh-CN") : QStringLiteral("en-US"));
+}
+
+void EngineResources::setLanguage(const QString &language)
+{
+    m_strings.clear();
     // Localized RESW tables contain only overrides; retain the pinned English
     // operation symbols and captions just as Windows resource fallback does.
     QStringList languages { QStringLiteral("en-US") };
-    if (QLocale().language() == QLocale::Chinese)
+    if (language == "zh-CN")
         languages.append(QStringLiteral("zh-CN"));
     for (const auto &language : languages) {
         QFile file(QStringLiteral(":/engine/%1.json").arg(language));

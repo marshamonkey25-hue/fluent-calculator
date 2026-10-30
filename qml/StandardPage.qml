@@ -21,6 +21,7 @@ FocusScope {
     })
     focus: true
     Shortcut {
+        enabled: page.visible
         sequence: StandardKey.Copy
         context: Qt.WindowShortcut
         onActivated: page.session.copyResult()
@@ -122,7 +123,7 @@ FocusScope {
                              || ["clear", "clearEntry", "backspace", "decimal", "equals"].indexOf(modelData.command) !== -1
                     onClicked: page.session.send(modelData.command)
                     Shortcut {
-                        enabled: keyButton.enabled
+                        enabled: page.visible && keyButton.enabled
                         sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
                         context: Qt.WindowShortcut
                         onActivated: page.session.send(keyButton.modelData.command)

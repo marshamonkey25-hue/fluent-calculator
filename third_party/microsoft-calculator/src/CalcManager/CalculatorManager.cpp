@@ -32,6 +32,15 @@ namespace CalculationManager
         CCalcEngine::InitialOneTimeOnlySetup(*m_resourceProvider);
     }
 
+    void CalculatorManager::RefreshResources()
+    {
+        for (auto engine : { m_standardCalculatorEngine.get(), m_scientificCalculatorEngine.get(), m_programmerCalculatorEngine.get() })
+        {
+            if (engine)
+                engine->RefreshResources(engine == m_currentCalculatorEngine);
+        }
+    }
+
     /// <summary>
     /// Call the callback function using passed in IDisplayHelper.
     /// Used to set the primary display value on ViewModel

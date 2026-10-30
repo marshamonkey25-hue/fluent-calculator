@@ -155,6 +155,16 @@ void CCalcEngine::PersistedMemObject(Rational const& memObject)
     m_memoryValue = make_unique<Rational>(memObject);
 }
 
+void CCalcEngine::RefreshResources(bool updateDisplay)
+{
+    // Unlike InitialOneTimeOnlySetup, this leaves the shared arithmetic
+    // constants, pending operands, history and memory intact.
+    LoadEngineStrings(*m_resourceProvider);
+    SettingsChanged();
+    if (updateDisplay && m_bError)
+        DisplayError(m_lastErrorCode);
+}
+
 void CCalcEngine::SettingsChanged()
 {
     wchar_t lastDec = m_decimalSeparator;

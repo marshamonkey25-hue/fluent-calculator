@@ -1,6 +1,6 @@
 # Fluent Calculator
 
-A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–02**: the Standard arithmetic keypad, expression/result/error display, entry correction, reference error recovery, copying results, and corresponding keyboard input. History, memory, settings, and other modes are separate implementation tickets.
+A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–03**: the Standard arithmetic keypad, expression/result/error display, entry correction, reference error recovery, copying results, keyboard input, and persistent theme/language settings. History, memory, and other modes are separate implementation tickets.
 
 The content follows the pinned Microsoft Standard keypad layout with Fluent controls and native system window decorations. Navigation is registered centrally in `qml/ModeRegistry.qml`. `MainWindow` owns one `CalculationSession`, which dispatches string command names to `CalculatorManager`, `CCalcEngine` and Ratpack. Arithmetic displays and expressions remain strings across C++/QML, including integers above JavaScript's safe integer range.
 
@@ -36,7 +36,9 @@ XDG_CACHE_HOME="$PWD/.build/manual-data/cache" \
 QT_QUICK_BACKEND=software ./.build/calculator
 ```
 
-The application uses the system color scheme and palette. All new UI captions/accessibility names use `qsTr`, and engine resources include English plus Simplified Chinese overrides selected at startup. Runtime language/theme preferences and a settings page are ticket 03, not a claim of completion in this tracer.
+Open navigation → Settings to select Light, Dark, or Use system setting, and English, Simplified Chinese, or Use system setting. Changes apply immediately, including current core errors, without clearing a pending calculation. Unsupported system languages (including Traditional Chinese) fall back to English. Explicit choices override system changes. Theme, language choice and the most recent available mode persist in local Qt settings; an unavailable saved mode safely opens Standard. Ordinary restarts create a fresh calculation session; history and memory are never written by preferences.
+
+`AppPreferences` owns the settings and Qt translator. New pages use `qsTr`, add their context/source translations to `resources/ui/zh-CN.json`, and inherit the application palette; no separate theme or language state is needed. Register each implemented mode with a stable key in `qml/ModeRegistry.qml` to participate in navigation and restoration. `SystemPreferences` obtains the platform's language and applies Qt's native scheme override/reset; it is the external input replaced in deterministic tests. The engine language binding refreshes resources on the existing manager, preserving arithmetic state and shared Ratpack constants.
 
 Click the visible keys, or use the reference shortcuts below. Tab/Shift+Tab navigate real controls, and Space activates the focused button. Both mouse and keyboard dispatch through the same command path. Standard mode evaluates step by step: `2 + 3 * 4 =` gives `20`.
 
@@ -60,14 +62,15 @@ cmake --build .build --target calculator_ui_qmllint -j2
 
 Configure with `-DBUILD_TESTING=OFF` only when deliberately building without QuickTest. The normal configuration includes all current checks.
 
-The three CTest entries run the same real-QML behavior suite in English/light, English/dark, and Simplified-Chinese engine startup/light. CTest sets offscreen/software rendering; the test setup gives each process a temporary settings/data/cache root and deterministic locale. No network calls, shared user settings or mocked calculator core are involved. The suite covers:
+The three main CTest entries run the real-QML behavior suite with controlled English/light, English/dark, and Simplified-Chinese/light system preferences. The additional `calculator-preferences-restart` entry launches three separate processes against one temporary settings root: select preferences through the UI and close normally, restart and observe their restoration with fresh calculation state, then seed invalid external settings and observe safe defaults. CTest sets offscreen/software rendering; each run isolates Qt settings, data and cache. No network calls, shared user settings or mocked calculator core are involved. The suite covers:
 
 - Mouse stepwise evaluation and displayed expression, keyboard decimal entry/evaluation/clear, all four arithmetic operations, decimal precision, and the core's 16-digit input limit.
 - Exact `9007199254740992 + 1 = 9007199254740993`, then subtracting `9007199254740992` to get `1`, via both mouse and keyboard.
 - Meaningful division-by-zero and undefined-result errors, clear and continued calculation, including Chinese engine messages and shared operation symbols.
-- Navigation return with in-progress calculation retained, translated-source accessible labels, Tab focus, all current keys at 320×460 and 900×700, image capture, and normal window close.
+- Navigation return with in-progress calculation retained, translated accessible labels, Tab focus, all current keys at 320×460 and 900×700, image capture, and normal window close.
+- Runtime theme/language selection, translated live/future core errors, pending `6 × 7` continued after translation, controlled system changes and explicit overrides, unsupported-language fallback, keyboard scrolling/focus retention through translated settings, and readable heading/result contrast in both themes.
 
-Screenshots `standard-{light,dark}-{narrow,wide}.png` are saved in the test working/build directory. To run the same QML suite in an actual Wayland session, preserving the current desktop's runtime environment:
+Screenshots `standard-{light,dark}-{narrow,wide}.png` and `settings-{light,dark}-{narrow,wide}.png` are saved in the test working/build directory. To run the same QML suite in an actual Wayland session, preserving the current desktop's runtime environment:
 
 ```sh
 cd .build
@@ -81,7 +84,7 @@ Checked on Linux x86_64 (Omarchy/Arch), Qt **6.12.0**, GCC **16.2.1**, CMake **4
 
 TDD evidence: the initial mouse test failed with `0` versus `20`, then passed after the real core bridge was added; keyboard clear failed with `4` versus `0`, then passed after shortcuts were connected; explicit error-state and accessible-name tests each failed before their UI additions; Chinese expression symbols failed (`5 4` versus `5 × 4 =`) before layering the pinned English resource fallback. Exact-precision/digit-limit cases are regression checks of the real imported core and were not falsely reported as new failing tests.
 
-Current limits: only Linux/Qt 6.12 is actually verified; no three-platform installers or deployment; runtime settings/translation, history, memory, additional modes, converters and graphing remain with their own tickets. Ticket 01 is resolved after a fresh integration build, all three CTest configurations, native Wayland tests, QML lint and standalone normal-close validation; see its local tracker entry for merge evidence. The completed application still requires the workflow’s final independent review.
+Current limits: only Linux/Qt 6.12 is actually verified; no three-platform installers or deployment; history, memory, additional modes, converters and graphing remain with their own tickets. Ticket 01 is resolved after a fresh integration build, all three CTest configurations, native Wayland tests, QML lint and standalone normal-close validation; see its local tracker entry for merge evidence. The completed application still requires the workflow’s final independent review.
 
 
 ## Local verification for ticket 02
@@ -91,3 +94,12 @@ The private `.build-ticket02` Debug build passes all three CTest configurations 
 The standalone executable also mapped a native Wayland window (`xwayland=false`) and exited **0** after a normal compositor close. The native Wayland QuickTest run could not obtain window activation on this desktop, including after explicit compositor focus requests; it stopped at its initial `active` assertion. The full behavior suite is therefore verified on offscreen/software rendering for this ticket, without claiming a successful native Wayland behavior run. Windows/macOS remain unverified. Runtime UI translation/preferences remain ticket 03.
 
 TDD reds and greens, reference behavior sources, and merge-validation ownership are recorded in the [ticket 02 tracker](.scratch/calculator/issues/02-standard-operations-recovery.md). The tracker remains ready for the integration reviewer to validate and close.
+
+
+## Local verification for ticket 03
+
+The private `.build-ticket03` Debug build passed all four CTest entries on Linux with Qt **6.12.0**, GCC **16.2.1**, CMake **4.4.4**, and GNU Make. Each of the three main configurations reports **23 passed, 0 failed, 0 skipped**; the restart check passes all three independent process stages. QML lint completed without warnings. Settings screenshots were reviewed in English/light and Simplified-Chinese/dark at 320×460 and 900×700; keyboard focus scrolls each option into view, and heading/result contrast is checked automatically. The pinned Standard key positions and native window decorations remain in place.
+
+TDD evidence includes failures before adding reachable Settings, language selection, live core-error translation, the controlled system-preference input, persistence across a real process restart, accessible option labels and keyboard scrolling, and a readable light-theme fallback heading. Each slice passed after its corresponding implementation; earlier red/green logs remain in the private build directory.
+
+A native Wayland run was attempted but failed the existing `active === true` setup assertions before exercising calculator operations: the compositor did not activate either test window after `requestActivate()`. That run is **not** reported as passing, and the assertions remain intact. Functional acceptance here uses the complete offscreen/software-rendering tests. Windows/macOS and native Wayland keyboard interaction are not newly verified by ticket 03. Only Standard is registered at this integration point; recent-mode restoration covers its stable key and rejects an unavailable saved key. The registry hook applies to later implemented modes without adding preference state to those pages.
