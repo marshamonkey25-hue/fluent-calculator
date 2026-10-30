@@ -391,7 +391,7 @@ Item {
             }
             keyClick(Qt.Key_Space)
             compare(result(), "1")
-            const scheme = Application.styleHints.colorScheme === Qt.Dark ? "dark" : "light"
+            const scheme = application.color.r < 0.5 ? "dark" : "light"
             grabImage(application.contentItem).save("programmer-bits-" + scheme + "-" + data.tag + ".png")
             click("fullKeypadButton")
             for (const name of ["key_shift_left", "key_shift_right", "key_clearEntry", "key_backspace"]) {
@@ -480,6 +480,63 @@ Item {
             keyClick("2")
             keyClick(Qt.Key_Return)
             compare(result(), "10")
+        }
+
+        function contrastRatio(a, b) {
+            function channel(value) { return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4) }
+            function luminance(color) { return 0.2126 * channel(color.r) + 0.7152 * channel(color.g) + 0.0722 * channel(color.b) }
+            const first = luminance(a), second = luminance(b)
+            return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
+        }
+
+        function test_keypad_selector_labels_contrast_in_both_views() {
+            for (const selected of ["fullKeypadButton", "bitPanelButton"]) {
+                click(selected)
+                waitForRendering(application.contentItem)
+                const image = grabImage(application.contentItem)
+                for (const name of ["fullKeypadButton", "bitPanelButton"]) {
+                    const button = item(name)
+                    const point = button.mapToItem(application.contentItem, 6, 6)
+                    const background = image.pixel(Math.round(point.x), Math.round(point.y))
+                    verify(contrastRatio(button.contentItem.color, background) >= 4.5,
+                           button.text + " contrasts with its rendered background, selected " + selected)
+                }
+            }
+        }
+
+        function test_shift_menu_labels_contrast_with_rendered_background() {
+            for (const selected of ["arithmetic", "logical", "circular", "carry"]) {
+                selectShift(selected)
+                click("bitShiftButton")
+                tryCompare(item("bitShiftPopup"), "opened", true)
+                waitForRendering(application.contentItem)
+                const image = grabImage(application.contentItem)
+                image.save("programmer-shift-contrast-" + (application.color.r < 0.5 ? "dark" : "light") + "-" + selected + ".png")
+                for (const mode of ["arithmetic", "logical", "circular", "carry"]) {
+                    const choice = item("shiftMode_" + mode)
+                    const point = choice.mapToItem(application.contentItem, 6, 6)
+                    const background = image.pixel(Math.round(point.x), Math.round(point.y))
+                    verify(contrastRatio(choice.contentItem.color, background) >= 4.5,
+                           choice.text + " contrasts with the rendered menu, selected " + selected)
+                }
+                keyClick(Qt.Key_Escape)
+                tryCompare(item("bitShiftPopup"), "visible", false)
+            }
+        }
+
+        function test_navigation_drawer_pauses_programmer_bit_shortcuts() {
+            keyClick("3")
+            click("navigationButton")
+            const drawer = findChild(application, "navigationDrawer")
+            tryCompare(drawer, "opened", true)
+            for (const key of ["~", ".", "&", "|", "^", "\\", "<", ">", Qt.Key_F12, Qt.Key_Delete]) keyClick(key)
+            compare(result(), "3", "Navigation preserves the pending integer")
+            compare(item("wordWidthButton").text, "QWORD")
+            keyClick(Qt.Key_Escape)
+            tryCompare(drawer, "visible", false)
+            compare(result(), "3", "Escape dismisses navigation without clearing")
+            keyClick("~")
+            compare(result(), "-4", "Bitwise shortcuts resume after closing navigation")
         }
 
         function test_bitwise_and_from_reference_flyout() {

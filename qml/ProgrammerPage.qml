@@ -171,6 +171,13 @@ FocusScope {
                     checkable: true
                     autoExclusive: true
                     checked: !page.bitPanelVisible
+                    contentItem: Text {
+                        text: fullKeypadButton.text
+                        font: fullKeypadButton.font
+                        color: fullKeypadButton.checked ? fullKeypadButton.palette.highlightedText : fullKeypadButton.palette.buttonText
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
                     onActiveFocusChanged: if (activeFocus) page.revealControl(fullKeypadButton)
                     onClicked: page.bitPanelVisible = false
                 }
@@ -182,6 +189,13 @@ FocusScope {
                     checkable: true
                     autoExclusive: true
                     checked: page.bitPanelVisible
+                    contentItem: Text {
+                        text: bitPanelButton.text
+                        font: bitPanelButton.font
+                        color: bitPanelButton.checked ? bitPanelButton.palette.highlightedText : bitPanelButton.palette.buttonText
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
                     onActiveFocusChanged: if (activeFocus) page.revealControl(bitPanelButton)
                     onClicked: page.bitPanelVisible = true
                 }
