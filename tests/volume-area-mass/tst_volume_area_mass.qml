@@ -20,6 +20,12 @@ Item {
             tryCompare(application, "active", true)
         }
 
+        function init() {
+            navigate("mode_volume")
+            mouseClick(control("converterValue1"))
+            mouseClick(control("converterKey_clear"))
+        }
+
         function control(name) {
             const item = findChild(application.contentItem, name)
             verify(item !== null, "Converter control: " + name)
@@ -32,6 +38,13 @@ Item {
             tryCompare(drawer, "opened", true)
             const entry = findChild(drawer.contentItem, mode)
             verify(entry !== null, "Navigation entry: " + mode)
+            const list = findChild(drawer.contentItem, "navigationList")
+            for (let attempt = 0; attempt < 12 && list && mode !== "settingsButton"; ++attempt) {
+                const point = entry.mapToItem(list, 0, 0)
+                if (point.y >= 0 && point.y + entry.height <= list.height) break
+                mouseWheel(list, list.width / 2, list.height / 2, 0, point.y < 0 ? 120 : -120)
+                tryCompare(list, "moving", false)
+            }
             mouseClick(entry)
             tryCompare(drawer, "visible", false)
         }
@@ -96,8 +109,8 @@ Item {
                      negative: chinese ? "重量和质量不能为负值" : "Weight and mass cannot be negative"}]
         }
 
-        function test_reference_defaults_data() { return cases() }
-        function test_reference_defaults(data) {
+        function test_000_reference_defaults_data() { return cases() }
+        function test_000_reference_defaults(data) {
             navigate("mode_" + data.mode)
             const customary = Qt.locale().name === "en_US"
             const defaults = {volume: customary ? [75, 79] : [79, 75],
@@ -190,12 +203,16 @@ Item {
             compare(control("converterValue1").text, data.result, "Same-unit result")
             const other = data.mode === "volume" ? "area" : "volume"
             navigate("mode_" + other)
-            compare(control("converterValue1").text, "0", "New category starts with its own input")
-            compare(control("converterValue2").text, "0")
+            verify(control("converterValue2").checked, "Active input side survives category changes")
+            compare(control("converterValue2").text, data.result, "Shared converter retains current numeric input")
             verify(control("converterUnit1").indexOfValue(data.from) < 0, "Previous category units cannot leak")
             navigate("mode_" + data.mode)
+            compare(control("converterUnit1").currentValue, data.to, "First unit selection is restored")
+            compare(control("converterUnit2").currentValue, data.to, "Second unit selection is restored")
+            compare(control("converterValue2").text, data.result)
             selectUnit("converterUnit1", data.from)
             selectUnit("converterUnit2", data.to)
+            mouseClick(control("converterValue1"))
             mouseClick(control("converterKey_clear"))
             enter("1", false)
             compare(control("converterValue2").text, data.result, "Round trip remains usable after navigation")

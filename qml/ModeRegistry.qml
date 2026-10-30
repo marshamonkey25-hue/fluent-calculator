@@ -18,6 +18,10 @@ QtObject {
         { key: "volume", title: qsTr("Volume"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "volume" },
         { key: "length", title: qsTr("Length"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "length" },
         { key: "weight", title: qsTr("Weight and Mass"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "weight" },
-        { key: "area", title: qsTr("Area"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "area" }
+        { key: "area", title: qsTr("Area"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "area" },
+        { key: "energy", title: qsTr("Energy"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "energy" },
+        { key: "speed", title: qsTr("Speed"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "speed" },
+        { key: "time", title: qsTr("Time"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "time" },
+        { key: "pressure", title: qsTr("Pressure"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "pressure" }
     ]
 }

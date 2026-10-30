@@ -8,8 +8,15 @@ FocusScope {
     required property CalculationSession session
     implicitHeight: 428
     focus: true
-    property string converterCategory: "length"
-    ConversionSession { id: converter; category: page.converterCategory; language: page.session.language }
+    required property ConversionSession converter
+    readonly property string category: page.converter.category
+    readonly property string negativeInputMessage: category === "energy" ? qsTr("Energy cannot be negative")
+        : category === "speed" ? qsTr("Speed cannot be negative")
+        : category === "time" ? qsTr("Time cannot be negative")
+        : category === "pressure" ? qsTr("Pressure cannot be negative")
+        : category === "volume" ? qsTr("Volume cannot be negative")
+        : category === "area" ? qsTr("Area cannot be negative")
+        : category === "weight" ? qsTr("Weight and mass cannot be negative") : qsTr("Length cannot be negative")
     readonly property bool landscape: width >= height
     readonly property var keySequences: ({ clear: ["Escape", "Delete"], backspace: ["Backspace"], decimal: ["."] })
     readonly property var commandNames: ({ clear: qsTr("Clear entry"), backspace: qsTr("Backspace"), decimal: qsTr("Decimal separator") })
@@ -18,13 +25,13 @@ FocusScope {
         enabled: page.visible && page.enabled && page.activeFocus
         sequences: [StandardKey.Paste]
         context: Qt.WindowShortcut
-        onActivated: converter.paste()
+        onActivated: page.converter.paste()
     }
     Shortcut {
         enabled: page.visible && page.enabled && page.activeFocus
         sequences: [StandardKey.Copy]
         context: Qt.WindowShortcut
-        onActivated: converter.copy()
+        onActivated: page.converter.copy()
     }
     Menu {
         id: valueMenu
@@ -32,12 +39,12 @@ FocusScope {
         MenuItem {
             objectName: "converterCopy"
             text: qsTr("Copy")
-            onTriggered: converter.copy()
+            onTriggered: page.converter.copy()
         }
         MenuItem {
             objectName: "converterPaste"
             text: qsTr("Paste")
-            onTriggered: converter.paste()
+            onTriggered: page.converter.paste()
         }
     }
 
@@ -54,60 +61,58 @@ FocusScope {
             spacing: 4
             ConverterValue {
                 objectName: "converterValue1"
-                text: converter.value1
+                text: page.converter.value1
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 44
-                checked: converter.activeSide === 1
-                Accessible.name: (converter.activeSide === 1 ? qsTr("Input: %1 %2") : qsTr("Result: %1 %2")).arg(text).arg(firstUnit.currentText)
-                onClicked: converter.activate(1)
-                onContextRequested: { converter.activate(1); valueMenu.popup() }
+                checked: page.converter.activeSide === 1
+                Accessible.name: (page.converter.activeSide === 1 ? qsTr("Input: %1 %2") : qsTr("Result: %1 %2")).arg(text).arg(firstUnit.currentText)
+                onClicked: page.converter.activate(1)
+                onContextRequested: { page.converter.activate(1); valueMenu.popup() }
             }
             ConverterUnitSelector {
                 id: firstUnit
                 objectName: "converterUnit1"
                 Layout.fillWidth: true
                 Layout.minimumHeight: 32
-                model: converter.units
+                model: page.converter.units
                 textRole: "name"
                 valueRole: "id"
-                currentValue: converter.unit1
+                currentValue: page.converter.unit1
                 Accessible.name: qsTr("First unit")
-                onActivated: converter.unit1 = currentValue
+                onActivated: page.converter.unit1 = currentValue
             }
             ConverterValue {
                 objectName: "converterValue2"
-                text: converter.value2
+                text: page.converter.value2
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 44
-                checked: converter.activeSide === 2
-                Accessible.name: (converter.activeSide === 2 ? qsTr("Input: %1 %2") : qsTr("Result: %1 %2")).arg(text).arg(secondUnit.currentText)
-                onClicked: converter.activate(2)
-                onContextRequested: { converter.activate(2); valueMenu.popup() }
+                checked: page.converter.activeSide === 2
+                Accessible.name: (page.converter.activeSide === 2 ? qsTr("Input: %1 %2") : qsTr("Result: %1 %2")).arg(text).arg(secondUnit.currentText)
+                onClicked: page.converter.activate(2)
+                onContextRequested: { page.converter.activate(2); valueMenu.popup() }
             }
             ConverterUnitSelector {
                 id: secondUnit
                 objectName: "converterUnit2"
                 Layout.fillWidth: true
                 Layout.minimumHeight: 32
-                model: converter.units
+                model: page.converter.units
                 textRole: "name"
                 valueRole: "id"
-                currentValue: converter.unit2
+                currentValue: page.converter.unit2
                 Accessible.name: qsTr("Second unit")
-                onActivated: converter.unit2 = currentValue
+                onActivated: page.converter.unit2 = currentValue
             }
             Label {
                 objectName: "converterStatus"
                 Layout.fillWidth: true
-                visible: converter.status !== ""
-                text: converter.status === "limit" ? qsTr("Maximum 15 digits")
-                    : converter.status === "negative" ? (page.converterCategory === "volume" ? qsTr("Volume cannot be negative")
-                        : page.converterCategory === "area" ? qsTr("Area cannot be negative")
-                        : page.converterCategory === "weight" ? qsTr("Weight and mass cannot be negative") : qsTr("Length cannot be negative"))
-                    : converter.status === "unavailable" ? qsTr("Result cannot be displayed")
-                    : converter.status === "invalid" ? qsTr("Invalid input") : ""
+                visible: page.converter.status !== ""
+                text: page.converter.status === "limit" ? qsTr("Maximum 15 digits")
+                    : page.converter.status === "negative" ? page.negativeInputMessage
+                    : page.converter.status === "unavailable" ? qsTr("Result cannot be displayed")
+                    : page.converter.status === "invalid" ? qsTr("Invalid input") : ""
                 wrapMode: Text.Wrap
                 Accessible.role: Accessible.AlertMessage
             }
@@ -149,12 +154,12 @@ FocusScope {
                     Layout.minimumHeight: 44
                     Layout.minimumWidth: 44
                     numeric: modelData.command.length === 1
-                    onClicked: converter.send(modelData.command)
+                    onClicked: page.converter.send(modelData.command)
                     Shortcut {
                         enabled: page.visible && page.enabled
                         sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
                         context: Qt.WindowShortcut
-                        onActivated: converter.send(keyButton.modelData.command)
+                        onActivated: page.converter.send(keyButton.modelData.command)
                     }
                 }
             }

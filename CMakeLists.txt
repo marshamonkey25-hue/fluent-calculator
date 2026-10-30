@@ -25,6 +25,7 @@ qt_add_qml_module(calculator_ui
         app/ConversionSession.h app/ConversionSession.cpp
         app/LengthDataLoader.h app/LengthDataLoader.cpp
         app/MeasurementDataLoader.h app/MeasurementDataLoader.cpp
+        app/EnergySpeedTimePressureDataLoader.h app/EnergySpeedTimePressureDataLoader.cpp
     QML_FILES
         qml/MainWindow.qml
         qml/StandardPage.qml
@@ -111,6 +112,18 @@ if(BUILD_TESTING)
             -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/preferences-restart.cmake)
     set_tests_properties(calculator-preferences-restart PROPERTIES TIMEOUT 100)
+    foreach(variant light dark zh-CN)
+        add_test(NAME calculator-energy-speed-time-pressure-${variant}
+            COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+                -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/energy-speed-time-pressure)
+        if(variant STREQUAL "zh-CN")
+            set(conversion_test_environment "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light")
+        else()
+            set(conversion_test_environment "CALCULATOR_TEST_THEME=${variant}")
+        endif()
+        set_tests_properties(calculator-energy-speed-time-pressure-${variant} PROPERTIES
+            ENVIRONMENT "${conversion_test_environment}" TIMEOUT 600)
+    endforeach()
     foreach(theme light dark)
         add_test(NAME calculator-ui-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
         add_test(NAME calculator-programmer-bits-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
@@ -149,8 +162,8 @@ if(BUILD_TESTING)
         TIMEOUT 180)
     add_test(NAME calculator-volume-area-mass-ja-JP COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/volume-area-mass
-        VolumeAreaMassConversion::test_reference_unit_catalog_and_ratios
-        VolumeAreaMassConversion::test_reference_defaults)
+        VolumeAreaMassConversion::test_000_reference_defaults
+        VolumeAreaMassConversion::test_reference_unit_catalog_and_ratios)
     set_tests_properties(calculator-volume-area-mass-ja-JP PROPERTIES
         ENVIRONMENT "CALCULATOR_TEST_LOCALE=ja_JP;CALCULATOR_TEST_THEME=light"
         TIMEOUT 120)
