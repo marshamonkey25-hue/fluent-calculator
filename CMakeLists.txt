@@ -18,6 +18,8 @@ qt_add_qml_module(calculator_ui
         app/AppPreferences.h app/AppPreferences.cpp
         app/SystemPreferences.h app/SystemPreferences.cpp
         app/CalculationSession.h app/CalculationSession.cpp
+        app/FunctionExpression.h app/FunctionExpression.cpp
+        app/FunctionGraph.h app/FunctionGraph.cpp
         app/EngineResources.h app/EngineResources.cpp
     QML_FILES
         qml/MainWindow.qml
@@ -25,6 +27,7 @@ qt_add_qml_module(calculator_ui
         qml/SettingsPage.qml
         qml/ScientificPage.qml
         qml/ScientificTrigonometry.qml
+        qml/GraphingPage.qml
         qml/ProgrammerPage.qml
         qml/ProgrammerBitPanel.qml
         qml/HistoryPanel.qml
@@ -83,6 +86,11 @@ if(BUILD_TESTING)
         add_test(NAME calculator-ui-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
         add_test(NAME calculator-programmer-bits-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+        add_test(NAME calculator-graphing-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+            -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/graphing)
+        set_tests_properties(calculator-graphing-${theme} PROPERTIES
+            ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
+            TIMEOUT 120)
         add_test(NAME calculator-history-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
         set_tests_properties(calculator-ui-${theme} calculator-programmer-bits-${theme} calculator-history-${theme} PROPERTIES
@@ -93,6 +101,11 @@ if(BUILD_TESTING)
     add_test(NAME calculator-ui-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
     add_test(NAME calculator-programmer-bits-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+    add_test(NAME calculator-graphing-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/graphing)
+    set_tests_properties(calculator-graphing-zh-CN PROPERTIES
+        ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
+        TIMEOUT 120)
     add_test(NAME calculator-history-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
     set_tests_properties(calculator-ui-zh-CN calculator-programmer-bits-zh-CN calculator-history-zh-CN PROPERTIES

@@ -8,7 +8,8 @@
   "ModeRegistry": {
     "Standard": "标准",
     "Scientific": "科学",
-    "Programmer": "程序员"
+    "Programmer": "程序员",
+    "Graphing": "函数绘图"
   },
   "SettingsPage": {
     "Appearance": "外观",
@@ -180,5 +181,24 @@
     "Clear all history": "清除所有历史记录",
     "Close": "关闭",
     "Delete": "删除"
+  },
+  "GraphingPage": {
+    "Function graph": "函数图形",
+    "x and y range from -10 to 10. %1": "x 和 y 的范围为 -10 到 10。%1",
+    "Equation": "方程",
+    "Function of x": "x 的函数",
+    "Enter a function of x": "输入 x 的函数",
+    "Plot": "绘制",
+    "Syntax": "语法",
+    "Close": "关闭",
+    "Enter a function, then press Enter or Plot.": "输入函数，然后按回车或绘制。",
+    "Invalid or unsupported expression. Check the syntax.": "表达式无效或不受支持。请检查语法。",
+    "No defined points in this range.": "此范围内没有有定义的点。",
+    "The curve is outside the visible range.": "曲线在可见范围之外。",
+    "Showing y = %1. Undefined or unresolved intervals are omitted.": "正在显示 y = %1。已省略无定义或无法解析的区间。",
+    "Showing y = %1": "正在显示 y = %1",
+    "Use x, pi, e, decimal numbers, + - * / ^ and parentheses. Functions: sin, cos, tan, sqrt, abs, ln, log (base 10), exp. Angles are radians. Write multiplication explicitly, for example 2*x. Powers associate right; -x^2 means -(x^2). Use a decimal point. Limit: 512 characters and 64 parser levels. Only y=f(x) is supported.": "支持 x、pi、e、小数、+ - * / ^ 和括号。函数：sin、cos、tan、sqrt、abs、ln、log（以 10 为底）、exp。角度使用弧度。请明确写出乘号，例如 2*x。幂为右结合；-x^2 表示 -(x^2)。小数使用点号。最多 512 个字符和 64 层解析深度。仅支持 y=f(x)。",
+    "Graph": "图形",
+    "Equations": "方程"
   }
 }
