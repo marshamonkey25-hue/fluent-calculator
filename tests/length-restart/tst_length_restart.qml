@@ -36,7 +36,7 @@ Item {
                 compare(source.currentText, "厘米")
                 compare(target.currentText, "英寸")
                 mouseClick(findChild(application.contentItem, "converterKey_1"))
-                compare(findChild(application.contentItem, "converterValue2").text, "0.3937008")
+                compare(findChild(application.contentItem, "converterValue2").text, "0.393701")
             }
         }
 
