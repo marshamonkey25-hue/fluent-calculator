@@ -220,7 +220,17 @@
     "%1 months": "%1 月",
     "%1 week": "%1 周",
     "%1 weeks": "%1 周",
-    ", ": ", "
+    ", ": ", ",
+    "Add or subtract days": "添加或减去天数",
+    "Date calculation option": "日期计算选项",
+    "Add": "添加",
+    "Subtract": "减去",
+    "Years": "年",
+    "Months": "月",
+    "Days": "天",
+    "Date": "日期",
+    "Resulting date: %1": "结果日期：%1",
+    "Date out of Bound": "超出日期"
   },
   "DatePicker": {
     "Month": "月",
