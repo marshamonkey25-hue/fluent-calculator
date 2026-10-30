@@ -1,5 +1,7 @@
 #include "CalculationSession.h"
 #include "Command.h"
+#include <QClipboard>
+#include <QGuiApplication>
 
 using CalculationManager::Command;
 
@@ -20,11 +22,35 @@ void CalculationSession::send(const QString &command)
         {"decimal", Command::CommandPNT}, {"add", Command::CommandADD},
         {"subtract", Command::CommandSUB}, {"multiply", Command::CommandMUL},
         {"divide", Command::CommandDIV}, {"equals", Command::CommandEQU},
-        {"clear", Command::CommandCLEAR}
+        {"clear", Command::CommandCLEAR}, {"percent", Command::CommandPERCENT},
+        {"sign", Command::CommandSIGN}, {"square", Command::CommandSQR},
+        {"squareRoot", Command::CommandSQRT}, {"reciprocal", Command::CommandREC},
+        {"clearEntry", Command::CommandCENTR}, {"backspace", Command::CommandBACK}
     };
     const auto entry = commands.constFind(command);
-    if (entry != commands.cend())
-        m_manager->SendCommand(entry.value());
+    if (entry == commands.cend())
+        return;
+
+    // Match StandardCalculatorViewModel.OnButtonPressed: a digit or decimal
+    // restarts input after an error; other enabled keys only clear the error.
+    if (m_error) {
+        m_manager->SendCommand(Command::CommandCLEAR);
+        const auto opcode = entry.value();
+        if (opcode != Command::CommandPNT
+            && !(opcode >= Command::Command0 && opcode <= Command::Command9))
+            return;
+    }
+    m_manager->SendCommand(entry.value());
+}
+
+void CalculationSession::copyResult()
+{
+    // The reference copies ungrouped numeric text, or the localized error text.
+    // Keep digits as strings, including values beyond JavaScript's exact range.
+    QString text = m_display;
+    if (!m_error)
+        text.remove(QString::fromStdWString(m_resources.GetCEngineString(L"sThousand")));
+    QGuiApplication::clipboard()->setText(text);
 }
 
 void CalculationSession::SetPrimaryDisplay(const std::wstring &text, bool isError)

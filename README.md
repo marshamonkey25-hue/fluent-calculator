@@ -1,8 +1,8 @@
 # Fluent Calculator
 
-A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements ticket **01**: Standard mode digits, decimal entry, four arithmetic operations, equals, clear, expression/result/error display, and corresponding keyboard input. Other modes and the rest of Standard mode are separate implementation tickets; they are not shown as working pages.
+A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–02**: the Standard arithmetic keypad, expression/result/error display, entry correction, reference error recovery, copying results, and corresponding keyboard input. History, memory, settings, and other modes are separate implementation tickets.
 
-The content follows the pinned Microsoft Standard layout with Fluent controls and native system window decorations. Future operations occupy their reference positions; unimplemented controls are absent. Navigation is registered centrally in `qml/ModeRegistry.qml`. `MainWindow` owns one `CalculationSession`, which dispatches string command names to `CalculatorManager`, `CCalcEngine` and Ratpack. Arithmetic displays and expressions remain strings across C++/QML, including integers above JavaScript's safe integer range.
+The content follows the pinned Microsoft Standard keypad layout with Fluent controls and native system window decorations. Navigation is registered centrally in `qml/ModeRegistry.qml`. `MainWindow` owns one `CalculationSession`, which dispatches string command names to `CalculatorManager`, `CCalcEngine` and Ratpack. Arithmetic displays and expressions remain strings across C++/QML, including integers above JavaScript's safe integer range.
 
 ## Dependencies
 
@@ -38,7 +38,18 @@ QT_QUICK_BACKEND=software ./.build/calculator
 
 The application uses the system color scheme and palette. All new UI captions/accessibility names use `qsTr`, and engine resources include English plus Simplified Chinese overrides selected at startup. Runtime language/theme preferences and a settings page are ticket 03, not a claim of completion in this tracer.
 
-Click the visible keys, or type digits, `.`, `+`, `-`, `*`, `/`. `=`, Return and keypad Enter evaluate; Escape clears. Tab/Shift+Tab navigate real controls, and Space activates the focused button. Both mouse and keyboard dispatch through the same command path. Standard mode evaluates step by step: `2 + 3 * 4 =` gives `20`.
+Click the visible keys, or use the reference shortcuts below. Tab/Shift+Tab navigate real controls, and Space activates the focused button. Both mouse and keyboard dispatch through the same command path. Standard mode evaluates step by step: `2 + 3 * 4 =` gives `20`.
+
+| Operation | Keyboard |
+| --- | --- |
+| Digits, decimal, arithmetic | `0`–`9`, `.`, `+`, `-`, `*`, `/` |
+| Equals | `=`, Return, keypad Enter |
+| Percent, negate | `%`, F9 |
+| Square, square root, reciprocal | Q, `@`, R |
+| Clear all, clear entry, backspace | Escape, Delete, Backspace |
+| Copy current result | Platform Copy shortcut (Ctrl+C on Linux/Windows, Command+C on macOS), or right-click the result and choose Copy |
+
+CE clears the current operand while preserving the pending calculation; C clears the calculation. Backspace removes an input digit and leaves completed results unchanged. After an error, digits and the decimal separator start a fresh calculation; C, CE, Backspace, and equals clear the error. Operators are disabled until recovery. Copy remains available during errors: numeric text has grouping separators removed without numeric conversion, while localized error text is copied unchanged.
 
 ## Checks
 
@@ -70,4 +81,13 @@ Checked on Linux x86_64 (Omarchy/Arch), Qt **6.12.0**, GCC **16.2.1**, CMake **4
 
 TDD evidence: the initial mouse test failed with `0` versus `20`, then passed after the real core bridge was added; keyboard clear failed with `4` versus `0`, then passed after shortcuts were connected; explicit error-state and accessible-name tests each failed before their UI additions; Chinese expression symbols failed (`5 4` versus `5 × 4 =`) before layering the pinned English resource fallback. Exact-precision/digit-limit cases are regression checks of the real imported core and were not falsely reported as new failing tests.
 
-Current limits: only Linux/Qt 6.12 is actually verified; no three-platform installers or deployment; runtime settings/translation, full Standard operations, history, memory, additional modes, converters and graphing remain with their own tickets. Ticket 01 is resolved after a fresh integration build, all three CTest configurations, native Wayland tests, QML lint and standalone normal-close validation; see its local tracker entry for merge evidence. The completed application still requires the workflow’s final independent review.
+Current limits: only Linux/Qt 6.12 is actually verified; no three-platform installers or deployment; runtime settings/translation, history, memory, additional modes, converters and graphing remain with their own tickets. Ticket 01 is resolved after a fresh integration build, all three CTest configurations, native Wayland tests, QML lint and standalone normal-close validation; see its local tracker entry for merge evidence. The completed application still requires the workflow’s final independent review.
+
+
+## Local verification for ticket 02
+
+The private `.build-ticket02` Debug build passes all three CTest configurations with **122 passed, 0 failed, 0 skipped** per configuration, plus QML lint. The additional real-QML coverage exercises all Standard arithmetic/correction keys and their keyboard accelerators, percent contexts, repeated equals, operator replacement, entry correction, five error scenarios with every supported recovery key, and Copy observed through an editable control's real clipboard paste. Exact digits, decimal trailing zeroes and localized errors survive copying. Narrow/wide light/dark captures retain the pinned keypad positions and readable symbols.
+
+The standalone executable also mapped a native Wayland window (`xwayland=false`) and exited **0** after a normal compositor close. The native Wayland QuickTest run could not obtain window activation on this desktop, including after explicit compositor focus requests; it stopped at its initial `active` assertion. The full behavior suite is therefore verified on offscreen/software rendering for this ticket, without claiming a successful native Wayland behavior run. Windows/macOS remain unverified. Runtime UI translation/preferences remain ticket 03.
+
+TDD reds and greens, reference behavior sources, and merge-validation ownership are recorded in the [ticket 02 tracker](.scratch/calculator/issues/02-standard-operations-recovery.md). The tracker remains ready for the integration reviewer to validate and close.
