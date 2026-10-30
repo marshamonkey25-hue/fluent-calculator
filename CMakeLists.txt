@@ -19,6 +19,7 @@ qt_add_qml_module(calculator_ui
         app/SystemPreferences.h app/SystemPreferences.cpp
         app/CalculationSession.h app/CalculationSession.cpp
         app/EngineResources.h app/EngineResources.cpp
+        app/DateCalculation.h app/DateCalculation.cpp
     QML_FILES
         qml/MainWindow.qml
         qml/StandardPage.qml
@@ -28,6 +29,8 @@ qt_add_qml_module(calculator_ui
         qml/ProgrammerPage.qml
         qml/ProgrammerBitPanel.qml
         qml/HistoryPanel.qml
+        qml/DatePage.qml
+        qml/DatePicker.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
 )
@@ -85,7 +88,9 @@ if(BUILD_TESTING)
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
         add_test(NAME calculator-history-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
-        set_tests_properties(calculator-ui-${theme} calculator-programmer-bits-${theme} calculator-history-${theme} PROPERTIES
+        add_test(NAME calculator-date-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+            -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/date)
+        set_tests_properties(calculator-ui-${theme} calculator-programmer-bits-${theme} calculator-history-${theme} calculator-date-${theme} PROPERTIES
             ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
             TIMEOUT 600
         )
@@ -95,7 +100,9 @@ if(BUILD_TESTING)
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
     add_test(NAME calculator-history-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
-    set_tests_properties(calculator-ui-zh-CN calculator-programmer-bits-zh-CN calculator-history-zh-CN PROPERTIES
+    add_test(NAME calculator-date-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/date)
+    set_tests_properties(calculator-ui-zh-CN calculator-programmer-bits-zh-CN calculator-history-zh-CN calculator-date-zh-CN PROPERTIES
         ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
         TIMEOUT 600
     )
