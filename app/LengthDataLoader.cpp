@@ -4,7 +4,7 @@
 // 551–568 (unit IDs, ordering, defaults, metre factors and whimsical suggestions).
 #include "LengthDataLoader.h"
 #include <QLocale>
-#include <algorithm>
+#include "ProportionalRatios.h"
 
 using namespace UnitConversionManager;
 
@@ -55,12 +55,7 @@ public:
     bool SupportsCategory(const Category &category) override { return category.id == 5; }
     std::unordered_map<Unit, ConversionData, UnitHash> LoadOrderedRatios(const Unit &unit) override
     {
-        const auto source = std::find_if(std::begin(definitions), std::end(definitions),
-                                         [&unit](const LengthUnit &item) { return item.id == unit.id; });
-        std::unordered_map<Unit, ConversionData, UnitHash> ratios;
-        for (size_t index = 0; index < m_units.size(); ++index)
-            ratios.emplace(m_units[index], ConversionData(source->meters / definitions[index].meters, 0, false));
-        return ratios;
+        return loadProportionalRatios(unit, m_units, [](size_t index) { return definitions[index].meters; });
     }
 };
 }

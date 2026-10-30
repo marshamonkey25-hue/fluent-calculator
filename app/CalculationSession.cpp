@@ -1,5 +1,6 @@
 #include "CalculationSession.h"
 #include "Command.h"
+#include "ArithmeticPaste.h"
 #include <QClipboard>
 #include <QGuiApplication>
 
@@ -372,6 +373,25 @@ void CalculationSession::send(const QString &command)
     if (m_mode == "scientific" && (command == "clear" || command == "clearEntry"))
         setScientificNotation(false);
     m_manager->SendCommand(opcode);
+    updateRadixDisplays();
+}
+
+void CalculationSession::paste()
+{
+    const auto text = QGuiApplication::clipboard()->text();
+    if (text.isEmpty())
+        return;
+    const auto commands = arithmeticPasteCommands(text, m_mode, m_radix, m_wordWidth);
+    if (!commands) {
+        m_manager->DisplayPasteError();
+    } else {
+        // Clear only the entry, preserving a pending operation as in OnPaste.
+        if (m_error)
+            m_manager->SendCommand(Command::CommandCLEAR);
+        m_manager->SendCommand(Command::CommandCENTR);
+        for (const auto command : *commands)
+            m_manager->SendCommand(command);
+    }
     updateRadixDisplays();
 }
 

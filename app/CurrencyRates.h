@@ -56,6 +56,7 @@ private:
     QString m_date;
     QString m_refreshedAt;
     double m_rate = 0;
+    bool m_catalogRefreshFailed = false;
     bool m_usingCached = false;
     bool m_cacheWriteFailed = false;
     quint64 m_generation = 0;

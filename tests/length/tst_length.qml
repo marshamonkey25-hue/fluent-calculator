@@ -32,6 +32,7 @@ Item {
             tryCompare(drawer, "opened", true)
             const entry = findChild(drawer.contentItem, name)
             verify(entry !== null, "Navigation entry: " + name)
+            entry.forceActiveFocus(Qt.TabFocusReason)
             mouseClick(entry)
             tryCompare(drawer, "visible", false)
         }
@@ -411,6 +412,44 @@ Item {
             application.height = 560
         }
 
+        function test_unavailable_physical_result_cannot_become_input_and_recovers() {
+            selectUnit("converterUnit1", 33)
+            selectUnit("converterUnit2", 168)
+            enter("999999999999999", true)
+            let side = 1
+            for (let cycle = 0; cycle < 22; ++cycle) {
+                side = side === 1 ? 2 : 1
+                mouseClick(control("converterValue" + side))
+                selectUnit("converterUnit" + side, 33)
+                selectUnit("converterUnit" + (side === 1 ? 2 : 1), 168)
+            }
+            const resultSide = side === 1 ? 2 : 1
+            const result = control("converterValue" + resultSide)
+            compare(result.text, "—")
+            verify(!result.enabled, "Unavailable physical results cannot become numeric input")
+            verify(control("converterStatus").visible)
+            mouseClick(result)
+            verify(control("converterValue" + side).checked)
+            selectUnit("converterUnit" + resultSide, 38)
+            navigate("mode_energy")
+            selectUnit("converterUnit1", side === 1 ? 166 : 25)
+            selectUnit("converterUnit2", side === 1 ? 25 : 166)
+            compare(control("converterValue" + resultSide).text, "—")
+            verify(control("converterStatus").visible)
+            navigate("mode_length")
+            navigate("mode_energy")
+            compare(control("converterValue" + resultSide).text, "—")
+            verify(control("converterStatus").visible, "Category return preserves the unavailable-result explanation")
+            verify(!control("converterValue" + resultSide).enabled)
+            navigate("mode_length")
+            mouseClick(control("converterKey_clear"))
+            keyClick("2")
+            compare(control("converterValue" + side).text, "2")
+            compare(control("converterValue" + resultSide).text, "2,000,000,000,000")
+            verify(!control("converterStatus").visible)
+            mouseClick(control("converterValue1"))
+        }
+
         function test_scientific_result_stays_consistent_when_reused_on_the_other_side() {
             selectUnit("converterUnit1", 168)
             selectUnit("converterUnit2", 33)
@@ -442,6 +481,28 @@ Item {
                 }
             }
             verify(readable >= 8, "Unit dropdown indicator has at least 3:1 contrast in the visible theme")
+        }
+
+        function test_subnormal_result_reuse_preserves_finite_values_and_recovers() {
+            selectUnit("converterUnit1", 168)
+            selectUnit("converterUnit2", 33)
+            enter("1", true)
+            let side = 1
+            for (let cycle = 0; cycle < 24; ++cycle) {
+                side = side === 1 ? 2 : 1
+                mouseClick(control("converterValue" + side))
+                selectUnit("converterUnit" + side, 168)
+                selectUnit("converterUnit" + (side === 1 ? 2 : 1), 33)
+            }
+            verify(Math.abs(Number(control("converterValue" + side).text) - 1e-312) < 5e-319,
+                   "Finite subnormal results remain usable within the converter display tolerance")
+            compare(control("converterValue" + (side === 1 ? 2 : 1)).text, "0", "Genuine double underflow rounds to zero")
+            mouseClick(control("converterKey_clear"))
+            keyClick("2")
+            compare(control("converterValue" + side).text, "2")
+            verify(Math.abs(Number(control("converterValue" + (side === 1 ? 2 : 1)).text) - 2e-13) < 1e-19)
+            verify(!control("converterStatus").visible)
+            mouseClick(control("converterValue1"))
         }
 
         function cleanupTestCase() { application.close() }

@@ -67,6 +67,70 @@ Item {
             for (let row = 0; row < index; ++row) keyClick(Qt.Key_Down)
             verify(combo.currentText.indexOf(code) === 0)
         }
+        function test_refresh_updates_current_catalog_without_losing_usable_quotes() {
+            testCurrencySource.setResponse("currencies", JSON.stringify([
+                {iso_code: "EUR", name: "Euro"}, {iso_code: "USD", name: "US Dollar"}
+            ]))
+            navigate("mode_currency")
+            tryCompare(control("converterUnit1"), "count", 2)
+            keyClick("8")
+            tryCompare(control("converterValue2"), "text", "10")
+            testCurrencySource.setResponse("currencies", JSON.stringify([
+                {iso_code: "EUR", name: "Euro"}, {iso_code: "USD", name: "US Dollar"},
+                {iso_code: "GBP", name: "Pound Sterling"}
+            ]), 300)
+            quote("EUR", "USD", 1.5, 300)
+            mouseClick(control("currencyRefresh"))
+            compare(control("converterValue2").text, "10", "Cached observation remains usable during refresh")
+            tryCompare(control("converterUnit1"), "count", 3)
+            tryCompare(control("converterValue2"), "text", "12")
+            selectCurrency("converterUnit2", "GBP")
+            tryCompare(control("converterValue2"), "text", "6.4")
+        }
+
+        function test_refresh_rejects_stale_catalog_and_preserves_cache_on_catalog_failure() {
+            openCurrency()
+            keyClick("8")
+            testCurrencySource.setResponse("currencies", '[{"iso_code":"JPY","name":"Yen"}]', 800)
+            mouseClick(control("currencyRefresh"))
+            testCurrencySource.setResponse("currencies", JSON.stringify([
+                {iso_code: "EUR", name: "Euro"}, {iso_code: "USD", name: "US Dollar"},
+                {iso_code: "GBP", name: "Pound Sterling"}, {iso_code: "AUD", name: "Australian Dollar"}
+            ]))
+            mouseClick(control("currencyRefresh"))
+            tryCompare(control("converterUnit1"), "count", 4)
+            tryCompare(control("currencyStatus"), "text", chinese ? "已更新" : "Up to date")
+            wait(850)
+            compare(control("converterUnit1").count, 4)
+            compare(control("converterValue2").text, "10")
+            testCurrencySource.setResponse("currencies", "[]")
+            mouseClick(control("currencyRefresh"))
+            tryCompare(control("currencyStatus"), "text", chinese ? "刷新失败，请重试。" : "Refresh failed. Try again.")
+            compare(control("converterUnit1").count, 4)
+            compare(control("converterValue2").text, "10")
+            restartApplication()
+            tryCompare(control("converterUnit1"), "count", 4)
+            keyClick("8")
+            compare(control("converterValue2").text, "10", "Failed catalog refresh preserves persisted observations")
+        }
+
+        function test_refreshed_catalog_removes_retired_currency_and_survives_restart() {
+            openCurrency()
+            selectCurrency("converterUnit1", "GBP")
+            keyClick("8")
+            tryCompare(control("converterValue2"), "text", "12")
+            testCurrencySource.setResponse("currencies", '[{"iso_code":"EUR","name":"Euro"},{"iso_code":"USD","name":"US Dollar"}]')
+            mouseClick(control("currencyRefresh"))
+            tryCompare(control("converterUnit1"), "count", 2)
+            verify(control("converterUnit1").currentText.indexOf("EUR") === 0)
+            verify(control("converterUnit2").currentText.indexOf("USD") === 0)
+            tryCompare(control("converterValue2"), "text", "10")
+            restartApplication()
+            tryCompare(control("converterUnit1"), "count", 2)
+            keyClick("8")
+            tryCompare(control("converterValue2"), "text", "10")
+        }
+
         function test_auto_refresh_converts_with_observation_date_and_source() {
             openCurrency()
             verify(control("currencyRefresh").enabled)

@@ -58,6 +58,7 @@ public:
     Q_INVOKABLE void selectRadix(int radix);
     Q_INVOKABLE void send(const QString &command);
     Q_INVOKABLE void copyResult();
+    Q_INVOKABLE void paste();
     Q_INVOKABLE void selectMode(const QString &mode);
 
 signals:

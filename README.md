@@ -44,6 +44,11 @@ Click the visible keys, or use the reference shortcuts below. Tab/Shift+Tab navi
 | Square, square root, reciprocal | Q, `@`, R |
 | Clear all, clear entry, backspace | Escape, Delete, Backspace |
 | Copy current result | Platform Copy shortcut (Ctrl+C on Linux/Windows, Command+C on macOS), or right-click the result and choose Copy |
+| Paste a number or arithmetic expression | Platform Paste shortcut (Ctrl+V on Linux/Windows, Command+V on macOS), or right-click the result and choose Paste |
+| Toggle history in a narrow Standard/Scientific window | Ctrl+H |
+| Clear the visible Standard/Scientific history panel | Ctrl+Shift+D |
+
+Arithmetic Paste validates the complete clipboard text before replaying native core commands. It preserves exact digits, accepts the current Programmer radix and word width (including reference integer prefixes/suffixes), and reports invalid or oversized input through the core's localized error state. Pasting replaces the current entry while retaining a pending operation. Standard/Scientific operand limits remain 16/32 digits, exponents at most four digits, and expressions at most 100 operands/512 clipboard characters. History shortcuts respect modal panels and restore calculator focus after the narrow history sheet closes.
 
 CE clears the current operand while preserving the pending calculation; C clears the calculation. Backspace removes an input digit and leaves completed results unchanged. After an error, digits and the decimal separator start a fresh calculation; C, CE, Backspace, and equals clear the error. Operators are disabled until recovery. Copy remains available during errors: numeric text has grouping separators removed without numeric conversion, while localized error text is copied unchanged.
 

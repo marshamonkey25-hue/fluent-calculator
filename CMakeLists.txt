@@ -18,6 +18,7 @@ qt_add_qml_module(calculator_ui
         app/AppPreferences.h app/AppPreferences.cpp
         app/SystemPreferences.h app/SystemPreferences.cpp
         app/CalculationSession.h app/CalculationSession.cpp
+        app/ArithmeticPaste.h app/ArithmeticPaste.cpp
         app/FunctionExpression.h app/FunctionExpression.cpp
         app/FunctionGraph.h app/FunctionGraph.cpp
         app/EngineResources.h app/EngineResources.cpp
@@ -27,6 +28,7 @@ qt_add_qml_module(calculator_ui
         app/ConversionSession.h app/ConversionSession.cpp
         app/DataConversionDataLoader.h app/DataConversionDataLoader.cpp
         app/LengthDataLoader.h app/LengthDataLoader.cpp
+        app/ProportionalRatios.h
         app/TemperaturePowerAngleDataLoader.h app/TemperaturePowerAngleDataLoader.cpp
         app/MeasurementDataLoader.h app/MeasurementDataLoader.cpp
         app/EnergySpeedTimePressureDataLoader.h app/EnergySpeedTimePressureDataLoader.cpp
