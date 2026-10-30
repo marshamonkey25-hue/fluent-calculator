@@ -27,6 +27,7 @@ qt_add_qml_module(calculator_ui
         qml/ScientificTrigonometry.qml
         qml/ProgrammerPage.qml
         qml/ProgrammerBitPanel.qml
+        qml/HistoryPanel.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
 )
@@ -60,6 +61,15 @@ if(BUILD_TESTING)
         COMMAND ${ui_test_launcher} "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ui_isolation.py"
             --test-executable $<TARGET_FILE:calculator_ui_tests>)
     set_tests_properties(calculator-test-isolation PROPERTIES TIMEOUT 60)
+    add_test(NAME calculator-history-restart
+        COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
+            -DTEST_PYTHON=${Python3_EXECUTABLE}
+            -DTEST_LAUNCHER=${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py
+            -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
+            -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/history-restart.cmake)
+    set_tests_properties(calculator-history-restart PROPERTIES TIMEOUT 100)
     add_test(NAME calculator-preferences-restart
         COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
             -DTEST_PYTHON=${Python3_EXECUTABLE}
@@ -73,7 +83,9 @@ if(BUILD_TESTING)
         add_test(NAME calculator-ui-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
         add_test(NAME calculator-programmer-bits-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
-        set_tests_properties(calculator-ui-${theme} calculator-programmer-bits-${theme} PROPERTIES
+        add_test(NAME calculator-history-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+            -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
+        set_tests_properties(calculator-ui-${theme} calculator-programmer-bits-${theme} calculator-history-${theme} PROPERTIES
             ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
             TIMEOUT 600
         )
@@ -81,7 +93,9 @@ if(BUILD_TESTING)
     add_test(NAME calculator-ui-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
     add_test(NAME calculator-programmer-bits-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
-    set_tests_properties(calculator-ui-zh-CN calculator-programmer-bits-zh-CN PROPERTIES
+    add_test(NAME calculator-history-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
+    set_tests_properties(calculator-ui-zh-CN calculator-programmer-bits-zh-CN calculator-history-zh-CN PROPERTIES
         ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
         TIMEOUT 600
     )

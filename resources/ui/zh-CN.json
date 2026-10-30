@@ -2,7 +2,8 @@
   "MainWindow": {
     "Calculator": "计算器",
     "Open navigation": "打开导航",
-    "Settings": "设置"
+    "Settings": "设置",
+    "History": "历史记录"
   },
   "ModeRegistry": {
     "Standard": "标准",
@@ -172,5 +173,12 @@
     "Least significant bit: %1": "最低有效位：%1",
     "Most significant bit: %1": "最高有效位：%1",
     "Bit %1: %2": "第 %1 位：%2"
+  },
+  "HistoryPanel": {
+    "History": "历史记录",
+    "There's no history yet": "尚无历史记录",
+    "Clear all history": "清除所有历史记录",
+    "Close": "关闭",
+    "Delete": "删除"
   }
 }

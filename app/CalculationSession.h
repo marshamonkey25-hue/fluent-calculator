@@ -4,6 +4,7 @@
 #include "CalculatorManager.h"
 #include <QObject>
 #include <QStringList>
+#include <QVariantList>
 #include <QtQml/qqmlregistration.h>
 
 // One session per application. The upstream Ratpack constants are process-global;
@@ -23,6 +24,7 @@ class CalculationSession : public QObject, private ICalcDisplay
     Q_PROPERTY(QString angleUnit READ angleUnit NOTIFY angleUnitChanged)
     Q_PROPERTY(int radix READ radix NOTIFY radixChanged)
     Q_PROPERTY(int wordWidth READ wordWidth NOTIFY wordWidthChanged)
+    Q_PROPERTY(QVariantList history READ history NOTIFY historyChanged)
     Q_PROPERTY(QStringList radixDisplays READ radixDisplays NOTIFY radixDisplaysChanged)
     Q_PROPERTY(QString binaryBits READ binaryBits NOTIFY radixDisplaysChanged)
 
@@ -45,6 +47,10 @@ public:
     int wordWidth() const { return m_wordWidth; }
     QString binaryBits() const { return m_binaryBits; }
     Q_INVOKABLE void toggleBit(int position);
+    QVariantList history() const;
+    Q_INVOKABLE void removeHistory(int index);
+    Q_INVOKABLE void reuseHistory(int index);
+    Q_INVOKABLE void clearHistory();
     Q_INVOKABLE void selectWordWidth(int width);
     Q_INVOKABLE void selectRadix(int radix);
     Q_INVOKABLE void send(const QString &command);
@@ -67,6 +73,7 @@ signals:
     void noRightParenthesisAdded();
     void maxDigitsReached();
     void binaryOperatorReceived();
+    void historyChanged();
     void historyItemAdded(uint index);
     void memorizedNumbersChanged(const QStringList &numbers);
     void memoryItemChanged(uint index);
