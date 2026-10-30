@@ -212,7 +212,12 @@ void ConversionSession::selectUnits()
     const auto find = [this](int id) {
         return *std::find_if(m_units.begin(), m_units.end(), [id](const Unit &unit) { return unit.id == id; });
     };
-    if (m_category == "currency") m_currency->selectPair(m_unit1, m_unit2);
+    if (m_category == "currency") {
+        m_currency->selectPair(m_unit1, m_unit2);
+        // Pair selection may restore a validated observation synchronously.
+        // Reload its ratios before calculating with the selected units.
+        m_converter->RefreshData();
+    }
     m_converter->SetCurrentUnitTypes(find(m_activeSide == 1 ? m_unit1 : m_unit2),
                                      find(m_activeSide == 1 ? m_unit2 : m_unit1));
 }

@@ -440,7 +440,9 @@
     "Refresh failed. Try again.": "刷新失败，请重试。",
     "No valid quote for this currency pair. Try again.": "此货币对暂无有效汇率，请重试。",
     "Rates unavailable. Refresh to try again.": "汇率不可用，请尝试刷新。",
-    "Refresh rates": "刷新汇率"
+    "Refresh rates": "刷新汇率",
+    "Using cached rates": "正在使用缓存汇率",
+    "Rates could not be saved. Offline data may be older.": "汇率无法保存，离线数据可能较旧。"
   },
   "GraphingPage": {
     "Function graph": "函数图形",
