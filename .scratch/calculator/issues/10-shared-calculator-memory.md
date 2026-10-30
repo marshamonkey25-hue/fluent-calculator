@@ -4,22 +4,22 @@
 
 **Blocked by:** 04: 使用科学模式的优先级与括号; 07: 使用程序员模式的进制与位宽。
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Spec:** Windows 11 风格跨平台计算器。
 
 **User stories:** 38, 39, 40。
 
-- [ ] 接入参考内存操作，包含保存、读取、加减和清除，以及参考列表项支持的实际交互；列表数据由真实计算状态产生。
-- [ ] 三种算术模式共享最多 100 条内存值，新值在前，超限淘汰最旧值；不同模式对内存值的解释、显示和操作遵循固定核心行为。
-- [ ] 读取内存值后可继续当前计算，修改或删除内存项后控件与列表及时同步；空列表的操作可用性符合参考规则。
-- [ ] 普通模式切换保留内存，普通退出后重新打开不恢复内存；不能将界面偏好持久化机制误用于保存内存值。
-- [ ] 内存按钮和面板在宽窄窗口均可访问，沿用主题、可翻译文案和参考键盘行为。
-- [ ] 通过 QML 用户操作验证保存/读取/加减/清除、跨三种模式共享、空状态、100/101 条边界及普通重启；断言可观察结果而非内部容器。
+- [x] 接入参考内存操作，包含保存、读取、加减和清除，以及参考列表项支持的实际交互；列表数据由真实计算状态产生。
+- [x] 三种算术模式共享最多 100 条内存值，新值在前，超限淘汰最旧值；不同模式对内存值的解释、显示和操作遵循固定核心行为。
+- [x] 读取内存值后可继续当前计算，修改或删除内存项后控件与列表及时同步；空列表的操作可用性符合参考规则。
+- [x] 普通模式切换保留内存，普通退出后重新打开不恢复内存；不能将界面偏好持久化机制误用于保存内存值。
+- [x] 内存按钮和面板在宽窄窗口均可访问，沿用主题、可翻译文案和参考键盘行为。
+- [x] 通过 QML 用户操作验证保存/读取/加减/清除、跨三种模式共享、空状态、100/101 条边界及普通重启；断言可观察结果而非内部容器。
 
-## Implementation evidence (ticket 10 branch, pending merge review)
+## Implementation evidence (ticket 10 branch)
 
-Status remains **ready-for-agent** for the integration reviewer. Only this ticket is implemented here; the parent spec and other tickets are unchanged.
+During implementation, Status remained **ready-for-agent** for the integration reviewer. Only this ticket was implemented on that branch; the parent spec and other tickets were unchanged.
 
 - `CalculationSession` exposes the real Microsoft manager's session memory as strings and dispatches guarded save/recall/indexed add/subtract/delete/clear operations. The native `vector<Rational>` owns the values and the 100-item limit; neither displayed strings nor preferences become arithmetic storage. Native list callbacks publish updates; indexed delete explicitly refreshes its otherwise unannounced change.
 - `MemoryBar.qml` preserves MC/MR/M+/M−/MS and the pinned Ctrl+L/R/P/Q/M shortcuts in Standard/Scientific; Programmer preserves the reference MS/list toolbar. `MemoryPanel.qml` provides actual list values, item recall, MC/M+/M−, context menus, clear-all, and empty/error states. Indexed context deletion preserves nearby keyboard focus; the final context deletion returns focus to M+ (MS for Programmer), closing a narrow sheet.
@@ -60,4 +60,21 @@ Linux x86_64, Qt 6.12.0, GCC 16.2.1, Debug/Unix Makefiles, private `.build-ticke
 - English and Chinese narrow/wide offscreen captures were reviewed in both themes: `memory-narrow-{light,dark}.png`, `memory-wide-{light,dark}.png`. Both themes retain readable values, controls, and focus styling; no pixel-identical rendering claim is made.
 - Latest `integration/calculator` was merged/checked before final validation and again before commit: already up to date at `d327f2de0e09bca87e02416e42374db91a506883`, confirmed ancestor of this branch. `git diff --check` passes. All intended changes are committed; the final commit is reported in the handoff artifact.
 
-Windows/macOS and native desktop behavior are unverified. Independent integration review and ticket closure remain the merger's responsibility; Status intentionally remains ready-for-agent.
+Windows/macOS and native desktop behavior are unverified. Integration review and closure evidence follows.
+
+## Integration completion and acceptance
+
+Merged `407fbcb5d13b4280d3cb96c13cf95f6a092f4f95` into the clean `integration/calculator` checkout with `git merge --no-ff --no-edit`, producing merge commit `b9ceb3f9ef290dc6e51318d4a17d832b183fef99`. Both the prior integration tip `d327f2d` and the ticket commit remain ancestors. The merge had no conflicts and preserved the existing arithmetic, history, navigation, translations and isolated test launcher. Independent merge review found no ticket 10 blockers or integration regressions requiring code changes.
+
+All six acceptance criteria are fulfilled by the native memory operations and the real-QML memory/restart suites described above. In particular, integration tests verify indexed actions in all three modes, exact integer/rational recall, newest-first 100/101 eviction, pending-calculation continuation, empty/error states, reference shortcuts/context focus, translated wide/narrow/short-window controls, and six separate memory close/restart stages that preserve preferences while clearing memory.
+
+Validation on the merged Linux/Qt 6.12 Debug source:
+
+- `cmake -S . -B .build-integration -DCMAKE_BUILD_TYPE=Debug` and `cmake --build .build-integration -j2`: passed; application and tests linked.
+- `cmake --build .build-integration --target calculator_ui_qmllint -j2`: passed without QML lint warnings.
+- `ctest --test-dir .build-integration --output-on-failure -j2`: **16/16 passed**, **1,094.46 seconds**, exit 0. Each English/light, English/dark and Chinese/light configuration passed **298 application / 35 Programmer-bit / 20 history / 21 memory outcomes**, with zero failures/skips. History, preference and memory restart checks and the isolation check also passed.
+- Reviewed integration-generated `memory-narrow-{light,dark}.png` and `memory-wide-{light,dark}.png`: readable values/actions in both themes and live Chinese wide-panel labels. Automated tests retain sidebar breakpoint/cap, keyboard/focus and minimum-window reachability coverage.
+- Every GUI process ran through `tests/run-ui-isolated.py`: offscreen/software/compose/generic, private settings/cache/data/runtime and private Linux D-Bus. No active-desktop or host IME interaction was used.
+- Merge diff whitespace and ancestry checks passed. Full logs are `.build-integration/merge10-build.log`, `.build-integration/merge10-ctest.log` and `.build-integration/Testing/Temporary/LastTest.log`. Only ticket 10 and its README completion note are changed by closure; the parent spec remains untouched.
+
+The previously reported offscreen size-hint and Copy-shortcut runtime warnings remain; their behavior checks pass. Windows/macOS and native desktop behavior remain unverified. The final application-wide review remains part of the parent workflow. Ticket 10 is resolved based on the successful independent merge review and full integration validation.
