@@ -6,7 +6,8 @@
   },
   "ModeRegistry": {
     "Standard": "标准",
-    "Scientific": "科学"
+    "Scientific": "科学",
+    "Programmer": "程序员"
   },
   "SettingsPage": {
     "Appearance": "外观",
@@ -55,5 +56,30 @@
     "Digit %1": "数字 %1",
     "Open parenthesis": "左括号",
     "Close parenthesis": "右括号"
+  },
+  "ProgrammerPage": {
+    "Clear": "清除",
+    "Clear entry": "清除输入",
+    "Backspace": "退格",
+    "Negate": "取反",
+    "Open parenthesis": "左括号",
+    "Close parenthesis": "右括号",
+    "Modulo": "模",
+    "Divide": "除",
+    "Multiply": "乘",
+    "Decimal separator": "小数点",
+    "Subtract": "减",
+    "Add": "加",
+    "Equals": "等于",
+    "Error: %1": "错误：%1",
+    "Result: %1": "结果：%1",
+    "Error": "错误",
+    "Hexadecimal": "十六进制",
+    "Decimal": "十进制",
+    "Octal": "八进制",
+    "Binary": "二进制",
+    "%1: %2": "%1：%2",
+    "Word size: %1 bits": "字长：%1 位",
+    "Digit %1": "数字 %1"
   }
 }

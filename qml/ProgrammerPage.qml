@@ -110,7 +110,7 @@ FocusScope {
                     onClicked: page.session.selectRadix(modelData.radix)
                     Shortcut {
                         sequence: ({16: "F5", 10: "F6", 8: "F7", 2: "F8"})[radixButton.modelData.radix]
-                        enabled: radixButton.enabled
+                        enabled: page.visible && radixButton.enabled
                         onActivated: page.session.selectRadix(radixButton.modelData.radix)
                     }
                 }
@@ -132,7 +132,7 @@ FocusScope {
                 delegate: Shortcut {
                     required property var modelData
                     sequence: modelData.shortcut
-                    enabled: !page.session.error
+                    enabled: page.visible && !page.session.error
                     onActivated: page.session.selectWordWidth(modelData.width)
                 }
             }
@@ -198,7 +198,7 @@ FocusScope {
                         Shortcut {
                             sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
                             context: Qt.WindowShortcut
-                            enabled: keyButton.enabled
+                            enabled: page.visible && keyButton.enabled
                             onActivated: page.session.send(keyButton.modelData.command)
                         }
                     }

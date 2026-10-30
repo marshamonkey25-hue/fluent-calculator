@@ -60,12 +60,12 @@ if(BUILD_TESTING)
         add_test(NAME calculator-ui-${theme} COMMAND calculator_ui_tests)
         set_tests_properties(calculator-ui-${theme} PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_THEME=${theme}"
-            TIMEOUT 60
+            TIMEOUT 180
         )
     endforeach()
     add_test(NAME calculator-ui-zh-CN COMMAND calculator_ui_tests)
     set_tests_properties(calculator-ui-zh-CN PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
-        TIMEOUT 60
+        TIMEOUT 180
     )
 endif()

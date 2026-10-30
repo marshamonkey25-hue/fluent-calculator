@@ -3,7 +3,7 @@ import QtTest
 import Calculator
 
 Item {
-    MainWindow { id: application; width: 400; height: 760 }
+    MainWindow { id: application; systemPreferences: testSystemPreferences; width: 400; height: 760 }
     TestCase {
         name: "ProgrammerCalculator"
         when: windowShown && application.visible
@@ -264,7 +264,7 @@ Item {
             mouseClick(item("radix_16"))
             for (const digit of "FFFFFFFFFFFFFFFF") keyClick(digit)
             compare(item("key_decimal").enabled, false)
-            compare(item("key_decimal").Accessible.name, "Decimal separator")
+            compare(item("key_decimal").Accessible.name, Qt.locale().name.indexOf("zh") === 0 ? "小数点" : "Decimal separator")
             for (const name of ["radix_16", "radix_10", "radix_8", "radix_2", "wordWidthButton",
                                 "key_A", "key_clearEntry", "key_backspace", "key_divide", "key_0", "key_equals"]) {
                 const control = item(name)
@@ -311,6 +311,83 @@ Item {
                 keyClick(Qt.Key_Tab)
                 verify(item("key_" + command).activeFocus, "Tab reaches " + command + " in visual order")
             }
+        }
+
+        function openSettings() {
+            mouseClick(item("navigationButton"))
+            const drawer = findChild(application, "navigationDrawer")
+            tryCompare(drawer, "opened", true)
+            mouseClick(findChild(drawer.contentItem, "settingsButton"))
+            tryCompare(drawer, "visible", false)
+        }
+
+        function test_runtime_translation_preserves_programmer_calculation() {
+            openSettings()
+            mouseClick(item("language_en-US"))
+            navigate("programmer")
+            mouseClick(item("radix_16"))
+            selectWidth("BYTE")
+            clickCommands(["A", "add"])
+            openSettings()
+            mouseClick(item("language_zh-CN"))
+            navigate("programmer")
+            compare(item("pageTitle").text, "程序员")
+            compare(item("wordWidthButton").Accessible.name, "字长：8 位")
+            compare(item("radix_16").Accessible.name, "十六进制：A")
+            compare(item("key_mod").Accessible.name, "模")
+            compare(item("key_open").Accessible.name, "左括号")
+            compare(item("key_decimal").Accessible.name, "小数点")
+            compare(item("radix_16").checked, true)
+            compare(item("wordWidthButton").text, "BYTE")
+            clickCommands(["1", "equals"])
+            compare(item("resultDisplay").text, "B")
+            clickCommands(["clear", "1", "divide", "0", "equals"])
+            compare(item("resultDisplay").text, "除数不能为零")
+            compare(item("errorIndicator").text, "错误")
+            openSettings()
+            mouseClick(item("language_en-US"))
+            navigate("programmer")
+            compare(item("resultDisplay").text, "Cannot divide by zero")
+            compare(item("wordWidthButton").Accessible.name, "Word size: 8 bits")
+            openSettings()
+            mouseClick(item("language_system"))
+            navigate("programmer")
+        }
+
+        function test_settings_keep_hidden_programmer_shortcuts_inactive_data() {
+            return [
+                { tag: "keypad", keys: ["7", "+", Qt.Key_Escape, Qt.Key_Return], radix: 16, width: "BYTE" },
+                { tag: "radix", keys: [Qt.Key_F6, Qt.Key_F7, Qt.Key_F8], radix: 16, width: "BYTE" },
+                { tag: "width", keys: [Qt.Key_F2, Qt.Key_F3, Qt.Key_F4], radix: 16, width: "BYTE" }
+            ]
+        }
+        function test_settings_keep_hidden_programmer_shortcuts_inactive(data) {
+            mouseClick(item("radix_16"))
+            selectWidth("BYTE")
+            clickCommands(["A", "add"])
+            openSettings()
+            item("theme_light").forceActiveFocus(Qt.TabFocusReason)
+            for (const key of data.keys) keyClick(key)
+            navigate("programmer")
+            compare(item("radix_" + data.radix).checked, true)
+            compare(item("wordWidthButton").text, data.width)
+            clickCommands(["1", "equals"])
+            compare(item("resultDisplay").text, "B", "Settings preserves the pending integer calculation")
+        }
+
+        function test_scientific_and_programmer_keep_their_own_input_rules() {
+            clickCommands(["7", "divide", "2", "equals"])
+            compare(item("resultDisplay").text, "3")
+            navigate("scientific")
+            clickCommands(["7", "divide", "2", "equals"])
+            compare(item("resultDisplay").text, "3.5")
+            clickCommands(["clear", "openParenthesis", "2", "add", "3", "closeParenthesis", "multiply", "4", "equals"])
+            compare(item("resultDisplay").text, "20")
+            navigate("programmer")
+            compare(item("radix_10").checked, true)
+            compare(item("wordWidthButton").text, "QWORD")
+            compare(item("resultDisplay").text, "0")
+            compare(item("key_decimal").enabled, false)
         }
 
         function test_programmer_defaults_and_integer_arithmetic() {

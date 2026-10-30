@@ -19,7 +19,25 @@ Item {
         function test_preferences_survive_ordinary_process_restart() {
             application.requestActivate()
             tryCompare(application, "active", true)
-            if (restartStage === "scientific-write") {
+            if (restartStage === "programmer-write") {
+                navigate("mode_programmer")
+                compare(findChild(application.contentItem, "pageTitle").text, "程序员")
+                keyClick(Qt.Key_F5)
+                keyClick(Qt.Key_F12)
+                keyClick("F")
+                keyClick("F")
+                compare(findChild(application.contentItem, "resultDisplay").text, "FF")
+            } else if (restartStage === "programmer-restore") {
+                compare(findChild(application.contentItem, "pageTitle").text, "程序员")
+                compare(findChild(application.contentItem, "resultDisplay").text, "0")
+                compare(findChild(application.contentItem, "expressionDisplay").text, "")
+                compare(findChild(application.contentItem, "radix_10").checked, true)
+                compare(findChild(application.contentItem, "wordWidthButton").text, "QWORD")
+                compare(findChild(application.contentItem, "key_decimal").enabled, false)
+                tryCompare(Application.styleHints, "colorScheme", Qt.Dark)
+                for (const key of ["7", "/", "2", "="]) keyClick(key)
+                compare(findChild(application.contentItem, "resultDisplay").text, "3")
+            } else if (restartStage === "scientific-write") {
                 navigate("mode_scientific")
                 compare(findChild(application.contentItem, "pageTitle").text, "科学")
                 for (const command of ["2", "add", "3", "multiply", "4", "equals"])
