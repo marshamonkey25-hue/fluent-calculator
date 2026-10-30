@@ -1,0 +1,2 @@
+# Private build trees and isolated test data
+.build*/
