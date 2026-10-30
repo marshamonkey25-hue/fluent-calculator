@@ -1,6 +1,7 @@
 #include "ConversionSession.h"
 #include "Command.h"
 #include "LengthDataLoader.h"
+#include "EnergySpeedTimePressureDataLoader.h"
 #include <QClipboard>
 #include <QCoreApplication>
 #include <QGuiApplication>
@@ -13,6 +14,50 @@
 using namespace UnitConversionManager;
 
 namespace {
+// Keep the category/unit state in the real converter across page navigation.
+class ConverterDataLoader final : public IConverterDataLoader
+{
+    std::vector<std::shared_ptr<IConverterDataLoader>> m_loaders {
+        createLengthDataLoader(), createEnergySpeedTimePressureDataLoader("energy"),
+        createEnergySpeedTimePressureDataLoader("speed"), createEnergySpeedTimePressureDataLoader("time"),
+        createEnergySpeedTimePressureDataLoader("pressure")
+    };
+public:
+    void LoadData() override {}
+    std::vector<Category> GetOrderedCategories() override
+    {
+        std::vector<Category> categories;
+        for (const auto &loader : m_loaders) {
+            const auto items = loader->GetOrderedCategories();
+            categories.insert(categories.end(), items.begin(), items.end());
+        }
+        return categories;
+    }
+    std::vector<Unit> GetOrderedUnits(const Category &category) override
+    {
+        for (const auto &loader : m_loaders)
+            if (loader->SupportsCategory(category))
+                return loader->GetOrderedUnits(category);
+        return {};
+    }
+    bool SupportsCategory(const Category &category) override
+    {
+        return std::any_of(m_loaders.begin(), m_loaders.end(),
+                           [&category](const auto &loader) { return loader->SupportsCategory(category); });
+    }
+    std::unordered_map<Unit, ConversionData, UnitHash> LoadOrderedRatios(const Unit &unit) override
+    {
+        for (const auto &loader : m_loaders) {
+            for (const auto &category : loader->GetOrderedCategories()) {
+                const auto units = loader->GetOrderedUnits(category);
+                if (std::find(units.begin(), units.end(), unit) != units.end())
+                    return loader->LoadOrderedRatios(unit);
+            }
+        }
+        return {};
+    }
+};
+
 QString grouped(QString value)
 {
     // Preserve engine decimal text, trailing zeroes and scientific mantissas.
@@ -42,7 +87,13 @@ void ConversionSession::MaxDigitsReached() { setStatus(QStringLiteral("limit"));
 
 ConversionSession::ConversionSession(QObject *parent) : QObject(parent)
 {
-    m_converter = std::make_shared<UnitConverter>(createLengthDataLoader());
+    initializeConverter(std::make_shared<ConverterDataLoader>());
+}
+
+void ConversionSession::initializeConverter(std::shared_ptr<IConverterDataLoader> loader)
+{
+    m_converter = std::make_shared<UnitConverter>(std::move(loader));
+    m_activeSide = 1;
     const auto selection = m_converter->SetCurrentCategory(m_converter->GetCategories().front());
     m_units = std::get<0>(selection);
     m_unit1 = std::get<1>(selection).id;
@@ -52,12 +103,40 @@ ConversionSession::ConversionSession(QObject *parent) : QObject(parent)
     selectUnits();
 }
 
+void ConversionSession::setCategory(const QString &category)
+{
+    if (category == m_category)
+        return;
+    static const QHash<QString, int> categories {
+        {"length", 5}, {"energy", 8}, {"speed", 10}, {"time", 11}, {"pressure", 14}
+    };
+    const auto id = categories.constFind(category);
+    if (id == categories.cend())
+        return;
+    const auto available = m_converter->GetCategories();
+    const auto selected = std::find_if(available.begin(), available.end(),
+                                       [id](const Category &item) { return item.id == id.value(); });
+    if (selected == available.end())
+        return;
+    m_category = category;
+    const auto selection = m_converter->SetCurrentCategory(*selected);
+    m_units = std::get<0>(selection);
+    m_unit1 = (m_activeSide == 1 ? std::get<1>(selection) : std::get<2>(selection)).id;
+    m_unit2 = (m_activeSide == 1 ? std::get<2>(selection) : std::get<1>(selection)).id;
+    selectUnits();
+    setStatus({});
+    emit categoryChanged();
+    emit unitsChanged();
+    emit activeSideChanged();
+}
+
 void ConversionSession::setLanguage(const QString &language)
 {
     if (m_language == language)
         return;
     m_language = language;
     emit languageChanged();
+    emit unitsChanged();
 }
 
 QVariantList ConversionSession::units() const

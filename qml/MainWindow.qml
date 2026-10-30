@@ -49,6 +49,7 @@ ApplicationWindow {
     property SystemPreferences systemPreferences
     AppPreferences { id: appPreferences; systemPreferences: window.systemPreferences }
     CalculationSession { id: calculator; language: appPreferences.effectiveLanguage }
+    ConversionSession { id: conversion; language: appPreferences.effectiveLanguage }
 
     function focusMemoryInput() {
         const standardPage = page.item as StandardPage
@@ -64,7 +65,13 @@ ApplicationWindow {
 
     function loadMode() {
         calculator.selectMode(ModeRegistry.modes[currentMode].key)
-        page.setSource(ModeRegistry.modes[currentMode].source, { session: calculator })
+        const mode = ModeRegistry.modes[currentMode]
+        const properties = { session: calculator }
+        if (mode.converterCategory || mode.key === "length") {
+            conversion.category = mode.converterCategory || "length"
+            properties.converter = conversion
+        }
+        page.setSource(mode.source, properties)
     }
     onCurrentModeChanged: {
         memorySelected = false
@@ -231,23 +238,46 @@ ApplicationWindow {
             anchors.fill: parent
             anchors.margins: 12
             Label { text: qsTr("Calculator"); font.pixelSize: 20; font.bold: true }
-            Repeater {
-                model: ModeRegistry.modes
-                delegate: ItemDelegate {
-                    required property var modelData
-                    required property int index
-                    Layout.fillWidth: true
-                    objectName: "mode_" + modelData.key
-                    text: modelData.title
-                    highlighted: !window.settingsOpen && index === window.currentMode
-                    onClicked: {
-                        window.settingsOpen = false
-                        window.currentMode = index
-                        navigation.close()
+            Flickable {
+                id: navigationList
+                objectName: "navigationList"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                contentHeight: navigationModes.implicitHeight
+                contentWidth: width
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollBar.vertical: ScrollBar {}
+                ColumnLayout {
+                    id: navigationModes
+                    width: navigationList.width
+                    Repeater {
+                        model: ModeRegistry.modes
+                        delegate: ItemDelegate {
+                            required property var modelData
+                            required property int index
+                            Layout.fillWidth: true
+                            objectName: "mode_" + modelData.key
+                            text: modelData.title
+                            focusPolicy: Qt.StrongFocus
+                            highlighted: !window.settingsOpen && index === window.currentMode
+                            onActiveFocusChanged: {
+                                if (activeFocus) {
+                                    if (y < navigationList.contentY)
+                                        navigationList.contentY = y
+                                    else if (y + height > navigationList.contentY + navigationList.height)
+                                        navigationList.contentY = y + height - navigationList.height
+                                }
+                            }
+                            onClicked: {
+                                window.settingsOpen = false
+                                window.currentMode = index
+                                navigation.close()
+                            }
+                        }
                     }
                 }
             }
-            Item { Layout.fillHeight: true }
             ItemDelegate {
                 objectName: "settingsButton"
                 text: qsTr("Settings")
