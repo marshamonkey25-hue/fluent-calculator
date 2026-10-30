@@ -18,3 +18,15 @@
 - [ ] 新界面文案可翻译、样式可随应用主题变化，合理缩放窗口时必要操作仍可访问；不要求本任务完成独立的设置页面。
 - [ ] 通过真实 QML 操作验证基本计算、清空和键鼠一致性，并覆盖能够发现数值桥接精度损失的参考用例；测试断言外部行为而非内部实现。
 - [ ] 提供从依赖准备到构建、运行和执行现有检查的说明，并记录一次实际启动及测试结果；本任务不将其他平台标记为已实测。
+
+## Ticket 01 implementation evidence (pending merge validation)
+
+Status remains `ready-for-agent`; the merger owns acceptance checkboxes and closure.
+
+- Added CMake/Qt Quick application, native `ApplicationWindow` chrome, a central implemented-mode registry, shared session adapter, reusable Fluent controls and the pinned Standard number/operator positions. Only implemented Standard controls/navigation are exposed.
+- Vendored the real 27-source Microsoft `CalculatorManager → CCalcEngine → Ratpack` core from `79e1ac53bba690cdf930e5dcd6ed9dbc4cbfb128`, with MIT/NOTICE, a six-file portability change inventory, and exact resource provenance/omission notes in `third_party/microsoft-calculator/README.md`.
+- Arithmetic values and expressions remain `QString`/`std::wstring`. Real-QML mouse and keyboard paths prove `2 + 3 × 4 = 20`, decimal arithmetic, clear, four operations, exact `9007199254740992 + 1 = 9007199254740993`, continuation back to `1`, core input limits, expression display, division/undefined errors and recovery, navigation retention, accessible labels/Tab focus, and narrow/wide layouts.
+- Five red→green cycles observed: mouse result `0` versus `20`; keyboard Escape left `4` instead of `0`; missing explicit error-state label; symbolic rather than named accessible operators; Chinese expression `5 4` missing `×`/`=` before the English resource fallback. Precision/input-limit cases were added as passing imported-core regressions, not claimed as new red cycles.
+- Linux x86_64 / Qt 6.12.0 / GCC 16.2.1 / CMake 4.4.4 / Make 4.4.1: Debug configure/build and all three CTest entries passed (13 QtTest outcomes each). Native Wayland full QML suite passed (13 outcomes). `calculator_ui_qmllint` passed without warnings. Light/dark 320×460 and 900×700 screenshots were inspected. The standalone executable opened a native Wayland `Calculator` window and exited 0 on normal close.
+- Reproduction commands, dependencies, theme/translation hooks, test isolation and actual platform limits are in `README.md`. Tests use a private build tree, temporary app-data/settings/cache roots, offscreen/software rendering under CTest, and the real core without mocks.
+- Windows/macOS remain unverified. Settings/runtime language changes, remaining Standard operations and other modes stay with their own tickets. Independent reviewer/merge validation remains required.
