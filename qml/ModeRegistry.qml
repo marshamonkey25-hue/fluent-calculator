@@ -22,6 +22,9 @@ QtObject {
         { key: "energy", title: qsTr("Energy"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "energy" },
         { key: "speed", title: qsTr("Speed"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "speed" },
         { key: "time", title: qsTr("Time"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "time" },
-        { key: "pressure", title: qsTr("Pressure"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "pressure" }
+        { key: "pressure", title: qsTr("Pressure"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "pressure" },
+        { key: "temperature", title: qsTr("Temperature"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "temperature" },
+        { key: "power", title: qsTr("Power"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "power" },
+        { key: "angle", title: qsTr("Angle"), source: Qt.resolvedUrl("ConverterPage.qml"), converterCategory: "angle" }
     ]
 }

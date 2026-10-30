@@ -1,6 +1,7 @@
 #include "ConversionSession.h"
 #include "Command.h"
 #include "LengthDataLoader.h"
+#include "TemperaturePowerAngleDataLoader.h"
 #include "MeasurementDataLoader.h"
 #include "EnergySpeedTimePressureDataLoader.h"
 #include <QClipboard>
@@ -22,7 +23,8 @@ class ConverterDataLoader final : public IConverterDataLoader
         createLengthDataLoader(), createMeasurementDataLoader(4), createMeasurementDataLoader(9),
         createMeasurementDataLoader(6), createEnergySpeedTimePressureDataLoader("energy"),
         createEnergySpeedTimePressureDataLoader("speed"), createEnergySpeedTimePressureDataLoader("time"),
-        createEnergySpeedTimePressureDataLoader("pressure")
+        createEnergySpeedTimePressureDataLoader("pressure"),
+        createTemperatureDataLoader(), createPowerDataLoader(), createAngleDataLoader()
     };
 public:
     void LoadData() override {}
@@ -110,7 +112,8 @@ void ConversionSession::setCategory(const QString &category)
     if (category == m_category)
         return;
     static const QHash<QString, int> categories {
-        {"length", 5}, {"volume", 4}, {"area", 9}, {"weight", 6}, {"energy", 8}, {"speed", 10}, {"time", 11}, {"pressure", 14}
+        {"length", 5}, {"volume", 4}, {"area", 9}, {"weight", 6}, {"energy", 8}, {"speed", 10}, {"time", 11}, {"pressure", 14},
+        {"temperature", 7}, {"power", 12}, {"angle", 15}
     };
     const auto id = categories.constFind(category);
     if (id == categories.cend())
@@ -196,7 +199,7 @@ void ConversionSession::send(const QString &command)
         {"0", Command::Zero}, {"1", Command::One}, {"2", Command::Two}, {"3", Command::Three},
         {"4", Command::Four}, {"5", Command::Five}, {"6", Command::Six}, {"7", Command::Seven},
         {"8", Command::Eight}, {"9", Command::Nine}, {"decimal", Command::Decimal},
-        {"clear", Command::Clear}, {"backspace", Command::Backspace}
+        {"clear", Command::Clear}, {"backspace", Command::Backspace}, {"negate", Command::Negate}
     };
     const auto entry = commands.constFind(command);
     if (entry != commands.cend()) {
@@ -215,11 +218,12 @@ void ConversionSession::copy()
 void ConversionSession::paste()
 {
     auto input = QGuiApplication::clipboard()->text().trimmed();
-    if (input.startsWith('-')) {
+    const bool negative = input.startsWith('-');
+    if (negative && !supportsNegative()) {
         setStatus(QStringLiteral("negative"));
         return;
     }
-    static const QRegularExpression decimal(QStringLiteral(R"(^[+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$)"));
+    static const QRegularExpression decimal(QStringLiteral(R"(^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$)"));
     if (!decimal.match(input).hasMatch()) {
         setStatus(QStringLiteral("invalid"));
         return;
@@ -230,7 +234,7 @@ void ConversionSession::paste()
         setStatus(QStringLiteral("unavailable"));
         return;
     }
-    if (input.startsWith('+'))
+    if (negative || input.startsWith('+'))
         input.remove(0, 1);
     const auto point = input.indexOf('.');
     const auto integerEnd = point < 0 ? input.size() : point;
@@ -247,6 +251,8 @@ void ConversionSession::paste()
     send(QStringLiteral("clear"));
     for (const auto character : input)
         send(character == '.' ? QStringLiteral("decimal") : QString(character));
+    if (negative)
+        send(QStringLiteral("negate"));
 }
 
 void ConversionSession::DisplayCallback(const std::wstring &from, const std::wstring &to)

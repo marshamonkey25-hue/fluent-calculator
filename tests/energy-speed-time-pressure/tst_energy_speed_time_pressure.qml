@@ -176,7 +176,8 @@ Item {
             verify(!control("converterStatus").visible)
             keyClick("-", Qt.NoModifier)
             compare(control("converterValue1").text, "3", "Minus key cannot enter a negative quantity")
-            verify(findChild(application.contentItem, "converterKey_negate") === null)
+            const negate = findChild(application.contentItem, "converterKey_negate")
+            verify(negate === null || !negate.visible, "Positive-only categories do not expose negation")
         }
 
         function test_navigation_entries_remain_reachable_at_minimum_window() {

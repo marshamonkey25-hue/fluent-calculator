@@ -24,6 +24,7 @@ qt_add_qml_module(calculator_ui
         app/DateCalculation.h app/DateCalculation.cpp
         app/ConversionSession.h app/ConversionSession.cpp
         app/LengthDataLoader.h app/LengthDataLoader.cpp
+        app/TemperaturePowerAngleDataLoader.h app/TemperaturePowerAngleDataLoader.cpp
         app/MeasurementDataLoader.h app/MeasurementDataLoader.cpp
         app/EnergySpeedTimePressureDataLoader.h app/EnergySpeedTimePressureDataLoader.cpp
     QML_FILES
@@ -103,6 +104,15 @@ if(BUILD_TESTING)
             -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/length-restart.cmake)
     set_tests_properties(calculator-length-restart PROPERTIES TIMEOUT 100)
+    add_test(NAME calculator-temperature-power-angle-restart
+        COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
+            -DTEST_PYTHON=${Python3_EXECUTABLE}
+            -DTEST_LAUNCHER=${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py
+            -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
+            -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/signed-conversions-restart.cmake)
+    set_tests_properties(calculator-temperature-power-angle-restart PROPERTIES TIMEOUT 200)
     add_test(NAME calculator-preferences-restart
         COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
             -DTEST_PYTHON=${Python3_EXECUTABLE}
@@ -131,6 +141,11 @@ if(BUILD_TESTING)
         add_test(NAME calculator-volume-area-mass-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/volume-area-mass)
         set_tests_properties(calculator-volume-area-mass-${theme} PROPERTIES
+            ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
+            TIMEOUT 180)
+        add_test(NAME calculator-temperature-power-angle-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+            -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/signed-conversions)
+        set_tests_properties(calculator-temperature-power-angle-${theme} PROPERTIES
             ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
             TIMEOUT 180)
         add_test(NAME calculator-length-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
@@ -167,6 +182,11 @@ if(BUILD_TESTING)
     set_tests_properties(calculator-volume-area-mass-ja-JP PROPERTIES
         ENVIRONMENT "CALCULATOR_TEST_LOCALE=ja_JP;CALCULATOR_TEST_THEME=light"
         TIMEOUT 120)
+    add_test(NAME calculator-temperature-power-angle-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/signed-conversions)
+    set_tests_properties(calculator-temperature-power-angle-zh-CN PROPERTIES
+        ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
+        TIMEOUT 180)
     add_test(NAME calculator-length-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/length)
 

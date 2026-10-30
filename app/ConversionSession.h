@@ -12,6 +12,7 @@ class ConversionSession : public QObject, private UnitConversionManager::IUnitCo
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
+    Q_PROPERTY(bool supportsNegative READ supportsNegative NOTIFY categoryChanged)
     Q_PROPERTY(QString category READ category WRITE setCategory NOTIFY categoryChanged)
     Q_PROPERTY(QVariantList units READ units NOTIFY unitCatalogChanged)
     Q_PROPERTY(int unit1 READ unit1 WRITE setUnit1 NOTIFY unitsChanged)
@@ -24,6 +25,7 @@ public:
     explicit ConversionSession(QObject *parent = nullptr);
     QString language() const { return m_language; }
     void setLanguage(const QString &language);
+    bool supportsNegative() const { return m_converter->GetCurrentCategory().supportsNegative; }
     QString category() const { return m_category; }
     void setCategory(const QString &category);
     QVariantList units() const;
