@@ -28,6 +28,32 @@ void DateCalculation::setToDate(const QString &text)
     emit datesChanged();
 }
 
+void DateCalculation::setStartDate(const QString &text)
+{
+    const auto date = QDate::fromString(text, Qt::ISODate);
+    if (!date.isValid() || date.year() < 1601 || date.year() > 9999
+        || date.toString(Qt::ISODate) != text || date == m_startDate)
+        return;
+    m_startDate = date;
+    emit startDateChanged();
+}
+
+QString DateCalculation::adjustedDate(const QString &start, bool add, int years, int months, int days) const
+{
+    const auto date = QDate::fromString(start, Qt::ISODate);
+    if (!date.isValid() || date.year() < 1601 || date.year() > 9999
+        || date.toString(Qt::ISODate) != start
+        || years < 0 || years > 999 || months < 0 || months > 999 || days < 0 || days > 999)
+        return {};
+    // Pinned AddDuration applies larger units first; SubtractDuration reverses
+    // that order. Each step clips a missing day to the destination month's end.
+    const auto result = add ? date.addYears(years).addMonths(months).addDays(days)
+                            : date.addDays(-days).addMonths(-months).addYears(-years);
+    if (!result.isValid() || result.year() < 1601 || result.year() > 9999)
+        return {};
+    return result.toString(Qt::ISODate);
+}
+
 int DateCalculation::totalDays() const
 {
     return static_cast<int>(std::abs(m_fromDate.daysTo(m_toDate)));
@@ -59,4 +85,11 @@ QString DateCalculation::formattedDate(const QString &date, const QString &langu
     const auto format = locale.language() == QLocale::Chinese
         ? QStringLiteral("yyyy年M月d日") : QStringLiteral("MMMM d, yyyy");
     return locale.toString(QDate::fromString(date, Qt::ISODate), format);
+}
+
+QString DateCalculation::formattedResultDate(const QString &date, const QString &language) const
+{
+    // Pinned DateCalculatorViewModel uses "longdate" for results; the picker
+    // separately requests day/month/year without a weekday.
+    return QLocale(language).toString(QDate::fromString(date, Qt::ISODate), QLocale::LongFormat);
 }
