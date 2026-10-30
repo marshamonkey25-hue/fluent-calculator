@@ -4,23 +4,23 @@
 
 **Blocked by:** 04: 使用科学模式的优先级与括号。
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Spec:** Windows 11 风格跨平台计算器。
 
 **User stories:** 22, 25, 26。
 
-- [ ] 对照固定源码列出并接入科学模式中本任务涵盖的幂、根、指数、对数、常数、阶乘、取模及其参考变体；三角函数和角度单位由任务 06 负责。
-- [ ] 各操作通过真实核心执行，显示、表达式和输入状态与操作同步更新；常数与中间结果不因界面桥接丢失原版数值能力。
-- [ ] 相关二级功能或切换控件使用参考交互，按钮内容与实际命令一致，不能只有标签而无对应运算。
-- [ ] 沿用核心指数输入、定义域、精度和范围限制；错误出现后用户能继续纠正或清空计算。
-- [ ] 新增操作支持参考键盘入口，沿用应用主题、可翻译文案和窗口适配规则。
-- [ ] 通过用户可见输入和结果验证代表性的幂根、对数、常数、阶乘、取模组合以及边界和恢复流程；必要的批量精度用例可通过核心公开命令补充，不检查私有实现。
+- [x] 对照固定源码列出并接入科学模式中本任务涵盖的幂、根、指数、对数、常数、阶乘、取模及其参考变体；三角函数和角度单位由任务 06 负责。
+- [x] 各操作通过真实核心执行，显示、表达式和输入状态与操作同步更新；常数与中间结果不因界面桥接丢失原版数值能力。
+- [x] 相关二级功能或切换控件使用参考交互，按钮内容与实际命令一致，不能只有标签而无对应运算。
+- [x] 沿用核心指数输入、定义域、精度和范围限制；错误出现后用户能继续纠正或清空计算。
+- [x] 新增操作支持参考键盘入口，沿用应用主题、可翻译文案和窗口适配规则。
+- [x] 通过用户可见输入和结果验证代表性的幂根、对数、常数、阶乘、取模组合以及边界和恢复流程；必要的批量精度用例可通过核心公开命令补充，不检查私有实现。
 
 
-## Implementation evidence (review pending)
+## Implementation evidence
 
-Status intentionally remains `ready-for-agent`; the merge reviewer owns checklist verification and closure.
+The implementation was submitted with `ready-for-agent` status; independent integration review and closure are recorded below.
 
 Pinned-source inventory (revision `79e1ac53bba690cdf930e5dcd6ed9dbc4cbfb128`): `Calculator/Views/CalculatorScientificOperators.xaml` and `.xaml.cs`, `CalculatorScientificAngleButtons.xaml` and `.xaml.cs`, en-US `Resources.resw`, `Calculator.ViewModels/StandardCalculatorViewModel.cs`, and `CalcManager/Command.h`. Command names below are the real Microsoft manager commands, with their `Command` prefix omitted for readability.
 
@@ -85,4 +85,10 @@ Final source audit: pinned `OperatorsPanel.xaml.cs:EnsureScientificOps` caches t
 
 Final validation: private Debug/Make `.build-ticket05`, Linux x86_64, Qt 6.12/GCC 16.2, compilation `-j2`. `python3 tests/run-ui-isolated.py ctest --test-dir .build-ticket05 -j1 -V --output-on-failure` exited **0**, all **5/5** entries passing. Each of English/light, English/dark and Chinese/light reports **255 passed, 0 failed, 0 skipped**; process isolation has **3 passed**, and all **7** independent restart stages pass. The final durable record is `.build-ticket05/ctest-final-checked.log` and `.exit` (0). Full configurations completed in 186.67s, 171.11s and 180.54s; total 545.49s. QML lint is warning-free (`lint-second-navigation.log`), and `git diff --check` passes. Final screenshot review used only offscreen rendering, including Chinese/light narrow layout and dark secondary controls. All final test processes used compose/generic/offscreen/software, private storage/runtime and private Linux D-Bus; no final native desktop validation. Windows/macOS are unverified. The inherited Standard Copy shortcut warning is unchanged; clipboard tests pass.
 
-Immediately before committing, integration/calculator was still `06ffcdfa4f0006ba36496e6210bd870b2fad2c1e`; merge was already up to date and both integration/calculator and main were confirmed ancestors. No parent-spec or other ticket status/closure changes were made. Status/checklist remain for the required independent merge reviewer.
+Immediately before committing, integration/calculator was still `06ffcdfa4f0006ba36496e6210bd870b2fad2c1e`; merge was already up to date and both integration/calculator and main were confirmed ancestors. No parent-spec or other ticket status/closure changes were made. At implementation submission, status/checklist were left for the required independent merge reviewer.
+
+## Integration review and completion
+
+Merged `c8108b5df3cd9d0ede7d60e0129058d5398296f8` into the clean `integration/calculator` checkout with `git merge --no-ff`, producing `459f5a1ef06e2a5ccfb9b44cc075ea1576e1cbec`. No conflicts or integration regressions were found. Reviewed all six criteria against the pinned Scientific controls, real-core command dispatch and public QML tests; verified representative implementer red/green logs. Existing Standard, Scientific precedence, Programmer, navigation, translations and settings remain covered. The shared offscreen/compose/generic launcher, private storage and Linux D-Bus isolation are preserved.
+
+Integration validation on Linux/Qt 6.12 in `.build-integration`: Debug configure and `cmake --build .build-integration -j2` pass; `calculator_ui_qmllint` passes without warnings. `python3 tests/run-ui-isolated.py ctest --test-dir .build-integration -j1 -V --output-on-failure` exits **0**, **5/5** entries pass in **571.33 s**: English/light **255**, English/dark **255**, Chinese/light **255** outcomes, each with **0 failed/0 skipped**; **3** process-isolation tests and all **7** independent restart stages pass. Evidence: `merge-05-build.log`, `merge-05-qmllint.log`, `merge-05-ctest.log`, `merge-05-ctest.exit` (0). Reviewed offscreen narrow primary and settled wide secondary/flyout captures in both themes; no native desktop validation. The first primary wide PNG can capture the previous render size during resize, so wide visual evidence uses the settled secondary/flyout images and geometry checks. The inherited Standard Copy shortcut warning remains, with clipboard behavior passing. Windows/macOS remain unverified. All six fulfilled criteria are checked; ticket **resolved**. Parent specification unchanged.
