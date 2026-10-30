@@ -151,7 +151,7 @@ FocusScope {
                         onActiveFocusChanged: if (activeFocus) page.revealControl(keyButton)
                         onClicked: page.session.send(modelData.command)
                         Shortcut {
-                            enabled: page.visible && page.Window.window.active
+                            enabled: page.visible && page.enabled && page.Window.window.active
                                      && (keyButton.modelData.command !== "clear" || !trigonometry.popupOpen)
                             sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
                             // Keep the reference's per-window accelerators active

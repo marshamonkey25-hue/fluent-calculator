@@ -434,6 +434,24 @@ Item {
             compare(result(), "0.5")
         }
 
+        function test_navigation_drawer_pauses_scientific_accelerators() {
+            keyClick("3")
+            mouseClick(control("navigationButton"))
+            const drawer = findChild(application, "navigationDrawer")
+            tryCompare(drawer, "opened", true)
+            keyClick("0")
+            keyClick(Qt.Key_S)
+            keyClick(Qt.Key_F4)
+            compare(result(), "3", "Navigation keeps the calculation unchanged")
+            compare(control("angleUnitButton").text, "DEG")
+            mouseClick(findChild(drawer.contentItem, "mode_scientific"))
+            tryCompare(drawer, "visible", false)
+            keyClick("0")
+            compare(result(), "30", "Accelerators resume after closing navigation")
+            keyClick(Qt.Key_S)
+            compare(result(), "0.5")
+        }
+
         function cleanupTestCase() { application.close() }
     }
 }
