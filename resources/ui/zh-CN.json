@@ -1,0 +1,33 @@
+{
+  "MainWindow": {
+    "Calculator": "计算器",
+    "Open navigation": "打开导航",
+    "Settings": "设置"
+  },
+  "ModeRegistry": { "Standard": "标准" },
+  "SettingsPage": {
+    "Appearance": "外观",
+    "App theme": "应用主题",
+    "Light": "浅色",
+    "Dark": "深色",
+    "Use system setting": "使用系统设置",
+    "Language": "语言",
+    "App language": "应用语言",
+    "English": "英语",
+    "Simplified Chinese": "简体中文",
+    "Unsupported system languages use English.": "不支持的系统语言将使用英语。"
+  },
+  "StandardPage": {
+    "Clear": "清除",
+    "Divide": "除",
+    "Multiply": "乘",
+    "Subtract": "减",
+    "Add": "加",
+    "Decimal separator": "小数点",
+    "Equals": "等于",
+    "Error: %1": "错误：%1",
+    "Result: %1": "结果：%1",
+    "Error": "错误",
+    "Digit %1": "数字 %1"
+  }
+}

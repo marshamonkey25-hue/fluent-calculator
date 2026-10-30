@@ -12,13 +12,26 @@ ApplicationWindow {
     minimumWidth: 320
     minimumHeight: 460
     title: qsTr("Calculator")
+    // Fluent's Fusion fallback Labels otherwise retain the native text color
+    // when an application override first changes the scheme.
+    palette.windowText: Application.styleHints.colorScheme === Qt.Dark ? "#ffffff" : "#1b1b1b"
     property int currentMode: 0
-    CalculationSession { id: calculator }
+    property bool settingsOpen: false
+    property SystemPreferences systemPreferences
+    AppPreferences { id: appPreferences; systemPreferences: window.systemPreferences }
+    CalculationSession { id: calculator; language: appPreferences.effectiveLanguage }
 
     function loadMode() {
         page.setSource(ModeRegistry.modes[currentMode].source, { session: calculator })
     }
-    onCurrentModeChanged: loadMode()
+    onCurrentModeChanged: {
+        loadMode()
+        appPreferences.lastMode = ModeRegistry.modes[currentMode].key
+    }
+    Component.onCompleted: {
+        window.currentMode = ModeRegistry.indexForKey(appPreferences.lastMode)
+        appPreferences.lastMode = ModeRegistry.modes[window.currentMode].key
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -33,17 +46,22 @@ ApplicationWindow {
                 onClicked: navigation.open()
             }
             Label {
-                text: ModeRegistry.modes[window.currentMode].title
+                objectName: "pageTitle"
+                text: window.settingsOpen ? qsTr("Settings") : ModeRegistry.modes[window.currentMode].title
                 font.pixelSize: 20
                 font.bold: true
                 Layout.fillWidth: true
             }
         }
-        Loader {
-            id: page
+        StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Component.onCompleted: window.loadMode()
+            currentIndex: window.settingsOpen ? 1 : 0
+            Loader {
+                id: page
+                Component.onCompleted: window.loadMode()
+            }
+            SettingsPage { preferences: appPreferences }
         }
     }
 
@@ -64,14 +82,25 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     objectName: "mode_" + modelData.key
                     text: modelData.title
-                    highlighted: index === window.currentMode
+                    highlighted: !window.settingsOpen && index === window.currentMode
                     onClicked: {
+                        window.settingsOpen = false
                         window.currentMode = index
                         navigation.close()
                     }
                 }
             }
             Item { Layout.fillHeight: true }
+            ItemDelegate {
+                objectName: "settingsButton"
+                text: qsTr("Settings")
+                Layout.fillWidth: true
+                highlighted: window.settingsOpen
+                onClicked: {
+                    window.settingsOpen = true
+                    navigation.close()
+                }
+            }
         }
     }
 }

@@ -15,16 +15,24 @@ qt_add_qml_module(calculator_ui
     VERSION 1.0
     OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Calculator
     SOURCES
+        app/AppPreferences.h app/AppPreferences.cpp
+        app/SystemPreferences.h app/SystemPreferences.cpp
         app/CalculationSession.h app/CalculationSession.cpp
         app/EngineResources.h app/EngineResources.cpp
     QML_FILES
         qml/MainWindow.qml
         qml/StandardPage.qml
+        qml/SettingsPage.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
 )
 target_include_directories(calculator_ui PUBLIC app)
 target_link_libraries(calculator_ui PUBLIC Qt6::Quick Qt6::QuickControls2 microsoft_calculator_core)
+qt_add_resources(calculator_ui ui_translations
+    PREFIX /ui
+    BASE resources/ui
+    FILES resources/ui/zh-CN.json
+)
 qt_add_resources(calculator_ui engine_resources
     PREFIX /engine
     BASE resources/engine
@@ -39,6 +47,13 @@ if(BUILD_TESTING)
     qt_add_executable(calculator_ui_tests tests/quicktest.cpp)
     target_link_libraries(calculator_ui_tests PRIVATE calculator_ui calculator_uiplugin Qt6::QuickTest)
     target_compile_definitions(calculator_ui_tests PRIVATE QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml")
+    add_test(NAME calculator-preferences-restart
+        COMMAND ${CMAKE_COMMAND}
+            -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
+            -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/preferences-restart.cmake)
+    set_tests_properties(calculator-preferences-restart PROPERTIES TIMEOUT 100)
     foreach(theme light dark)
         add_test(NAME calculator-ui-${theme} COMMAND calculator_ui_tests)
         set_tests_properties(calculator-ui-${theme} PROPERTIES

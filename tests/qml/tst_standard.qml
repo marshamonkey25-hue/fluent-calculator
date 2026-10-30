@@ -3,7 +3,7 @@ import QtTest
 import Calculator
 
 Item {
-    MainWindow { id: application }
+    MainWindow { id: application; systemPreferences: testSystemPreferences }
     TestCase {
         name: "StandardCalculator"
         when: windowShown && application.visible
@@ -98,11 +98,12 @@ Item {
         }
 
         function test_operator_labels_and_keyboard_focus_are_accessible() {
-            compare(button("multiply").Accessible.name, "Multiply")
-            compare(button("divide").Accessible.name, "Divide")
-            compare(button("clear").Accessible.name, "Clear")
-            compare(button("decimal").Accessible.name, "Decimal separator")
-            compare(button("equals").Accessible.name, "Equals")
+            const chinese = Qt.locale().name.indexOf("zh") === 0
+            compare(button("multiply").Accessible.name, chinese ? "乘" : "Multiply")
+            compare(button("divide").Accessible.name, chinese ? "除" : "Divide")
+            compare(button("clear").Accessible.name, chinese ? "清除" : "Clear")
+            compare(button("decimal").Accessible.name, chinese ? "小数点" : "Decimal separator")
+            compare(button("equals").Accessible.name, chinese ? "等于" : "Equals")
             button("clear").forceActiveFocus(Qt.TabFocusReason)
             keyClick(Qt.Key_Tab)
             verify(button("divide").activeFocus)

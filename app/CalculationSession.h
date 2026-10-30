@@ -15,15 +15,19 @@ class CalculationSession : public QObject, private ICalcDisplay
     Q_PROPERTY(QString display READ display NOTIFY displayChanged)
     Q_PROPERTY(QString expression READ expression NOTIFY expressionChanged)
     Q_PROPERTY(bool error READ error NOTIFY errorChanged)
+    Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
 
 public:
     explicit CalculationSession(QObject *parent = nullptr);
     QString display() const { return m_display; }
     QString expression() const { return m_expression; }
     bool error() const { return m_error; }
+    QString language() const { return m_language; }
+    void setLanguage(const QString &language);
     Q_INVOKABLE void send(const QString &command);
 
 signals:
+    void languageChanged();
     void displayChanged();
     void expressionChanged();
     void errorChanged();
@@ -56,6 +60,7 @@ private:
     bool m_error = false;
     std::vector<std::pair<std::wstring, int>> m_tokens;
     std::vector<std::shared_ptr<IExpressionCommand>> m_expressionCommands;
+    QString m_language;
     EngineResources m_resources;
     std::unique_ptr<CalculationManager::CalculatorManager> m_manager;
 };

@@ -9,6 +9,16 @@ CalculationSession::CalculationSession(QObject *parent) : QObject(parent)
     m_manager->SetStandardMode();
 }
 
+void CalculationSession::setLanguage(const QString &language)
+{
+    if (language == m_language)
+        return;
+    m_language = language;
+    m_resources.setLanguage(language);
+    m_manager->RefreshResources();
+    emit languageChanged();
+}
+
 void CalculationSession::send(const QString &command)
 {
     static const QHash<QString, Command> commands {
