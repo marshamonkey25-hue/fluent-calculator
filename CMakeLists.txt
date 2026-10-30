@@ -20,6 +20,7 @@ qt_add_qml_module(calculator_ui
     QML_FILES
         qml/MainWindow.qml
         qml/StandardPage.qml
+        qml/ProgrammerPage.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
 )

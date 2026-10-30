@@ -16,6 +16,7 @@ ApplicationWindow {
     CalculationSession { id: calculator }
 
     function loadMode() {
+        calculator.selectMode(ModeRegistry.modes[currentMode].key)
         page.setSource(ModeRegistry.modes[currentMode].source, { session: calculator })
     }
     onCurrentModeChanged: loadMode()

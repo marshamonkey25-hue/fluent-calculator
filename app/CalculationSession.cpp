@@ -9,6 +9,70 @@ CalculationSession::CalculationSession(QObject *parent) : QObject(parent)
     m_manager->SetStandardMode();
 }
 
+void CalculationSession::selectMode(const QString &mode)
+{
+    if (mode == m_mode || (mode != "standard" && mode != "programmer"))
+        return;
+    m_mode = mode;
+    if (mode == "programmer") {
+        m_manager->SetProgrammerMode();
+        m_manager->SendCommand(Command::CommandQword);
+        m_wordWidth = 64;
+        emit wordWidthChanged();
+        m_radix = 10;
+        emit radixChanged();
+        updateRadixDisplays();
+    } else
+        m_manager->SetStandardMode();
+    emit modeChanged();
+}
+
+void CalculationSession::selectWordWidth(int width)
+{
+    if (m_mode != "programmer" || m_error)
+        return;
+    Command command;
+    switch (width) {
+    case 64: command = Command::CommandQword; break;
+    case 32: command = Command::CommandDword; break;
+    case 16: command = Command::CommandWord; break;
+    case 8: command = Command::CommandByte; break;
+    default: return;
+    }
+    m_manager->SendCommand(command);
+    m_wordWidth = width;
+    emit wordWidthChanged();
+    updateRadixDisplays();
+}
+
+void CalculationSession::selectRadix(int radix)
+{
+    if (m_mode != "programmer" || m_error)
+        return;
+    Command command;
+    switch (radix) {
+    case 16: command = Command::CommandHex; break;
+    case 10: command = Command::CommandDec; break;
+    case 8: command = Command::CommandOct; break;
+    case 2: command = Command::CommandBin; break;
+    default: return;
+    }
+    m_manager->SendCommand(command);
+    m_radix = radix;
+    emit radixChanged();
+    updateRadixDisplays();
+}
+
+void CalculationSession::updateRadixDisplays()
+{
+    if (m_mode != "programmer")
+        return;
+    m_radixDisplays.clear();
+    for (const auto radix : {16, 10, 8, 2})
+        m_radixDisplays.append(m_error ? QString{} : QString::fromStdWString(m_manager->GetResultForRadix(radix, 64, true)));
+    emit radixDisplaysChanged();
+}
+
 void CalculationSession::send(const QString &command)
 {
     static const QHash<QString, Command> commands {
@@ -17,14 +81,30 @@ void CalculationSession::send(const QString &command)
         {"4", Command::Command4}, {"5", Command::Command5},
         {"6", Command::Command6}, {"7", Command::Command7},
         {"8", Command::Command8}, {"9", Command::Command9},
+        {"A", Command::CommandA}, {"B", Command::CommandB},
+        {"C", Command::CommandC}, {"D", Command::CommandD},
+        {"E", Command::CommandE}, {"F", Command::CommandF},
         {"decimal", Command::CommandPNT}, {"add", Command::CommandADD},
         {"subtract", Command::CommandSUB}, {"multiply", Command::CommandMUL},
         {"divide", Command::CommandDIV}, {"equals", Command::CommandEQU},
-        {"clear", Command::CommandCLEAR}
+        {"clear", Command::CommandCLEAR}, {"clearEntry", Command::CommandCENTR},
+        {"backspace", Command::CommandBACK}, {"negate", Command::CommandSIGN},
+        {"open", Command::CommandOPENP}, {"close", Command::CommandCLOSEP},
+        {"mod", Command::CommandMOD}
     };
+    if (command.size() == 1) {
+        const int digit = QStringLiteral("0123456789ABCDEF").indexOf(command);
+        const int base = m_mode == "programmer" ? m_radix : 10;
+        if (digit >= base)
+            return;
+    }
+    if (m_mode == "programmer" && command == "decimal")
+        return;
     const auto entry = commands.constFind(command);
-    if (entry != commands.cend())
+    if (entry != commands.cend()) {
         m_manager->SendCommand(entry.value());
+        updateRadixDisplays();
+    }
 }
 
 void CalculationSession::SetPrimaryDisplay(const std::wstring &text, bool isError)
