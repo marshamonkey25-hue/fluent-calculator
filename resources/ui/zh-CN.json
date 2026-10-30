@@ -80,6 +80,35 @@
     "Binary": "二进制",
     "%1: %2": "%1：%2",
     "Word size: %1 bits": "字长：%1 位",
-    "Digit %1": "数字 %1"
+    "Digit %1": "数字 %1",
+    "And": "与",
+    "Or": "或",
+    "Not": "非",
+    "Nand": "与非",
+    "Nor": "或非",
+    "Exclusive or": "异或",
+    "Bitwise": "按位",
+    "Bit shift": "位移位",
+    "Arithmetic shift": "算术移位",
+    "Logical shift": "逻辑移位",
+    "Rotate circular shift": "循环移位",
+    "Rotate through carry shift": "带进位循环移位",
+    "Left shift": "左移",
+    "Arithmetic right shift": "算术右移",
+    "Logical right shift": "逻辑右移",
+    "Rotate left": "循环左移",
+    "Rotate right": "循环右移",
+    "Rotate left through carry": "带进位循环左移",
+    "Rotate right through carry": "带进位循环右移",
+    "Keypad": "键盘",
+    "Bits": "位",
+    "Full keypad": "完整键盘",
+    "Bit toggling keypad": "位切换键盘"
+  },
+  "ProgrammerBitPanel": {
+    "Bit toggling keypad": "位切换键盘",
+    "Least significant bit: %1": "最低有效位：%1",
+    "Most significant bit: %1": "最高有效位：%1",
+    "Bit %1: %2": "第 %1 位：%2"
   }
 }

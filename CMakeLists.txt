@@ -25,6 +25,7 @@ qt_add_qml_module(calculator_ui
         qml/SettingsPage.qml
         qml/ScientificPage.qml
         qml/ProgrammerPage.qml
+        qml/ProgrammerBitPanel.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
 )
@@ -58,14 +59,18 @@ if(BUILD_TESTING)
     set_tests_properties(calculator-preferences-restart PROPERTIES TIMEOUT 100)
     foreach(theme light dark)
         add_test(NAME calculator-ui-${theme} COMMAND calculator_ui_tests)
-        set_tests_properties(calculator-ui-${theme} PROPERTIES
+        add_test(NAME calculator-programmer-bits-${theme} COMMAND calculator_ui_tests
+            -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+        set_tests_properties(calculator-ui-${theme} calculator-programmer-bits-${theme} PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_THEME=${theme}"
-            TIMEOUT 180
+            TIMEOUT 300
         )
     endforeach()
     add_test(NAME calculator-ui-zh-CN COMMAND calculator_ui_tests)
-    set_tests_properties(calculator-ui-zh-CN PROPERTIES
+    add_test(NAME calculator-programmer-bits-zh-CN COMMAND calculator_ui_tests
+        -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/programmer)
+    set_tests_properties(calculator-ui-zh-CN calculator-programmer-bits-zh-CN PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QSG_RHI_BACKEND=software;CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
-        TIMEOUT 180
+        TIMEOUT 300
     )
 endif()

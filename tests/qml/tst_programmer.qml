@@ -23,8 +23,12 @@ Item {
             tryCompare(drawer, "visible", false)
         }
         function clickCommands(commands) {
-            for (const command of commands)
-                mouseClick(item("key_" + command))
+            for (const command of commands) {
+                // Both clear shortcuts remain available in the reference's shared C/CE slot.
+                if (command === "clear") keyClick(Qt.Key_Escape)
+                else if (command === "clearEntry") keyClick(Qt.Key_Delete)
+                else mouseClick(item("key_" + command))
+            }
         }
         function initTestCase() {
             application.requestActivate()
@@ -143,7 +147,7 @@ Item {
                            equals: Qt.Key_Return, mod: "%", clear: Qt.Key_Escape, open: "(", close: ")", multiply: "*" }
             function enter(commands) {
                 for (const command of commands) {
-                    if (data.keyboard) keyClick(keys[command] || command)
+                    if (data.keyboard || command === "clear") keyClick(keys[command] || command)
                     else mouseClick(item("key_" + command))
                 }
             }
@@ -240,7 +244,7 @@ Item {
             application.height = 460
             waitForRendering(application.contentItem)
             item("wordWidthButton").forceActiveFocus(Qt.TabFocusReason)
-            for (let steps = 0; !item("key_equals").activeFocus && steps < 30; ++steps)
+            for (let steps = 0; !item("key_equals").activeFocus && steps < 40; ++steps)
                 keyClick(Qt.Key_Tab)
             verify(item("key_equals").activeFocus)
             const key = item("key_equals")
@@ -307,7 +311,7 @@ Item {
         function test_hexadecimal_tab_order_follows_keypad_rows() {
             mouseClick(item("radix_16"))
             item("key_A").forceActiveFocus(Qt.TabFocusReason)
-            for (const command of ["clearEntry", "clear", "backspace", "B", "open", "close", "mod", "divide", "C", "7"]) {
+            for (const command of ["shift_left", "shift_right", "clear", "backspace", "B", "open", "close", "mod", "divide", "C", "7"]) {
                 keyClick(Qt.Key_Tab)
                 verify(item("key_" + command).activeFocus, "Tab reaches " + command + " in visual order")
             }

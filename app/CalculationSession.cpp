@@ -79,6 +79,14 @@ void CalculationSession::selectRadix(int radix)
     updateRadixDisplays();
 }
 
+void CalculationSession::toggleBit(int position)
+{
+    if (m_mode != "programmer" || m_error || position < 0 || position >= m_wordWidth)
+        return;
+    m_manager->SendCommand(static_cast<Command>(static_cast<int>(Command::CommandBINPOS0) + position));
+    updateRadixDisplays();
+}
+
 void CalculationSession::updateRadixDisplays()
 {
     if (m_mode != "programmer")
@@ -86,6 +94,8 @@ void CalculationSession::updateRadixDisplays()
     m_radixDisplays.clear();
     for (const auto radix : {16, 10, 8, 2})
         m_radixDisplays.append(m_error ? QString{} : QString::fromStdWString(m_manager->GetResultForRadix(radix, 64, true)));
+    m_binaryBits = m_error ? QString(64, QLatin1Char('0'))
+                          : QString::fromStdWString(m_manager->GetResultForRadix(2, 64, false)).rightJustified(64, QLatin1Char('0'));
     emit radixDisplaysChanged();
 }
 
@@ -97,6 +107,22 @@ void CalculationSession::send(const QString &command)
     const auto parenthesis = parenthesisCommands.constFind(command);
     if (m_mode == QStringLiteral("scientific") && parenthesis != parenthesisCommands.cend()) {
         m_manager->SendCommand(parenthesis.value());
+        return;
+    }
+    static const QHash<QString, Command> bitwiseCommands {
+        {"and", Command::CommandAnd}, {"or", Command::CommandOR},
+        {"not", Command::CommandNot}, {"nand", Command::CommandNand},
+        {"nor", Command::CommandNor}, {"xor", Command::CommandXor},
+        {"shiftLeft", Command::CommandLSHF}, {"shiftRight", Command::CommandRSHF},
+        {"shiftRightLogical", Command::CommandRSHFL},
+        {"rotateLeft", Command::CommandROL}, {"rotateRight", Command::CommandROR},
+        {"rotateCarryLeft", Command::CommandROLC}, {"rotateCarryRight", Command::CommandRORC}
+    };
+    const auto bitwise = bitwiseCommands.constFind(command);
+    if (bitwise != bitwiseCommands.cend()) {
+        if (m_mode == "programmer" && !m_error)
+            m_manager->SendCommand(bitwise.value());
+        updateRadixDisplays();
         return;
     }
     static const QHash<QString, Command> commands {

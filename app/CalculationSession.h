@@ -15,23 +15,28 @@ class CalculationSession : public QObject, private ICalcDisplay
     Q_PROPERTY(QString display READ display NOTIFY displayChanged)
     Q_PROPERTY(QString expression READ expression NOTIFY expressionChanged)
     Q_PROPERTY(bool error READ error NOTIFY errorChanged)
+    Q_PROPERTY(bool inputEmpty READ inputEmpty NOTIFY inputChanged)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QString mode READ mode NOTIFY modeChanged)
     Q_PROPERTY(int radix READ radix NOTIFY radixChanged)
     Q_PROPERTY(int wordWidth READ wordWidth NOTIFY wordWidthChanged)
     Q_PROPERTY(QStringList radixDisplays READ radixDisplays NOTIFY radixDisplaysChanged)
+    Q_PROPERTY(QString binaryBits READ binaryBits NOTIFY radixDisplaysChanged)
 
 public:
     explicit CalculationSession(QObject *parent = nullptr);
     QString display() const { return m_display; }
     QString expression() const { return m_expression; }
     bool error() const { return m_error; }
+    bool inputEmpty() const { return m_manager->IsInputEmpty(); }
     QString language() const { return m_language; }
     void setLanguage(const QString &language);
     QString mode() const { return m_mode; }
     int radix() const { return m_radix; }
     QStringList radixDisplays() const { return m_radixDisplays; }
     int wordWidth() const { return m_wordWidth; }
+    QString binaryBits() const { return m_binaryBits; }
+    Q_INVOKABLE void toggleBit(int position);
     Q_INVOKABLE void selectWordWidth(int width);
     Q_INVOKABLE void selectRadix(int radix);
     Q_INVOKABLE void send(const QString &command);
@@ -72,6 +77,7 @@ private:
     void MemoryItemChanged(unsigned int index) override;
     void InputChanged() override;
 
+    QString m_binaryBits = QString(64, QLatin1Char('0'));
     int m_wordWidth = 64;
     int m_radix = 10;
     QStringList m_radixDisplays { "0", "0", "0", "0" };
