@@ -236,6 +236,13 @@ FocusScope {
                         id: bitwisePopup
                         objectName: "bitwisePopup"
                         y: parent.height
+                        width: Math.min(page.width, 300)
+                        margins: 4
+                        background: Rectangle {
+                            radius: 8
+                            color: bitwisePopup.palette.window
+                            border.color: bitwisePopup.palette.midlight
+                        }
                         focus: true
                         contentItem: GridLayout {
                             columns: 3
@@ -270,6 +277,13 @@ FocusScope {
                         id: bitShiftPopup
                         objectName: "bitShiftPopup"
                         y: parent.height
+                        width: Math.min(page.width, 320)
+                        margins: 4
+                        background: Rectangle {
+                            radius: 8
+                            color: bitShiftPopup.palette.window
+                            border.color: bitShiftPopup.palette.midlight
+                        }
                         focus: true
                         contentItem: ColumnLayout {
                             Repeater {

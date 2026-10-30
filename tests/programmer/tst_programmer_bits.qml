@@ -402,6 +402,7 @@ Item {
             }
             click("bitShiftButton")
             tryCompare(item("bitShiftPopup"), "opened", true)
+            verifyFits(item("bitShiftPopup").background)
             for (const mode of ["arithmetic", "logical", "circular", "carry"]) verifyFits(item("shiftMode_" + mode))
             grabImage(application.contentItem).save("programmer-shift-menu-" + scheme + "-" + data.tag + ".png")
             click("shiftMode_logical")
@@ -409,6 +410,7 @@ Item {
             compare(item("key_shift_right").Accessible.name, Qt.locale().name.indexOf("zh") === 0 ? "逻辑右移" : "Logical right shift")
             click("bitwiseButton")
             tryCompare(item("bitwisePopup"), "opened", true)
+            verifyFits(item("bitwisePopup").background)
             for (const command of ["and", "or", "not", "nand", "nor", "xor"]) verifyFits(item("key_" + command))
             grabImage(application.contentItem).save("programmer-bitwise-menu-" + scheme + "-" + data.tag + ".png")
             keyClick(Qt.Key_Escape)
