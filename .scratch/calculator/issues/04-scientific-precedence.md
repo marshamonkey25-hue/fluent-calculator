@@ -16,3 +16,13 @@
 - [ ] 沿用科学模式的精度、输入和括号深度检查；对未闭合或不合法的输入按固定参考版本处理，并能恢复继续输入。
 - [ ] 科学模式与标准模式切换后不产生错误的求值策略或过期显示；页面沿用主题、可翻译文案、键盘规则和宽窄窗口布局。
 - [ ] 从真实 QML 操作验证模式切换、运算优先级、嵌套括号、输入边界及错误恢复；输入行为和期望结果可追溯到固定参考版本。
+
+
+## Implementation evidence (awaiting integration validation)
+
+- Implemented the actual Microsoft Scientific manager mode in the existing session; navigation selects matching pages and clears active entry/expression only on a mode change. Standard remains stepwise (`20`); Scientific precedence produces `14`; nested parentheses change the result to `20`.
+- Added `qml/ScientificPage.qml` at the pinned reference's five-column/seven-row positions, preserving extension-function space for tickets 05/06. Reuses palette/focus controls and `qsTr` hooks, supports mouse/keyboard parentheses, a horizontally scrollable full expression, 320×540 and 900×700 layouts, and all visible keys at least 44×44.
+- `tests/qml/tst_scientific_precedence.qml` exercises real production QML/session/core, including mode changes, nested/unfinished/invalid parentheses, implicit multiplication, 25-level and 32-digit caps, exact rational continuation, decimal entry, localized errors/clear recovery, expression dragging and keyboard focus. Sources: pinned `CalculatorManagerTestScientificParenthesis`, `CalculatorManagerTestScientificError`, `CalculatorManagerTestModeChange`, `scicomm.cpp`, `History.h` and `CalculatorManager.h`.
+- TDD red→green: missing Scientific navigation → real mode/14-versus-20; absent mouse parentheses and keyboard result 14 instead of 20 → native parentheses/shortcuts and expression formatting; absent long-expression viewport → working horizontal drag/scrollbar. Core boundary tests passed as regressions, without claiming artificial failing stages.
+- Linux Qt 6.12/GCC 16.2 Debug build `.build-ticket04`, Make `-j2`: all three CTest entries passed (English/light, English/dark, Chinese engine startup/light; 27 QtTest outcomes each), complete native Wayland suite passed 27/27 with no skips, QML lint passed with no warnings, and `git diff --check` passed. Reviewed both-theme narrow/wide screenshots and observed the standalone native Wayland app. Runtime preference/translation completion belongs to ticket 03; extended Scientific operations/angles belong to 05/06. Windows/macOS not verified.
+- Status/checklist intentionally await the required independent merge validation. Parent spec and other tickets were not edited.

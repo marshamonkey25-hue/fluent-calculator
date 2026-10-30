@@ -22,6 +22,7 @@ public:
     QString expression() const { return m_expression; }
     bool error() const { return m_error; }
     Q_INVOKABLE void send(const QString &command);
+    Q_INVOKABLE void selectMode(const QString &mode);
 
 signals:
     void displayChanged();
@@ -51,6 +52,7 @@ private:
     void MemoryItemChanged(unsigned int index) override;
     void InputChanged() override;
 
+    QString m_mode = QStringLiteral("standard");
     QString m_display = QStringLiteral("0");
     QString m_expression;
     bool m_error = false;

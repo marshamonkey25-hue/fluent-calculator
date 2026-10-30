@@ -10,12 +10,14 @@ ApplicationWindow {
     width: 360
     height: 560
     minimumWidth: 320
-    minimumHeight: 460
+    minimumHeight: Math.max(460, currentPage ? currentPage.implicitHeight + 52 : 0)
     title: qsTr("Calculator")
     property int currentMode: 0
+    readonly property Item currentPage: page.item as Item
     CalculationSession { id: calculator }
 
     function loadMode() {
+        calculator.selectMode(ModeRegistry.modes[currentMode].key)
         page.setSource(ModeRegistry.modes[currentMode].source, { session: calculator })
     }
     onCurrentModeChanged: loadMode()
@@ -33,6 +35,7 @@ ApplicationWindow {
                 onClicked: navigation.open()
             }
             Label {
+                objectName: "modeTitle"
                 text: ModeRegistry.modes[window.currentMode].title
                 font.pixelSize: 20
                 font.bold: true
@@ -41,6 +44,7 @@ ApplicationWindow {
         }
         Loader {
             id: page
+            focus: true
             Layout.fillWidth: true
             Layout.fillHeight: true
             Component.onCompleted: window.loadMode()

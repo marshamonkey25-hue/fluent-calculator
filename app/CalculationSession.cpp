@@ -9,8 +9,29 @@ CalculationSession::CalculationSession(QObject *parent) : QObject(parent)
     m_manager->SetStandardMode();
 }
 
+void CalculationSession::selectMode(const QString &mode)
+{
+    if (mode == m_mode)
+        return;
+    if (mode == QStringLiteral("scientific"))
+        m_manager->SetScientificMode();
+    else if (mode == QStringLiteral("standard"))
+        m_manager->SetStandardMode();
+    else
+        return;
+    m_mode = mode;
+}
+
 void CalculationSession::send(const QString &command)
 {
+    static const QHash<QString, Command> parenthesisCommands {
+        {"openParenthesis", Command::CommandOPENP}, {"closeParenthesis", Command::CommandCLOSEP}
+    };
+    const auto parenthesis = parenthesisCommands.constFind(command);
+    if (m_mode == QStringLiteral("scientific") && parenthesis != parenthesisCommands.cend()) {
+        m_manager->SendCommand(parenthesis.value());
+        return;
+    }
     static const QHash<QString, Command> commands {
         {"0", Command::Command0}, {"1", Command::Command1},
         {"2", Command::Command2}, {"3", Command::Command3},
@@ -50,10 +71,15 @@ void CalculationSession::SetExpressionDisplay(
     // command objects so history replay does not need to parse formatted numbers.
     m_tokens = tokens ? *tokens : std::vector<std::pair<std::wstring, int>>{};
     m_expressionCommands = commands ? *commands : std::vector<std::shared_ptr<IExpressionCommand>>{};
-    QStringList parts;
-    for (const auto &token : m_tokens)
-        parts.append(QString::fromStdWString(token.first));
-    m_expression = parts.join(QLatin1Char(' ')).simplified();
+    m_expression.clear();
+    for (const auto &token : m_tokens) {
+        const auto text = QString::fromStdWString(token.first);
+        if (!m_expression.isEmpty() && !m_expression.endsWith(QLatin1Char('('))
+            && !text.startsWith(QLatin1Char(')')))
+            m_expression += QLatin1Char(' ');
+        m_expression += text;
+    }
+    m_expression = m_expression.simplified();
     emit expressionChanged();
 }
 
