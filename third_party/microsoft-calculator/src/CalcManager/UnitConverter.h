@@ -158,6 +158,8 @@ namespace UnitConversionManager
         virtual std::vector<Unit> GetOrderedUnits(const Category& c) = 0;
         virtual std::unordered_map<Unit, ConversionData, UnitHash> LoadOrderedRatios(const Unit& u) = 0;
         virtual bool SupportsCategory(const Category& target) = 0;
+        // Currency retains the pinned fixed-15-decimal output policy.
+        virtual bool IsCurrencyCategory(const Category&) const { return false; }
     };
 
     class IUnitConverterVMCallback
@@ -209,6 +211,8 @@ namespace UnitConversionManager
         void SetViewModelCallback(_In_ const std::shared_ptr<IUnitConverterVMCallback>& newCallback) override;
         void Calculate() override;
         void ResetCategoriesAndRatios() override;
+        // Reload dynamic metadata without clearing session input or unit choices.
+        void RefreshData();
         // IUnitConverter
 
         static std::vector<std::wstring> StringToVector(std::wstring_view w, std::wstring_view delimiter, bool addRemainder = false);

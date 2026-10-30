@@ -647,6 +647,34 @@ vector<tuple<wstring, Unit>> UnitConverter::CalculateSuggested()
     return returnVector;
 }
 
+void UnitConverter::RefreshData()
+{
+    const auto category = m_currentCategory;
+    const auto from = m_fromType;
+    const auto to = m_toType;
+    const auto switched = m_switchedActive;
+    const auto previousUnits = m_categoryToUnits;
+    ResetCategoriesAndRatios();
+    for (auto& [id, units] : m_categoryToUnits)
+    {
+        const auto previous = previousUnits.find(id);
+        if (previous == previousUnits.end()) continue;
+        for (auto& unit : units)
+        {
+            const auto old = find(previous->second.begin(), previous->second.end(), unit);
+            if (old == previous->second.end()) continue;
+            unit.isConversionSource = old->isConversionSource;
+            unit.isConversionTarget = old->isConversionTarget;
+        }
+    }
+    m_currentCategory = category;
+    m_fromType = from;
+    m_toType = to;
+    InitializeSelectedUnits();
+    m_switchedActive = switched;
+    Calculate();
+}
+
 /// <summary>
 /// Resets categories and ratios
 /// </summary>
@@ -798,7 +826,15 @@ void UnitConverter::Calculate()
     }
 
     unordered_map<Unit, ConversionData, UnitHash> conversionTable = m_ratioMap[m_fromType];
-    if (AnyUnitIsEmpty() || (conversionTable[m_toType].ratio == 1.0 && conversionTable[m_toType].offset == 0.0))
+    const auto conversion = conversionTable.find(m_toType);
+    if (conversion == conversionTable.end())
+    {
+        m_returnDisplay.clear();
+        m_returnHasDecimal = false;
+        UpdateViewModel();
+        return;
+    }
+    if (conversion->second.ratio == 1.0 && conversion->second.offset == 0.0)
     {
         m_returnDisplay = m_currentDisplay;
         m_returnHasDecimal = m_currentHasDecimal;
@@ -807,31 +843,46 @@ void UnitConverter::Calculate()
     else
     {
         double currentValue = stod(m_currentDisplay);
-        const double returnValue = Convert(currentValue, conversionTable[m_toType]);
-
-        const unsigned int numPreDecimal = GetNumberDigitsWholeNumberPart(returnValue);
-        if (numPreDecimal > MAXIMUMDIGITSALLOWED || (returnValue != 0 && abs(returnValue) < MINIMUMDECIMALALLOWED))
+        const double returnValue = Convert(currentValue, conversion->second);
+        if (!std::isfinite(returnValue))
         {
-            m_returnDisplay = ToScientificNumber(returnValue);
+            m_returnDisplay.clear();
+            m_returnHasDecimal = false;
+            UpdateViewModel();
+            return;
+        }
+
+        if (m_dataLoader->IsCurrencyCategory(m_currentCategory))
+        {
+            m_returnDisplay = RoundSignificantDigits(returnValue, MAXIMUMDIGITSALLOWED);
+            TrimTrailingZeros(m_returnDisplay);
         }
         else
         {
-            const unsigned int currentNumberSignificantDigits = GetNumberDigits(m_currentDisplay);
-            unsigned int precision;
-            if (abs(returnValue) < OPTIMALDECIMALALLOWED)
+            const unsigned int numPreDecimal = GetNumberDigitsWholeNumberPart(returnValue);
+            if (numPreDecimal > MAXIMUMDIGITSALLOWED || (returnValue != 0 && abs(returnValue) < MINIMUMDECIMALALLOWED))
             {
-                precision = MAXIMUMDIGITSALLOWED;
+                m_returnDisplay = ToScientificNumber(returnValue);
             }
             else
             {
-                // Fewer digits are needed following the decimal if the number is large,
-                // we calculate the number of decimals necessary based on the number of digits in the integer part.
-                auto numberDigits = max(OPTIMALDIGITSALLOWED, min(MAXIMUMDIGITSALLOWED, currentNumberSignificantDigits));
-                precision = numberDigits > numPreDecimal ? numberDigits - numPreDecimal : 0;
-            }
+                const unsigned int currentNumberSignificantDigits = GetNumberDigits(m_currentDisplay);
+                unsigned int precision;
+                if (abs(returnValue) < OPTIMALDECIMALALLOWED)
+                {
+                    precision = MAXIMUMDIGITSALLOWED;
+                }
+                else
+                {
+                    // Fewer digits are needed following the decimal if the number is large,
+                    // we calculate the number of decimals necessary based on the number of digits in the integer part.
+                    auto numberDigits = max(OPTIMALDIGITSALLOWED, min(MAXIMUMDIGITSALLOWED, currentNumberSignificantDigits));
+                    precision = numberDigits > numPreDecimal ? numberDigits - numPreDecimal : 0;
+                }
 
-            m_returnDisplay = RoundSignificantDigits(returnValue, precision);
-            TrimTrailingZeros(m_returnDisplay);
+                m_returnDisplay = RoundSignificantDigits(returnValue, precision);
+                TrimTrailingZeros(m_returnDisplay);
+            }
         }
         m_returnHasDecimal = (m_returnDisplay.find(L'.') != wstring::npos);
     }

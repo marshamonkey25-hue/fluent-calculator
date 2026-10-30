@@ -3,7 +3,7 @@ project(FluentCalculator VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Network)
 qt_standard_project_setup(REQUIRES 6.8)
 include(CTest)
 add_subdirectory(third_party/microsoft-calculator)
@@ -22,6 +22,8 @@ qt_add_qml_module(calculator_ui
         app/FunctionGraph.h app/FunctionGraph.cpp
         app/EngineResources.h app/EngineResources.cpp
         app/DateCalculation.h app/DateCalculation.cpp
+        app/CurrencyRates.h app/CurrencyRates.cpp
+        app/CurrencySource.h app/CurrencySource.cpp
         app/ConversionSession.h app/ConversionSession.cpp
         app/DataConversionDataLoader.h app/DataConversionDataLoader.cpp
         app/LengthDataLoader.h app/LengthDataLoader.cpp
@@ -49,7 +51,7 @@ qt_add_qml_module(calculator_ui
         qml/ConverterUnitSelector.qml
 )
 target_include_directories(calculator_ui PUBLIC app)
-target_link_libraries(calculator_ui PUBLIC Qt6::Quick Qt6::QuickControls2 microsoft_calculator_core microsoft_unit_converter)
+target_link_libraries(calculator_ui PUBLIC Qt6::Quick Qt6::QuickControls2 Qt6::Network microsoft_calculator_core microsoft_unit_converter)
 qt_add_resources(calculator_ui ui_translations
     PREFIX /ui
     BASE resources/ui
@@ -68,7 +70,7 @@ if(BUILD_TESTING)
     find_package(Qt6 6.8 REQUIRED COMPONENTS QuickTest)
     find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
     set(ui_test_launcher "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py")
-    qt_add_executable(calculator_ui_tests tests/quicktest.cpp)
+    qt_add_executable(calculator_ui_tests tests/quicktest.cpp tests/ControlledCurrencySource.h)
     target_link_libraries(calculator_ui_tests PRIVATE calculator_ui calculator_uiplugin Qt6::QuickTest)
     target_compile_definitions(calculator_ui_tests PRIVATE
         QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml"
@@ -96,6 +98,15 @@ if(BUILD_TESTING)
             -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/history-restart.cmake)
     set_tests_properties(calculator-history-restart PROPERTIES TIMEOUT 100)
+    add_test(NAME calculator-currency-restart
+        COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
+            -DTEST_PYTHON=${Python3_EXECUTABLE}
+            -DTEST_LAUNCHER=${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py
+            -DTEST_EXECUTABLE=$<TARGET_FILE:calculator_ui_tests>
+            -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/currency-restart.cmake)
+    set_tests_properties(calculator-currency-restart PROPERTIES TIMEOUT 100)
     add_test(NAME calculator-length-restart
         COMMAND ${ui_test_launcher} ${CMAKE_COMMAND}
             -DTEST_PYTHON=${Python3_EXECUTABLE}
@@ -132,6 +143,18 @@ if(BUILD_TESTING)
             -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/data-restart.cmake)
     set_tests_properties(calculator-data-restart PROPERTIES TIMEOUT 100)
+    foreach(variant light dark zh-CN)
+        add_test(NAME calculator-currency-${variant}
+            COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+                -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/currency)
+        if(variant STREQUAL "zh-CN")
+            set(currency_test_environment "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light")
+        else()
+            set(currency_test_environment "CALCULATOR_TEST_THEME=${variant}")
+        endif()
+        set_tests_properties(calculator-currency-${variant} PROPERTIES
+            ENVIRONMENT "${currency_test_environment}" TIMEOUT 180)
+    endforeach()
     foreach(variant light dark zh-CN)
         add_test(NAME calculator-data-${variant}
             COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>

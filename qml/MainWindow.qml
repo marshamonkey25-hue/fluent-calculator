@@ -49,7 +49,8 @@ ApplicationWindow {
     property SystemPreferences systemPreferences
     AppPreferences { id: appPreferences; systemPreferences: window.systemPreferences }
     CalculationSession { id: calculator; language: appPreferences.effectiveLanguage }
-    ConversionSession { id: conversion; language: appPreferences.effectiveLanguage }
+    property CurrencySource currencySource
+    ConversionSession { id: conversion; language: appPreferences.effectiveLanguage; currencySource: window.currencySource }
 
     function focusMemoryInput() {
         const standardPage = page.item as StandardPage

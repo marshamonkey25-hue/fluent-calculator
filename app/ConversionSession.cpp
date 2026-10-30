@@ -28,6 +28,7 @@ class ConverterDataLoader final : public IConverterDataLoader
         createTemperatureDataLoader(), createPowerDataLoader(), createAngleDataLoader(), createDataConversionDataLoader()
     };
 public:
+    explicit ConverterDataLoader(const std::shared_ptr<CurrencyRates> &currency) { m_loaders.push_back(currency); }
     void LoadData() override {}
     std::vector<Category> GetOrderedCategories() override
     {
@@ -44,6 +45,11 @@ public:
             if (loader->SupportsCategory(category))
                 return loader->GetOrderedUnits(category);
         return {};
+    }
+    bool IsCurrencyCategory(const Category &category) const override
+    {
+        return std::any_of(m_loaders.begin(), m_loaders.end(),
+                           [&category](const auto &loader) { return loader->IsCurrencyCategory(category); });
     }
     bool SupportsCategory(const Category &category) override
     {
@@ -77,8 +83,8 @@ QString grouped(QString value)
 }
 }
 
-QString ConversionSession::value1() const { return grouped(m_value1); }
-QString ConversionSession::value2() const { return grouped(m_value2); }
+QString ConversionSession::value1() const { return m_value1.isEmpty() || (m_category == "currency" && !m_currency->available() && m_activeSide != 1) ? QStringLiteral("—") : grouped(m_value1); }
+QString ConversionSession::value2() const { return m_value2.isEmpty() || (m_category == "currency" && !m_currency->available() && m_activeSide != 2) ? QStringLiteral("—") : grouped(m_value2); }
 
 void ConversionSession::setStatus(const QString &status)
 {
@@ -92,7 +98,29 @@ void ConversionSession::MaxDigitsReached() { setStatus(QStringLiteral("limit"));
 
 ConversionSession::ConversionSession(QObject *parent) : QObject(parent)
 {
-    initializeConverter(std::make_shared<ConverterDataLoader>());
+    m_currency = std::make_shared<CurrencyRates>();
+    initializeConverter(std::make_shared<ConverterDataLoader>(m_currency));
+    connect(m_currency.get(), &CurrencyRates::changed, this, &ConversionSession::displayChanged);
+    connect(m_currency.get(), &CurrencyRates::dataChanged, this, [this] {
+        m_converter->RefreshData();
+        if (m_category == "currency") {
+            const auto selection = m_converter->SetCurrentCategory({3, L"Currency", false});
+            m_units = std::get<0>(selection);
+            m_unit1 = (m_activeSide == 1 ? std::get<1>(selection) : std::get<2>(selection)).id;
+            m_unit2 = (m_activeSide == 1 ? std::get<2>(selection) : std::get<1>(selection)).id;
+            selectUnits();
+            emit unitCatalogChanged();
+            emit unitsChanged();
+        }
+    });
+}
+
+void ConversionSession::setCurrencySource(CurrencySource *source)
+{
+    if (source == m_currencySource) return;
+    m_currencySource = source;
+    m_currency->setSource(source);
+    emit currencySourceChanged();
 }
 
 void ConversionSession::initializeConverter(std::shared_ptr<IConverterDataLoader> loader)
@@ -113,7 +141,7 @@ void ConversionSession::setCategory(const QString &category)
     if (category == m_category)
         return;
     static const QHash<QString, int> categories {
-        {"length", 5}, {"volume", 4}, {"area", 9}, {"weight", 6}, {"energy", 8}, {"speed", 10}, {"time", 11}, {"pressure", 14},
+        {"currency", 3}, {"length", 5}, {"volume", 4}, {"area", 9}, {"weight", 6}, {"energy", 8}, {"speed", 10}, {"time", 11}, {"pressure", 14},
         {"temperature", 7}, {"power", 12}, {"angle", 15}, {"data", 13}
     };
     const auto id = categories.constFind(category);
@@ -148,6 +176,7 @@ void ConversionSession::setLanguage(const QString &language)
 
 QVariantList ConversionSession::units() const
 {
+    if (m_category == "currency") return m_currency->units(m_language);
     QVariantList rows;
     for (const auto &unit : m_units) {
         if (unit.isWhimsical)
@@ -178,16 +207,19 @@ void ConversionSession::setUnit2(int id)
 
 void ConversionSession::selectUnits()
 {
+    if (m_units.empty())
+        return;
     const auto find = [this](int id) {
         return *std::find_if(m_units.begin(), m_units.end(), [id](const Unit &unit) { return unit.id == id; });
     };
+    if (m_category == "currency") m_currency->selectPair(m_unit1, m_unit2);
     m_converter->SetCurrentUnitTypes(find(m_activeSide == 1 ? m_unit1 : m_unit2),
                                      find(m_activeSide == 1 ? m_unit2 : m_unit1));
 }
 
 void ConversionSession::activate(int side)
 {
-    if ((side != 1 && side != 2) || side == m_activeSide)
+    if ((side != 1 && side != 2) || side == m_activeSide || (m_category == "currency" && (!m_currency->available() || (side == 1 ? m_value1 : m_value2).isEmpty())))
         return;
     m_activeSide = side;
     m_converter->SwitchActive((side == 1 ? m_value1 : m_value2).toStdWString());
@@ -260,5 +292,11 @@ void ConversionSession::DisplayCallback(const std::wstring &from, const std::wst
 {
     m_value1 = QString::fromStdWString(m_activeSide == 1 ? from : to);
     m_value2 = QString::fromStdWString(m_activeSide == 1 ? to : from);
+    if (m_category == "currency" && m_currency->available()) {
+        if ((m_activeSide == 1 ? m_value2 : m_value1).isEmpty())
+            setStatus(QStringLiteral("unavailable"));
+        else if (m_status == "unavailable")
+            setStatus({});
+    }
     emit displayChanged();
 }

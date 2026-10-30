@@ -1,4 +1,5 @@
 #include "SystemPreferences.h"
+#include "ControlledCurrencySource.h"
 #include <QtQuickTest/quicktest.h>
 #include <QDir>
 #include <QGuiApplication>
@@ -52,6 +53,7 @@ public slots:
     void qmlEngineAvailable(QQmlEngine *engine)
     {
         auto system = new ControlledSystemPreferences(engine);
+        engine->rootContext()->setContextProperty("testCurrencySource", new ControlledCurrencySource(engine));
         if (qEnvironmentVariableIsEmpty("CALCULATOR_TEST_RESTART_STAGE"))
             QSettings().clear();
         if (qEnvironmentVariable("CALCULATOR_TEST_RESTART_STAGE") == "invalid") {
