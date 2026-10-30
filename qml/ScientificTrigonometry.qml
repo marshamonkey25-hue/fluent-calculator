@@ -95,6 +95,12 @@ ColumnLayout {
         width: Math.min(panel.flyoutWidth, 360)
         modal: true
         dim: false
+        margins: 4
+        background: Rectangle {
+            radius: 8
+            color: trigonometryPopup.palette.window
+            border.color: trigonometryPopup.palette.midlight
+        }
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         onOpened: {
@@ -110,10 +116,12 @@ ColumnLayout {
         onClosed: trigonometryButton.forceActiveFocus(Qt.PopupFocusReason)
         contentItem: GridLayout {
             columns: 4
-            ToolButton {
+            CalculatorButton {
                 id: inverseButton
                 objectName: "trigonometryInverse"
                 text: "2nd"
+                font.pixelSize: 14
+                accent: checked
                 Accessible.name: qsTr("Inverse function")
                 checkable: true
                 Layout.row: 0
@@ -121,10 +129,12 @@ ColumnLayout {
                 Layout.minimumWidth: 44
                 Layout.minimumHeight: 44
             }
-            ToolButton {
+            CalculatorButton {
                 id: hyperbolicButton
                 objectName: "trigonometryHyperbolic"
                 text: "hyp"
+                font.pixelSize: 14
+                accent: checked
                 Accessible.name: qsTr("Hyperbolic function")
                 checkable: true
                 Layout.row: 1

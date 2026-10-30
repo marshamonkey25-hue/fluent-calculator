@@ -174,6 +174,12 @@ FocusScope {
                                     width: Math.min(page.width, 240)
                                     height: 112
                                     modal: true
+                                    margins: 4
+                                    background: Rectangle {
+                                        radius: 8
+                                        color: functionPopup.palette.window
+                                        border.color: functionPopup.palette.midlight
+                                    }
                                     focus: true
                                     contentItem: GridLayout {
                                         columns: 3

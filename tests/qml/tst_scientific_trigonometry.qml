@@ -477,6 +477,56 @@ Item {
             compare(result(), "0.5", "Both Scientific panels continue using the same calculation session")
         }
 
+        function contrastRatio(a, b) {
+            function channel(value) { return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4) }
+            function luminance(color) { return 0.2126 * channel(color.r) + 0.7152 * channel(color.g) + 0.0722 * channel(color.b) }
+            const first = luminance(a), second = luminance(b)
+            return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
+        }
+
+        function test_flyout_toggles_have_readable_contrast_in_all_states() {
+            mouseClick(control("trigonometryButton"))
+            const popup = control("trigonometryPopup")
+            tryCompare(popup, "opened", true)
+            for (let variant = 0; variant < 4; ++variant) {
+                const inverse = control("trigonometryInverse")
+                const hyperbolic = control("trigonometryHyperbolic")
+                if (inverse.checked !== (variant % 2 === 1)) mouseClick(inverse)
+                if (hyperbolic.checked !== (variant >= 2)) mouseClick(hyperbolic)
+                waitForRendering(application.contentItem)
+                const image = grabImage(application.contentItem)
+                for (const toggle of [inverse, hyperbolic]) {
+                    const point = toggle.mapToItem(application.contentItem, 6, 6)
+                    const background = image.pixel(Math.round(point.x), Math.round(point.y))
+                    verify(contrastRatio(toggle.contentItem.color, background) >= 4.5,
+                           toggle.text + " text contrasts with its rendered background, state " + variant)
+                }
+            }
+            keyClick(Qt.Key_Escape)
+            tryCompare(popup, "visible", false)
+            // Selecting a function restores the normal flyout state for the next test.
+            mouseClick(control("trigonometryButton"))
+            tryCompare(popup, "opened", true)
+            mouseClick(control("trig_asinh"))
+            tryCompare(popup, "visible", false)
+        }
+
+        function test_existing_function_flyout_stays_inside_the_narrow_combined_header() {
+            application.width = 320
+            application.height = 632
+            verify(waitForPolish(application))
+            mouseClick(control("key_function"))
+            const popup = control("functionPopup")
+            tryCompare(popup, "opened", true)
+            for (const command of ["abs", "floor", "ceil", "rand", "dms", "degrees"])
+                verifyInsideWindow(findChild(popup.contentItem, "key_function_" + command))
+            mouseClick(findChild(popup.contentItem, "key_function_degrees"))
+            tryCompare(popup, "visible", false)
+            compare(result(), "0")
+            application.width = 360
+            application.height = 632
+        }
+
         function cleanupTestCase() { application.close() }
     }
 }
