@@ -1,6 +1,6 @@
 # Fluent Calculator
 
-A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–04 and 07**: the Standard arithmetic keypad, expression/result/error display, entry correction, reference error recovery, copying results, keyboard input, persistent theme/language settings, Scientific precedence/parentheses, and Programmer integer radix/word-width operations with mode navigation. Extended Scientific functions, history, memory, and other modes are separate implementation tickets.
+A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–04, 06 and 07**: the Standard arithmetic keypad, expression/result/error display, entry correction, reference error recovery, copying results, keyboard input, persistent theme/language settings, Scientific precedence/parentheses and trigonometry, and Programmer integer radix/word-width operations with mode navigation. Powers/logarithms and other extended Scientific functions, history, memory, and other modes are separate implementation tickets.
 
 The content follows the pinned Microsoft Standard keypad layout with Fluent controls and native system window decorations. Navigation is registered centrally in `qml/ModeRegistry.qml`. `MainWindow` owns one `CalculationSession`, which dispatches string command names to `CalculatorManager`, `CCalcEngine` and Ratpack. Arithmetic displays and expressions remain strings across C++/QML, including integers above JavaScript's safe integer range.
 
@@ -140,3 +140,23 @@ The keypad retains the reference five-column arrangement with A–F at the left.
 Ticket 07 is merged and resolved with tickets 01–04 preserved. Programmer now uses the shared runtime Chinese translation catalog and disables keypad, radix and width shortcuts while Settings is visible. Real-QML regressions reproduced both integration issues before their fixes. Mode-switch tests also distinguish Programmer integer division from Scientific decimal division, and ordinary restart restores Programmer with fresh input and DEC/QWORD defaults while keeping theme/language preferences.
 
 The `.build-integration` Debug build, QML lint and all four CTest entries pass on Linux/Qt 6.12: **187 passed, 0 failed, 0 skipped** per main configuration, plus seven independent restart stages. The expanded combined UI suite uses a 180-second limit after the former 60-second limit timed out; final configurations completed in 139–148 seconds. Selected native Wayland Programmer checks pass **14/14**, including exact 64-bit conversions, signed boundaries, translation and Settings shortcut isolation. Light/dark narrow/default/wide captures were reviewed. The existing Standard Copy shortcut warning remains, with clipboard tests passing; Windows/macOS remain unverified. See the [ticket 07 tracker](.scratch/calculator/issues/07-programmer-radix-word-width.md) for commits and evidence. Final application-wide review remains pending.
+
+
+## Scientific trigonometry and angle units — ticket 06
+
+Open **Scientific**, then **Trigonometry**. The flyout retains the pinned Microsoft four-column/two-row arrangement: **2nd** and **hyp** at the left, with **sin/cos/tan** above **sec/csc/cot**. The two toggles select ordinary, inverse, hyperbolic, or inverse hyperbolic functions, for 24 actual core operations. Choosing a function resets both toggles and closes the flyout; dismissing it preserves the toggle selection. Labels and accessible names reflect the selected function. Tab follows the visual row order, Space activates the focused control, Escape dismisses the flyout while preserving the entry, and focus returns to its opener.
+
+Scientific starts in **DEG**. Click the unit button to cycle **DEG → RAD → GRAD → DEG**, or use **F3/F4/F5** to select degrees/radians/gradians directly. Unit changes preserve the current entry; they affect circular and inverse circular functions, while hyperbolic functions use the core's unit-independent definitions. Clear and switching away from/returning to Scientific retain the chosen unit on the existing Scientific engine. An ordinary restart starts in degrees.
+
+| Function family | S / O / T / U / I / J |
+| --- | --- |
+| Circular | sin / cos / tan / sec / csc / cot |
+| Inverse circular | Shift plus the corresponding key |
+| Hyperbolic | Ctrl plus the corresponding key |
+| Inverse hyperbolic | Ctrl+Shift plus the corresponding key |
+
+The commands are explicitly allowlisted at the Qt session boundary and dispatched to the pinned `CalculatorManager`, including its composite inverse commands. No trigonometric calculation or arithmetic-value conversion occurs in QML. Core domain, division and range errors use the existing localized display and recovery path; angle/function controls and their shortcuts are disabled during errors. Digits start fresh input, and Clear/Escape recover normally. Hidden Scientific shortcuts remain inactive in Settings. All new captions and accessibility names use the shared English/Simplified Chinese catalog and the application palette.
+
+The complete Scientific keypad requests a **320×632** minimum window after adding the two function rows. A scrollable body and automatic focus reveal keep the keys reachable when a compositor allocates a shorter window. `tests/qml/tst_scientific_short_window.qml` exercises the real UI at 320×460, including reaching lower keys, the angle control, flyout dismissal and continued calculation. Existing full-keypad size checks now use 632 px.
+
+The production-QML coverage in `tests/qml/tst_scientific_trigonometry.qml` exercises all 24 flyout commands and keyboard equivalents, known values in all three units, hyperbolic independence from units, toggle/dismissal semantics, angle retention, 12 domain/singularity/range scenarios and recovery, runtime translation, Settings isolation, focus, and all four function-label states in narrow/wide windows. Numerical expectations are independently known trigonometric values or pinned upstream public behavior; approximate transcendental comparisons use a stated tolerance in the test. Production values stay strings. Screenshots use `trigonometry-{light,dark}-{narrow,wide}-{0,1,2,3}.png` in the private test build directory.

@@ -43,6 +43,23 @@ void CalculationSession::selectMode(const QString &mode)
     emit modeChanged();
 }
 
+void CalculationSession::selectAngleUnit(const QString &unit)
+{
+    if (m_mode != QStringLiteral("scientific") || m_error)
+        return;
+    static const QHash<QString, Command> units {
+        {"DEG", Command::CommandDEG}, {"RAD", Command::CommandRAD}, {"GRAD", Command::CommandGRAD}
+    };
+    const auto command = units.constFind(unit);
+    if (command == units.cend() || unit == m_angleUnit)
+        return;
+    // The Scientific engine retains its angle setting across Clear and mode
+    // changes. Keep the visible unit with that engine, rather than with a page.
+    m_manager->SendCommand(command.value());
+    m_angleUnit = unit;
+    emit angleUnitChanged();
+}
+
 void CalculationSession::selectWordWidth(int width)
 {
     if (m_mode != "programmer" || m_error)
@@ -97,6 +114,22 @@ void CalculationSession::send(const QString &command)
     const auto parenthesis = parenthesisCommands.constFind(command);
     if (m_mode == QStringLiteral("scientific") && parenthesis != parenthesisCommands.cend()) {
         m_manager->SendCommand(parenthesis.value());
+        return;
+    }
+    static const QHash<QString, Command> trigonometryCommands {
+        {"sin", Command::CommandSIN}, {"cos", Command::CommandCOS}, {"tan", Command::CommandTAN},
+        {"sec", Command::CommandSEC}, {"csc", Command::CommandCSC}, {"cot", Command::CommandCOT},
+        {"asin", Command::CommandASIN}, {"acos", Command::CommandACOS}, {"atan", Command::CommandATAN},
+        {"asec", Command::CommandASEC}, {"acsc", Command::CommandACSC}, {"acot", Command::CommandACOT},
+        {"sinh", Command::CommandSINH}, {"cosh", Command::CommandCOSH}, {"tanh", Command::CommandTANH},
+        {"sech", Command::CommandSECH}, {"csch", Command::CommandCSCH}, {"coth", Command::CommandCOTH},
+        {"asinh", Command::CommandASINH}, {"acosh", Command::CommandACOSH}, {"atanh", Command::CommandATANH},
+        {"asech", Command::CommandASECH}, {"acsch", Command::CommandACSCH}, {"acoth", Command::CommandACOTH}
+    };
+    const auto trigonometry = trigonometryCommands.constFind(command);
+    if (trigonometry != trigonometryCommands.cend()) {
+        if (m_mode == QStringLiteral("scientific") && !m_error)
+            m_manager->SendCommand(trigonometry.value());
         return;
     }
     static const QHash<QString, Command> commands {

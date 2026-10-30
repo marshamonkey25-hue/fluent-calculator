@@ -17,6 +17,7 @@ class CalculationSession : public QObject, private ICalcDisplay
     Q_PROPERTY(bool error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QString mode READ mode NOTIFY modeChanged)
+    Q_PROPERTY(QString angleUnit READ angleUnit NOTIFY angleUnitChanged)
     Q_PROPERTY(int radix READ radix NOTIFY radixChanged)
     Q_PROPERTY(int wordWidth READ wordWidth NOTIFY wordWidthChanged)
     Q_PROPERTY(QStringList radixDisplays READ radixDisplays NOTIFY radixDisplaysChanged)
@@ -29,6 +30,8 @@ public:
     QString language() const { return m_language; }
     void setLanguage(const QString &language);
     QString mode() const { return m_mode; }
+    QString angleUnit() const { return m_angleUnit; }
+    Q_INVOKABLE void selectAngleUnit(const QString &unit);
     int radix() const { return m_radix; }
     QStringList radixDisplays() const { return m_radixDisplays; }
     int wordWidth() const { return m_wordWidth; }
@@ -41,6 +44,7 @@ public:
 signals:
     void languageChanged();
     void modeChanged();
+    void angleUnitChanged();
     void radixChanged();
     void wordWidthChanged();
     void radixDisplaysChanged();
@@ -72,6 +76,7 @@ private:
     void MemoryItemChanged(unsigned int index) override;
     void InputChanged() override;
 
+    QString m_angleUnit = QStringLiteral("DEG");
     int m_wordWidth = 64;
     int m_radix = 10;
     QStringList m_radixDisplays { "0", "0", "0", "0" };
