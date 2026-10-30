@@ -4,18 +4,18 @@
 
 **Blocked by:** 01: 运行真实核心驱动的标准计算器。
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Spec:** Windows 11 风格跨平台计算器。
 
 **User stories:** 27, 28, 30。
 
-- [ ] 导航可进入真实程序员模式，默认十进制和 64 位，支持二、八、十、十六进制及 64/32/16/8 位选择。
-- [ ] 进制转换、整数基础运算和不同进制的显示使用原版核心行为；非当前进制的数字不能通过按钮或键盘绕过输入限制。
-- [ ] 位宽变化、符号解释、边界整数和溢出处理遵循固定源码，不将显示值强制转为会损失 64 位整数精度的 JavaScript 数值。
-- [ ] 模式、进制和位宽的选中状态清晰可见，切换后显示与可操作状态立即一致；程序员模式不引入计算历史面板。
-- [ ] 页面沿用应用主题、可翻译文案、参考键盘操作和窗口适配规则。
-- [ ] 通过 QML 操作验证各进制往返、所有位宽、最高位与符号边界、非法数字、模式切换，以及足以发现整数桥接精度损失的用例。
+- [x] 导航可进入真实程序员模式，默认十进制和 64 位，支持二、八、十、十六进制及 64/32/16/8 位选择。
+- [x] 进制转换、整数基础运算和不同进制的显示使用原版核心行为；非当前进制的数字不能通过按钮或键盘绕过输入限制。
+- [x] 位宽变化、符号解释、边界整数和溢出处理遵循固定源码，不将显示值强制转为会损失 64 位整数精度的 JavaScript 数值。
+- [x] 模式、进制和位宽的选中状态清晰可见，切换后显示与可操作状态立即一致；程序员模式不引入计算历史面板。
+- [x] 页面沿用应用主题、可翻译文案、参考键盘操作和窗口适配规则。
+- [x] 通过 QML 操作验证各进制往返、所有位宽、最高位与符号边界、非法数字、模式切换，以及足以发现整数桥接精度损失的用例。
 
 ## Implementation evidence (pending integration review)
 
@@ -28,3 +28,14 @@ Implemented in the ticket 07 worktree; Status deliberately remains `ready-for-ag
 - Verification uses `.build-ticket07`, Qt 6.12/GCC 16, `-j2`, offscreen/software rendering and the existing per-process temporary settings/data roots. All three CTest configurations (light, dark, Chinese engine) and QML lint pass. Screenshots were inspected in light/dark at 320×460, 360×560 and 900×700; short windows scroll and reveal keyboard focus. `README.md` documents use and shortcuts.
 - The standalone executable mapped a native Wayland Calculator window (`xwayland=false`). Full native Wayland automation could not obtain compositor activation; offscreen tests are the behavioral evidence. Standalone launch cleanup used SIGTERM; ordinary window close is covered by the QML suites. Windows/macOS remain untested. Bitwise/bit-editing functionality remains ticket 08.
 - Read full spec/GLOSSARY/ADR 0001, external handoff/porting notes, TDD and companion testing/mocking docs, UI/UX and find-docs skills. Context7 resolved Qt and supplied current Shortcut/Button/ScrollView API references; no fallback was needed. Layout and keyboard mappings were checked against pinned upstream Programmer XAML, Resources.resw and manager/core sources.
+
+
+## Merge acceptance and completion evidence
+
+- Merged source commit `2c195f5b83068d44e02faddc31ef2381617dfcff` into the clean `integration/calculator` checkout with `git merge --no-ff`; merge commit `240ade2a7a146d2e1df52060786b2a85552849de`. Conflict resolution preserves Standard operations/recovery/Copy, Scientific precedence/parentheses, theme/language settings, recent-mode navigation and all CMake/test registrations. The parent specification and vendored arithmetic algorithms are unchanged.
+- Integration fix commit `5e157f8` supplies Programmer Chinese translations through the existing catalog, keeps all three groups of hidden Programmer shortcuts inactive in Settings, and uses controlled system preferences in Programmer tests. Real-QML regressions first failed with English `Programmer` instead of `程序员`, result `1` instead of preserved `B`, changed radix selection and changed word width; all pass after the fixes. Runtime language changes retain radix/width and pending arithmetic, translate existing errors, and restore the selected system language afterward.
+- All six ticket criteria reviewed against the shared production session, Programmer page, pinned manager/core and QML tests. The combined suite checks all radices/widths, exact `9007199254740993` round trips, signed highest bits and wraparound, narrowing/sign extension, legal input and disabled buttons/shortcuts, integer arithmetic/editing/parentheses/modulo, mode defaults/reselection, no Programmer history panel, translations, focus and scrolling at 320×460/360×560/900×700. An added cross-mode regression verifies integer `7 / 2 = 3` versus Scientific `3.5`, Scientific parentheses, and fresh Programmer defaults. Two new independent process stages restore Programmer as recent mode with retained dark/Chinese preferences, fresh entry/expression, DEC/QWORD defaults and real integer arithmetic.
+- Linux Qt 6.12 / GCC 16.2 Debug build: `cmake -S . -B .build-integration -DCMAKE_BUILD_TYPE=Debug` and `cmake --build .build-integration -j2` passed. Final `ctest --test-dir .build-integration --output-on-failure -j2` passed **4/4** entries: **187 passed, 0 failed, 0 skipped** per English/light, English/dark and Chinese/light suite; all seven independent restart processes passed 3/3 outcomes. Total CTest time 285.18 seconds. The first combined run exceeded the earlier 60-second test limit without assertion failures; the expanded UI suite now has a 180-second limit, and final runs took 139–148 seconds each.
+- Native Wayland Programmer checks passed **14/14**, with no failures/skips: exact conversion across all radices, signed boundaries at all widths, runtime translation, and Settings isolation for keypad/radix/width shortcuts. QML lint is warning-free; `git diff --check` passed. Reviewed integration light/dark narrow/default/wide captures, including Chinese startup, radix values, disabled decimal input and visible keyboard focus. Targeted layout runs each passed 5/5 outcomes. All tests retain isolated application data/settings roots.
+- Evidence in `.build-integration`: `merge07-configure.log`, `merge07-build.log`, `merge07-red.log`, `merge07-green.log`, `merge07-ctest.log` (initial timeout), `merge07-final-ctest.log`, `Testing/Temporary/LastTest.log`, `merge07-qmllint.log`, `merge07-wayland.log`, and `merge07-layout-{light,dark}.log`; screenshots use `programmer-{light,dark}-{narrow,default,wide}-{radices,keypad}.png`.
+- Merger acceptance review found no ticket 07 blockers. The existing Standard Copy shortcut warning remains; its real clipboard tests pass. Windows/macOS remain unverified. Bitwise operations/bit editing remain ticket 08, and final application-wide independent review remains pending. No remote push, PR, deployment or other ticket/spec edits were made.
