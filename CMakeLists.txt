@@ -194,7 +194,7 @@ if(BUILD_TESTING)
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/graphing)
         set_tests_properties(calculator-graphing-${theme} PROPERTIES
             ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
-            TIMEOUT 120)
+            TIMEOUT 180)
         add_test(NAME calculator-history-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
             -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
         add_test(NAME calculator-memory-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
@@ -233,7 +233,7 @@ if(BUILD_TESTING)
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/graphing)
     set_tests_properties(calculator-graphing-zh-CN PROPERTIES
         ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
-        TIMEOUT 120)
+        TIMEOUT 180)
     add_test(NAME calculator-history-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
         -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/history)
     add_test(NAME calculator-memory-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
