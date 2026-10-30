@@ -4,23 +4,23 @@
 
 **Blocked by:** 11: 计算两个日期的差值。
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Spec:** Windows 11 风格跨平台计算器。
 
 **User stories:** 33, 34。
 
-- [ ] 日期模式可切换到年月日增减功能，选择起始日期、方向和各项数量后计算真实目标日期。
-- [ ] 年、月、日的应用顺序、月底调整、闰日和跨年规则遵循固定参考版本，不能用固定天数替代所有月份或年份。
-- [ ] 零增减、多个单位同时变化和减少日期均有明确结果，超出支持范围的请求不会产生错误日期或崩溃。
-- [ ] 在日期差与日期增减功能之间切换时，控件及结果与当前功能一致，能够继续正常输入。
-- [ ] 新增控件和结果沿用主题、翻译、日期显示与键盘规则，在合理窗口尺寸下保持可用。
-- [ ] 通过界面操作验证月底、闰年、跨年、混合年月日、零值、减少及越界恢复，预期日期来自参考行为或独立日历事实。
+- [x] 日期模式可切换到年月日增减功能，选择起始日期、方向和各项数量后计算真实目标日期。
+- [x] 年、月、日的应用顺序、月底调整、闰日和跨年规则遵循固定参考版本，不能用固定天数替代所有月份或年份。
+- [x] 零增减、多个单位同时变化和减少日期均有明确结果，超出支持范围的请求不会产生错误日期或崩溃。
+- [x] 在日期差与日期增减功能之间切换时，控件及结果与当前功能一致，能够继续正常输入。
+- [x] 新增控件和结果沿用主题、翻译、日期显示与键盘规则，在合理窗口尺寸下保持可用。
+- [x] 通过界面操作验证月底、闰年、跨年、混合年月日、零值、减少及越界恢复，预期日期来自参考行为或独立日历事实。
 
 
 ## Ticket 12 implementation evidence
 
-Status remains ready-for-agent for independent merge validation. Only ticket 12 is implemented by this change; the parent spec and other tickets are unchanged.
+Implementation was handed off ready-for-agent; independent merge acceptance and closure evidence follow below. Only ticket 12 is implemented by this change; the parent spec and other tickets are unchanged.
 
 - `qml/DatePage.qml` extends the existing date page with the pinned function selector, a separate From calendar for date adjustments, Add/Subtract radio controls, Years/Months/Days dropdowns with the reference 0–999 range, and a live resulting-date label. Results use locale-aware long-date formatting, including weekdays for English and Simplified Chinese; picker date formatting stays unchanged. The existing difference inputs and adjustment inputs remain independent when switching functions. Navigation, the date-picker keyboard behavior, locale formatting and semantic palettes are reused. Selector labels translate without replacing the selection model, preserving the selected function across runtime language changes.
 - `app/DateCalculation.*` retains Gregorian calendar dates as ISO strings at the QML boundary. Addition applies years → months → days; subtraction applies days → months → years, clipping absent dates to the destination month end at each calendar step. This follows pinned `Calculator.ViewModels/Common/DateCalculator.cs` AddDuration/SubtractDuration, `DateCalculatorViewModel.cs`, `Calculator/Views/DateCalculator.xaml`, and `Calculator.Tests/DateCalculatorTests.cs` at revision `79e1ac53bba690cdf930e5dcd6ed9dbc4cbfb128`. The adapter's source attribution and existing MIT notices remain intact.
@@ -59,4 +59,22 @@ Final implementation validation on Linux x86_64 / Qt 6.12:
 - Reviewed the final offscreen long-date result in English/dark and Chinese/light, including enlarged text, plus both popup palettes and visible dropdown arrows. Automatic narrow/wide/enlarged-text layout checks pass. Qt locale punctuation and weekday order are reported as Qt rendering of the pinned long-date intent, not Windows locale-data or retail-pixel identity.
 - The checkout started exactly at integration tip `2cbc82c3e9bc0139063f7ca8c78b2c333662071c`. Repeated pre-report `git merge integration/calculator` checks reported Already up to date; integration ancestry is preserved. `git diff --check` passes. The parent spec, other tickets, global configuration and existing modules outside the necessary date/translation seams are unchanged.
 
-No ticket 12 implementation blocker remains. Independent review/merge validation still owns checklist closure and the status change. Existing offscreen size-hint and Copy-shortcut warnings remain, with their behavior checks passing. Windows/macOS and native platform rendering remain unverified under the user's isolated-testing constraint. No remote push, PR, deployment, active-desktop window or host IME operation was performed.
+No ticket 12 implementation blocker remains. Independent merge acceptance and closure are recorded below. Existing offscreen size-hint and Copy-shortcut warnings remain, with their behavior checks passing. Windows/macOS and native platform rendering remain unverified under the user's isolated-testing constraint. No remote push, PR, deployment, active-desktop window or host IME operation was performed.
+
+## Integration completion and acceptance
+
+Merged `7a318ee93d6efbfe54bdad25d0625ab0f3098e05` into the clean root `integration/calculator` checkout using `git merge --no-ff`, producing `830dd3b9c6fba4fe83e9f6164c61e83da6e883ed`. The previous integration tip `2cbc82c3e9bc0139063f7ca8c78b2c333662071c` and the ticket commit both remain ancestors. There were no conflicts or integration regressions requiring source fixes. Navigation, CMake registration, existing modes and the isolated launcher were unchanged; all 248 pre-merge Chinese translation entries were independently verified unchanged.
+
+Independent merger review verified all six acceptance criteria against the production controller/page, pinned reference and real-QML cases. Addition uses years → months → days; subtraction uses days → months → years, with month-end clipping and bounds of 1601-01-01 through 9999-12-31. The UI provides genuine calendar selection, both directions, 0–999 offsets, independent difference/adjustment inputs, localized long-date results and recoverable range errors. The tests cover leap days and centuries, month/year boundaries, mixed and zero offsets, subtraction, every range boundary, function switching, keyboard limits/tab order, live English/Chinese translation, both themes and narrow/wide/enlarged-text layouts. Independent Python checks confirmed the date/weekday consistency of all 27 bilingual expected-date fixture pairs.
+
+Validation on the merged Linux x86_64 / Qt 6.12 Debug source:
+
+- `cmake -S . -B .build-integration -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON` and `cmake --build .build-integration -j2`: passed, building the production application and real-QML test executable. Logs: `.build-integration/merge-12-configure.log`, `merge-12-build.log`.
+- `cmake --build .build-integration --target calculator_ui_qmllint -j2`: passed without QML lint diagnostics; `.build-integration/merge-12-qmllint.log`.
+- `ctest --test-dir .build-integration --output-on-failure -j2 -R '^calculator-(date-|ui-|preferences-restart$|test-isolation$)'`: **8/8 passed**, **756.83 seconds**, exit 0. Each English/light, English/dark and Chinese/light configuration passed **298 application outcomes** and **71 date outcomes** (43 adjustment and 28 existing difference), with zero failures/skips. All seven preference restart stages passed (3 outcomes each), and the isolation entry passed. Summary: `.build-integration/merge-12-ctest.log`; frozen details: `.build-integration/merge-12-LastTest.log`. This is the affected/shared validation selection, not a rerun of all 26 registered entries.
+- From `.build-integration`, `TZ=America/New_York python3 ../tests/run-ui-isolated.py ./calculator_ui_tests -input ../tests/date DateAddSubtract::test_reference_calendar_cases:dst-forward-add DateAddSubtract::test_reference_calendar_cases:dst-backward-subtract`: **4 passed / 0 failed / 0 skipped**, including setup/cleanup. Both DST transitions preserve civil-day adjustments; `.build-integration/merge-12-dst.log`.
+- Reviewed integration-generated English/dark and Chinese/light/dark page captures, enlarged-text and narrow layouts, and both dropdown palettes. Values, long-date weekdays, focus outlines and popup text remain readable. Frozen captures are in `.build-integration/merge-12-screenshots/`.
+- All Qt checks used the shared offscreen/software/compose/generic launcher with private settings/cache/data/runtime roots and a fresh private Linux D-Bus. Actual Qt executable environments confirmed removed desktop/IME selectors; `.build-integration/merge-12-active-test-isolation.log`. No active-desktop window, native activation or host IME access was used.
+- Merge ancestry, ticket-scoped `git diff --check`, unchanged parent spec and empty index were checked. A broader baseline whitespace scan reported pre-existing whitespace in the pinned third-party NOTICE and arithmetic sources; those unrelated files were preserved. Closure edits affect only this ticket. No push, PR or deployment occurred.
+
+Independent merge review found no ticket 12 blocker. Windows/macOS and native rendering remain unverified; known offscreen size-hint and existing Copy-shortcut warnings do not fail behavior checks. Application-wide final review remains part of the parent workflow. Ticket 12 is resolved on the evidence above.
