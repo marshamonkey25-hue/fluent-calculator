@@ -45,6 +45,41 @@ Item {
             }
             commands(["clear"])
         }
+        function test_standard_history_reuse_keeps_scientific_angle_on_return() {
+            navigate("mode_scientific")
+            const angle = findChild(application.contentItem, "angleUnitButton")
+            mouseClick(angle)
+            compare(angle.text, "RAD")
+            navigate("mode_standard")
+            commands(["4", "2", "equals"])
+            const drawer = openHistory()
+            mouseClick(findChild(drawer.contentItem, "historyItem_0"))
+            tryCompare(drawer, "visible", false)
+            navigate("mode_scientific")
+            const returnedAngle = findChild(application.contentItem, "angleUnitButton")
+            compare(returnedAngle.text, "RAD")
+            // 90 radians has sine about 0.894; interpreting this as degrees gives 1.
+            for (const key of "90S") keyClick(key)
+            const result = Number(findChild(application.contentItem, "resultDisplay").text)
+            verify(Math.abs(result - 0.8939966636005579) < 1e-14, "Scientific still evaluates in radians: " + result)
+            keyClick(Qt.Key_Escape)
+            mouseClick(returnedAngle)
+            mouseClick(returnedAngle)
+            compare(returnedAngle.text, "DEG")
+        }
+        function test_reuse_preserves_selected_scientific_notation_for_continued_calculation() {
+            navigate("mode_scientific")
+            commands(["4", "2", "equals", "scientificNotation"])
+            compare(findChild(application.contentItem, "resultDisplay").text, "4.2e+1")
+            const drawer = openHistory()
+            mouseClick(findChild(drawer.contentItem, "historyItem_0"))
+            tryCompare(drawer, "visible", false)
+            verify(findChild(application.contentItem, "key_scientificNotation").checked)
+            // The reference restores the saved result, then keeps F-E for new operations.
+            compare(findChild(application.contentItem, "resultDisplay").text, "42")
+            commands(["multiply", "2", "equals"])
+            compare(findChild(application.contentItem, "resultDisplay").text, "8.4e+1")
+        }
         function test_reuse_scientific_record_restores_expression_and_continues_calculation() {
             navigate("mode_scientific")
             commands(["2", "add", "3", "multiply", "4", "equals"])
@@ -201,7 +236,7 @@ Item {
             const clear = findChild(drawer.contentItem, "clearHistoryButton")
             verify(row.height < findChild(drawer.contentItem, "historyList").height)
             verify(clear.mapToItem(drawer.contentItem, 0, clear.height).y <= drawer.height)
-            grabImage(application.contentItem).save("history-narrow-" + Application.styleHints.colorScheme + ".png")
+            grabImage(application.contentItem).save("history-narrow-" + (application.darkTheme ? "dark" : "light") + ".png")
             application.width = 900
             tryCompare(drawer, "visible", false)
             const sidebar = findChild(application.contentItem, "historySidebar")
@@ -214,7 +249,7 @@ Item {
             record.forceActiveFocus(Qt.TabFocusReason)
             keyClick(Qt.Key_Space)
             compare(findChild(application.contentItem, "resultDisplay").text, expected)
-            grabImage(application.contentItem).save("history-wide-" + Application.styleHints.colorScheme + ".png")
+            grabImage(application.contentItem).save("history-wide-" + (application.darkTheme ? "dark" : "light") + ".png")
             navigate("settingsButton")
             verify(!sidebar.visible)
             mouseClick(findChild(application.contentItem, "language_system"))

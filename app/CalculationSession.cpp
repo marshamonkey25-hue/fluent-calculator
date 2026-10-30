@@ -29,9 +29,11 @@ void CalculationSession::selectMode(const QString &mode)
         return;
     if (m_mode == "scientific")
         setScientificNotation(false);
-    if (mode == QStringLiteral("scientific"))
+    if (mode == QStringLiteral("scientific")) {
         m_manager->SetScientificMode();
-    else if (mode == QStringLiteral("standard"))
+        // History replay resets cached engines; restore the retained angle mode.
+        m_manager->SendCommand(m_manager->GetCurrentDegreeMode());
+    } else if (mode == QStringLiteral("standard"))
         m_manager->SetStandardMode();
     else if (mode == QStringLiteral("programmer")) {
         m_manager->SetProgrammerMode();
@@ -153,8 +155,11 @@ void CalculationSession::reuseHistory(int index)
     const auto degree = m_manager->GetCurrentDegreeMode();
     m_manager->SetInHistoryItemLoadMode(true);
     m_manager->Reset(false);
-    if (m_mode == "scientific")
+    if (m_mode == "scientific") {
         m_manager->SetScientificMode();
+        if (m_scientificNotation)
+            m_manager->SendCommand(Command::CommandFE);
+    }
     m_manager->SendCommand(degree);
     for (const int code : replay)
         m_manager->SendCommand(static_cast<Command>(code));
