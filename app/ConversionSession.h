@@ -11,8 +11,9 @@ class ConversionSession : public QObject, private UnitConversionManager::IUnitCo
 {
     Q_OBJECT
     QML_ELEMENT
+    Q_PROPERTY(QString category READ category WRITE setCategory NOTIFY categoryChanged)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
-    Q_PROPERTY(QVariantList units READ units NOTIFY languageChanged)
+    Q_PROPERTY(QVariantList units READ units NOTIFY unitCatalogChanged)
     Q_PROPERTY(int unit1 READ unit1 WRITE setUnit1 NOTIFY unitsChanged)
     Q_PROPERTY(int unit2 READ unit2 WRITE setUnit2 NOTIFY unitsChanged)
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
@@ -21,6 +22,8 @@ class ConversionSession : public QObject, private UnitConversionManager::IUnitCo
     Q_PROPERTY(QString value2 READ value2 NOTIFY displayChanged)
 public:
     explicit ConversionSession(QObject *parent = nullptr);
+    QString category() const { return m_category; }
+    void setCategory(const QString &category);
     QString language() const { return m_language; }
     void setLanguage(const QString &language);
     QVariantList units() const;
@@ -37,17 +40,21 @@ public:
     Q_INVOKABLE void copy();
     Q_INVOKABLE void send(const QString &command);
 signals:
+    void categoryChanged();
+    void unitCatalogChanged();
     void languageChanged();
     void unitsChanged();
     void activeSideChanged();
     void statusChanged();
     void displayChanged();
 private:
+    void initializeConverter();
     void selectUnits();
     void DisplayCallback(const std::wstring &from, const std::wstring &to) override;
     void SuggestedValueCallback(const std::vector<std::tuple<std::wstring, UnitConversionManager::Unit>> &) override {}
     void MaxDigitsReached() override;
     void setStatus(const QString &status);
+    QString m_category = QStringLiteral("length");
     QString m_language = QStringLiteral("en-US");
     QString m_status;
     QString m_value1 = QStringLiteral("0");

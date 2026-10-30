@@ -8,7 +8,8 @@ FocusScope {
     required property CalculationSession session
     implicitHeight: 428
     focus: true
-    ConversionSession { id: converter; language: page.session.language }
+    property string converterCategory: "length"
+    ConversionSession { id: converter; category: page.converterCategory; language: page.session.language }
     readonly property bool landscape: width >= height
     readonly property var keySequences: ({ clear: ["Escape", "Delete"], backspace: ["Backspace"], decimal: ["."] })
     readonly property var commandNames: ({ clear: qsTr("Clear entry"), backspace: qsTr("Backspace"), decimal: qsTr("Decimal separator") })
@@ -102,7 +103,9 @@ FocusScope {
                 Layout.fillWidth: true
                 visible: converter.status !== ""
                 text: converter.status === "limit" ? qsTr("Maximum 15 digits")
-                    : converter.status === "negative" ? qsTr("Length cannot be negative")
+                    : converter.status === "negative" ? (page.converterCategory === "volume" ? qsTr("Volume cannot be negative")
+                        : page.converterCategory === "area" ? qsTr("Area cannot be negative")
+                        : page.converterCategory === "weight" ? qsTr("Weight and mass cannot be negative") : qsTr("Length cannot be negative"))
                     : converter.status === "unavailable" ? qsTr("Result cannot be displayed")
                     : converter.status === "invalid" ? qsTr("Invalid input") : ""
                 wrapMode: Text.Wrap
