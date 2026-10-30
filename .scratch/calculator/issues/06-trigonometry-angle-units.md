@@ -4,23 +4,23 @@
 
 **Blocked by:** 04: 使用科学模式的优先级与括号。
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Spec:** Windows 11 风格跨平台计算器。
 
 **User stories:** 23, 24。
 
-- [ ] 科学模式默认角度制，能够通过实际控件选择固定参考版本支持的角度单位，且当前单位清晰可见。
-- [ ] 接入参考版本的三角函数、反三角函数、双曲函数及其支持的变体；相关切换状态、按钮标签与真实核心命令保持一致。
-- [ ] 角度单位影响对应运算，单位切换与模式切换的状态语义遵循固定参考实现，不单独假设所有函数都接受角度参数。
-- [ ] 定义域错误、不可表示结果或其他核心错误得到明确显示，并能按参考方式恢复。
-- [ ] 新增界面和键盘入口沿用应用主题、可翻译文案、焦点和窗口适配规则。
-- [ ] 通过真实科学模式界面验证各角度单位的已知结果、反函数、双曲功能、切换状态和错误恢复；测试使用参考用例或独立已知数学值。
+- [x] 科学模式默认角度制，能够通过实际控件选择固定参考版本支持的角度单位，且当前单位清晰可见。
+- [x] 接入参考版本的三角函数、反三角函数、双曲函数及其支持的变体；相关切换状态、按钮标签与真实核心命令保持一致。
+- [x] 角度单位影响对应运算，单位切换与模式切换的状态语义遵循固定参考实现，不单独假设所有函数都接受角度参数。
+- [x] 定义域错误、不可表示结果或其他核心错误得到明确显示，并能按参考方式恢复。
+- [x] 新增界面和键盘入口沿用应用主题、可翻译文案、焦点和窗口适配规则。
+- [x] 通过真实科学模式界面验证各角度单位的已知结果、反函数、双曲功能、切换状态和错误恢复；测试使用参考用例或独立已知数学值。
 
 
 ## Implementation evidence (ticket 06 branch)
 
-Status remains `ready-for-agent`; the integration reviewer owns checklist closure and resolution.
+The implementation branch left status `ready-for-agent` for integration review; the verified integration closure below supersedes that handoff status.
 
 - `CalculationSession` allowlists all 24 pinned Trigonometry-flyout commands: sin/cos/tan/sec/csc/cot, their inverse forms, the six hyperbolic forms, and their inverses. Each goes through the real `CalculatorManager`, including its native composite inverse commands. Arithmetic values remain strings across the Qt/QML boundary.
 - The Scientific unit control defaults to DEG, cycles DEG/RAD/GRAD, and supports F3/F4/F5 selection. Unit changes preserve the entry; Clear and mode return retain the cached Scientific engine's unit. Circular/inverse results use that unit; hyperbolic results are independent of it.
@@ -60,3 +60,20 @@ Runtime diagnosis: the representative hyperbolic group took 16.14 seconds with d
 Context7 verified Qt 6.8 Popup focus/close behavior and Instantiator's nonvisual delegate API; no documentation fallback was needed. UI guidance used the UI/UX skill's keyboard-focus/popup search and shared semantic palette, with the Microsoft layout retained. Linux/Qt 6.12 is verified; Windows/macOS remain untested. Independent integration review remains required.
 
 The shared navigation input change also passed existing Standard navigation/keyboard regression checks (4/4 outcomes) and Programmer navigation/defaults/reference-shortcut checks (4/4), each through the approved isolated launcher with normal exit and no skips. No Standard or Programmer test source was changed for this regression.
+
+
+## Verified integration closure
+
+Merged source commit `36530f28602e6cb95015d314bf45d75c0b4326bc` with `git merge --no-ff` as `d4ba32241726c4761aa2e3bb6c07e32dad1717d8`, preserving tickets 01–05 and 07. CMake retains the repository isolation launcher and early test setup. The controller retains both extended Scientific operations and all 24 trigonometric commands. The two-row header combines DEG/F-E and Trigonometry/Function above the existing full keypad; the result remains visible while short windows scroll the controls. The C/CE-aware tests use the public Escape shortcut for full clearing. Added a real-QML regression for extended operations while Trigonometry owns focus, and navigation now blocks extended and trigonometric accelerators together.
+
+Integration screenshot review found two additional issues despite the first passing English runs: the moved Function popup could extend outside a narrow window, and unchecked Trigonometry toggles had poor contrast on the generic platform's native popup background. Red real-QML checks reproduced both (`.build-integration/merge06-popup-red.log`). Fix commit `27c0435` constrains both popups with window margins and inherited semantic backgrounds, and uses the shared CalculatorButton for toggles so checked/unchecked text colors follow the application palette. All-state rendered contrast and all six Function controls' narrow-window bounds pass in both themes. Updated narrow/wide light/dark captures for both flyouts were reviewed under isolation. The initial run was interrupted through verified task-owned process handles after the visual discovery; it is not counted as final validation.
+
+Final validation on Linux x86_64, Qt 6.12.0/GCC 16.2.1:
+
+- Debug configure/build with `cmake -S . -B .build-integration -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug` and `cmake --build .build-integration -j2`: passed.
+- `python3 tests/run-ui-isolated.py cmake --build .build-integration --target calculator_ui_qmllint -j2`: passed without lint warnings.
+- `ctest --test-dir .build-integration --output-on-failure -j2`: **5/5 passed**, normal exit 0, 618.67 seconds. English/light and English/dark each passed **298 outcomes, 0 failed, 0 skipped** (330.18/330.23 seconds); Chinese/light also passed **298/0/0** (288.49 seconds). This includes all existing Standard, preferences, Programmer, Scientific precedence/extended operations and new Trigonometry/short-window/combined-popup regressions. Three child-process isolation checks and all seven independent restart stages passed.
+- Every final GUI process used the repository launcher: offscreen/software, compose, generic platform theme, private settings/cache/data/runtime, no inherited DISPLAY/WAYLAND_DISPLAY/IME variables, and a private D-Bus. No native desktop validation is claimed.
+- Evidence: `.build-integration/merge06-final-ctest.log`, `merge06-final-ctest.exit` (0), `merge06-final-last-test.log`, `merge06-popup-{build,qmllint}.log`, and `merge06-popup-green-{light,dark}.log`. Reviewed captures and focused normal-exit logs are under `.build-integration/merge06-visuals-{light,dark}/`.
+
+All six acceptance criteria above are fulfilled. No ticket-06 integration blockers remain. The inherited Standard Copy shortcut warning is unchanged, with real clipboard behavior passing. Windows/macOS and native desktop behavior remain unverified here; final application-wide independent review remains part of the parent workflow. The parent spec was not edited; no remote push, PR or deployment was performed.
