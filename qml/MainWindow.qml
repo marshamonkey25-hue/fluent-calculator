@@ -81,6 +81,7 @@ ApplicationWindow {
             Loader {
                 id: page
                 focus: true
+                enabled: !navigation.visible
                 Component.onCompleted: window.loadMode()
             }
             SettingsPage { preferences: appPreferences }

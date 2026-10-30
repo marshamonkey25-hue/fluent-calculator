@@ -6,7 +6,7 @@ import QtQuick.Layouts
 FocusScope {
     id: page
     required property CalculationSession session
-    implicitHeight: 488
+    implicitHeight: 580
     readonly property var keySequences: ({
         clear: ["Escape"], clearEntry: ["Delete"], backspace: ["Backspace"], divide: ["/"], multiply: ["*"],
         subtract: ["-"], add: ["+"], decimal: ["."],
@@ -65,8 +65,9 @@ FocusScope {
         delegate: Shortcut {
             required property string modelData
             sequences: page.keySequences[modelData] || [modelData]
-            enabled: page.visible && page.commandEnabled(modelData)
-            context: Qt.WindowShortcut
+            enabled: page.visible && page.enabled && page.Window.window.active && page.commandEnabled(modelData)
+                     && (modelData !== "clear" || (!trigonometry.popupOpen && !functionPopup.visible))
+            context: Qt.ApplicationShortcut
             onActivated: page.activate(modelData)
         }
     }
@@ -128,71 +129,84 @@ FocusScope {
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    ToolButton {
-                        id: notationButton
-                        objectName: "key_scientificNotation"
-                        text: "F-E"
-                        Accessible.name: qsTr("Scientific notation")
-                        checkable: true
-                        checked: page.session.scientificNotation
-                        highlighted: checked
-                        enabled: !page.session.error
-                        Layout.minimumHeight: 44
-                        Layout.minimumWidth: 44
-                        onActiveFocusChanged: if (activeFocus) page.revealControl(notationButton)
-                        onClicked: page.activate("scientificNotation")
+                    ScientificTrigonometry {
+                        id: trigonometry
+                        session: page.session
+                        flyoutWidth: page.width
+                        onControlFocused: function(control) { page.revealControl(control) }
+                        Layout.fillWidth: true
                     }
-                    Item { Layout.fillWidth: true }
-                }
-                RowLayout {
-                    Layout.fillWidth: true
-                    ToolButton {
-                        id: functionButton
-                        objectName: "key_function"
-                        text: qsTr("Function") + " ▾"
-                        Accessible.name: qsTr("Function")
-                        enabled: !page.session.error
-                        Layout.minimumHeight: 44
-                        onActiveFocusChanged: if (activeFocus) page.revealControl(functionButton)
-                        onClicked: functionPopup.open()
-                        Popup {
-                            id: functionPopup
-                            objectName: "functionPopup"
-                            y: functionButton.height
-                            width: Math.min(page.width, 240)
-                            height: 112
-                            modal: true
-                            focus: true
-                            contentItem: GridLayout {
-                                columns: 3
-                                columnSpacing: 4
-                                rowSpacing: 4
-                                Repeater {
-                                    model: [
-                                        { command: "abs", label: "|x|" }, { command: "floor", label: "⌊x⌋" },
-                                        { command: "ceil", label: "⌈x⌉" }, { command: "rand", label: "rand" },
-                                        { command: "dms", label: "→dms" }, { command: "degrees", label: "→deg" }
-                                    ]
-                                    delegate: CalculatorButton {
-                                        required property var modelData
-                                        objectName: "key_function_" + modelData.command
-                                        text: modelData.label
-                                        font.pixelSize: 17
-                                        Accessible.name: page.commandNames[modelData.command]
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        Layout.minimumWidth: 44
-                                        Layout.minimumHeight: 44
-                                        onClicked: {
-                                            page.activate(modelData.command)
-                                            functionPopup.close()
+                    ColumnLayout {
+                        spacing: 4
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ToolButton {
+                                id: notationButton
+                                objectName: "key_scientificNotation"
+                                text: "F-E"
+                                Accessible.name: qsTr("Scientific notation")
+                                checkable: true
+                                checked: page.session.scientificNotation
+                                highlighted: checked
+                                enabled: !page.session.error
+                                Layout.minimumHeight: 44
+                                Layout.minimumWidth: 44
+                                onActiveFocusChanged: if (activeFocus) page.revealControl(notationButton)
+                                onClicked: page.activate("scientificNotation")
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ToolButton {
+                                id: functionButton
+                                objectName: "key_function"
+                                text: qsTr("Function") + " ▾"
+                                Accessible.name: qsTr("Function")
+                                enabled: !page.session.error
+                                Layout.minimumHeight: 44
+                                onActiveFocusChanged: if (activeFocus) page.revealControl(functionButton)
+                                onClicked: functionPopup.open()
+                                Popup {
+                                    id: functionPopup
+                                    objectName: "functionPopup"
+                                    y: functionButton.height
+                                    width: Math.min(page.width, 240)
+                                    height: 112
+                                    modal: true
+                                    focus: true
+                                    contentItem: GridLayout {
+                                        columns: 3
+                                        columnSpacing: 4
+                                        rowSpacing: 4
+                                        Repeater {
+                                            model: [
+                                                { command: "abs", label: "|x|" }, { command: "floor", label: "⌊x⌋" },
+                                                { command: "ceil", label: "⌈x⌉" }, { command: "rand", label: "rand" },
+                                                { command: "dms", label: "→dms" }, { command: "degrees", label: "→deg" }
+                                            ]
+                                            delegate: CalculatorButton {
+                                                required property var modelData
+                                                objectName: "key_function_" + modelData.command
+                                                text: modelData.label
+                                                font.pixelSize: 17
+                                                Accessible.name: page.commandNames[modelData.command]
+                                                Layout.fillWidth: true
+                                                Layout.fillHeight: true
+                                                Layout.minimumWidth: 44
+                                                Layout.minimumHeight: 44
+                                                onClicked: {
+                                                    page.activate(modelData.command)
+                                                    functionPopup.close()
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
+                            Item { Layout.fillWidth: true }
                         }
                     }
-                    Item { Layout.fillWidth: true }
                 }
                 GridLayout {
                     Layout.fillWidth: true

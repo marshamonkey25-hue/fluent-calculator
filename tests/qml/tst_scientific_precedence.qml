@@ -3,7 +3,7 @@ import QtTest
 import Calculator
 
 Item {
-    MainWindow { id: application; systemPreferences: testSystemPreferences }
+    MainWindow { id: application; systemPreferences: testSystemPreferences; height: 632 }
     TestCase {
         name: "ScientificPrecedence"
         when: windowShown && application.visible
@@ -172,7 +172,7 @@ Item {
         }
 
         function test_scientific_keys_and_title_are_accessible_at_window_sizes_data() {
-            return [{ tag: "narrow", width: 320, height: 540 }, { tag: "wide", width: 900, height: 700 }]
+            return [{ tag: "narrow", width: 320, height: 632 }, { tag: "wide", width: 900, height: 700 }]
         }
 
         function test_scientific_keys_and_title_are_accessible_at_window_sizes(data) {
@@ -211,7 +211,7 @@ Item {
             const scheme = application.color.r < 0.5 ? "dark" : "light"
             grabImage(application.contentItem).save("scientific-" + scheme + "-" + data.tag + ".png")
             application.width = 360
-            application.height = 560
+            application.height = 632
         }
 
         function openSettings() {

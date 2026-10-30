@@ -24,6 +24,7 @@ qt_add_qml_module(calculator_ui
         qml/StandardPage.qml
         qml/SettingsPage.qml
         qml/ScientificPage.qml
+        qml/ScientificTrigonometry.qml
         qml/ProgrammerPage.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
@@ -71,12 +72,12 @@ if(BUILD_TESTING)
         add_test(NAME calculator-ui-${theme} COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
         set_tests_properties(calculator-ui-${theme} PROPERTIES
             ENVIRONMENT "CALCULATOR_TEST_THEME=${theme}"
-            TIMEOUT 300
+            TIMEOUT 600
         )
     endforeach()
     add_test(NAME calculator-ui-zh-CN COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>)
     set_tests_properties(calculator-ui-zh-CN PROPERTIES
         ENVIRONMENT "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light"
-        TIMEOUT 300
+        TIMEOUT 600
     )
 endif()

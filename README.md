@@ -1,6 +1,6 @@
 # Fluent Calculator
 
-A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–05 and 07**: the Standard arithmetic keypad, expression/result/error display, entry correction, reference error recovery, copying results, keyboard input, persistent theme/language settings, Scientific precedence/parentheses, and Programmer integer radix/word-width operations with mode navigation. Scientific trigonometry/angle units, history, memory, and other modes are separate implementation tickets.
+A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–07**: Standard arithmetic, expression/result/error display, entry correction, reference error recovery, copying results, keyboard input, persistent theme/language settings, Scientific precedence, extended operations and trigonometry, and Programmer integer radix/word-width operations with mode navigation. History, memory, and other modes are separate implementation tickets.
 
 The content follows the pinned Microsoft Standard keypad layout with Fluent controls and native system window decorations. Navigation is registered centrally in `qml/ModeRegistry.qml`. `MainWindow` owns one `CalculationSession`, which dispatches string command names to `CalculatorManager`, `CCalcEngine` and Ratpack. Arithmetic displays and expressions remain strings across C++/QML, including integers above JavaScript's safe integer range.
 
@@ -145,7 +145,7 @@ The `.build-integration` Debug build, QML lint and all four CTest entries pass o
 
 ## Scientific extended operations — ticket 05
 
-Scientific now exposes the pinned Microsoft power/root/logarithm column, constants, factorial, modulo, reciprocal, absolute value, exponent entry, scientific notation and Function flyout. **2nd** changes the six extension buttons to cube, cube root, nth root, two to the power, logarithm with a chosen base and exponential. Selecting a secondary operation restores the primary column and returns focus to 2nd. An unused 2nd selection survives temporary mode navigation within the session, matching the pinned cached operator panel; an ordinary restart creates fresh toggle state. The Function flyout offers absolute value, floor, ceiling, random number, degrees/minutes/seconds and decimal degrees; selection closes it, and Tab/Space/Escape work with its real controls. Trigonometric functions and the angle-unit selector remain ticket 06.
+Scientific now exposes the pinned Microsoft power/root/logarithm column, constants, factorial, modulo, reciprocal, absolute value, exponent entry, scientific notation and Function flyout. **2nd** changes the six extension buttons to cube, cube root, nth root, two to the power, logarithm with a chosen base and exponential. Selecting a secondary operation restores the primary column and returns focus to 2nd. An unused 2nd selection survives temporary mode navigation within the session, matching the pinned cached operator panel; an ordinary restart creates fresh toggle state. The Function flyout offers absolute value, floor, ceiling, random number, degrees/minutes/seconds and decimal degrees; selection closes it, and Tab/Space/Escape work with its real controls. Trigonometric functions and the angle-unit selector are described in ticket 06 below.
 
 All arithmetic executes in the existing Microsoft manager/CEngine/Ratpack, including full Scientific precision for π, e and intermediate values. `exp` enters an exponent on the current operand; it is distinct from the `eˣ` operation. The core caps exponent entry at four digits. **F-E** toggles result notation without converting numbers in QML, and ordinary C/CE actions or leaving Scientific restore ordinary notation according to the reference UI flow. The shared C/CE button reads `CalculatorManager::IsInputEmpty()`: CE preserves a pending calculation, while Escape always clears it. Backspace remains in its reference position. Invalid domains and range errors display the core's translated message; unavailable operations/shortcuts stay disabled until recovery.
 
@@ -178,3 +178,34 @@ The isolated generic Qt platform can report an unknown color scheme or ignore na
 Ticket 05 final validation used the private `.build-ticket05` Debug/Make build on Linux x86_64, Qt 6.12/GCC 16.2, with `-j2` compilation. The frozen full suite passed **all five CTest entries** normally: **255 passed, 0 failed, 0 skipped** in each English/light, English/dark and Chinese/light configuration, three child-process isolation checks, and all seven independent restart stages. Every final GUI process used compose/generic/offscreen/software with private settings/runtime and D-Bus; no final native-desktop run is claimed. QML lint completed without warnings. Light/dark and English/Chinese offscreen screenshots at narrow/wide sizes were reviewed; short Scientific windows scroll the controls while keeping the result visible.
 
 The ticket's tracker records 22 red/green slices and their private logs, including the core notation/error synchronization fix, cached 2nd state across mode navigation, runtime Chinese captions, pre-GUI isolation bootstrap and generic-platform palette fallback. Earlier interrupted or failing runs are retained separately and are not counted as final passes. The inherited Standard Copy shortcut warning remains, with its real clipboard behavior tests passing. Windows/macOS are not built or run here; the independent integration reviewer still owns ticket closure and final application-wide review.
+## Scientific trigonometry and angle units — ticket 06
+
+Open **Scientific**, then **Trigonometry**. The flyout retains the pinned Microsoft four-column/two-row arrangement: **2nd** and **hyp** at the left, with **sin/cos/tan** above **sec/csc/cot**. The two toggles select ordinary, inverse, hyperbolic, or inverse hyperbolic functions, for 24 actual core operations. Choosing a function resets both toggles and closes the flyout; dismissing it preserves the toggle selection. Labels and accessible names reflect the selected function. Tab follows the visual row order, Space activates the focused control, Escape dismisses the flyout while preserving the entry, and focus returns to its opener.
+
+Scientific starts in **DEG**. Click the unit button to cycle **DEG → RAD → GRAD → DEG**, or use **F3/F4/F5** to select degrees/radians/gradians directly. Unit changes preserve the current entry; they affect circular and inverse circular functions, while hyperbolic functions use the core's unit-independent definitions. Clear and switching away from/returning to Scientific retain the chosen unit on the existing Scientific engine. An ordinary restart starts in degrees.
+
+| Function family | S / O / T / U / I / J |
+| --- | --- |
+| Circular | sin / cos / tan / sec / csc / cot |
+| Inverse circular | Shift plus the corresponding key |
+| Hyperbolic | Ctrl plus the corresponding key |
+| Inverse hyperbolic | Ctrl+Shift plus the corresponding key |
+
+Digit and function accelerators remain available while the flyout owns focus; Clear/Escape yields to dismissal. Calculator input pauses while navigation is open and resumes when it closes. The commands are explicitly allowlisted at the Qt session boundary and dispatched to the pinned `CalculatorManager`, including its composite inverse commands. No trigonometric calculation or arithmetic-value conversion occurs in QML. Core domain, division and range errors use the existing localized display and recovery path; angle/function controls and their shortcuts are disabled during errors. Digits start fresh input, and Clear/Escape recover normally. Hidden Scientific shortcuts remain inactive in Settings. All new captions and accessibility names use the shared English/Simplified Chinese catalog and the application palette.
+
+The complete Scientific keypad requests a **320×632** minimum window after adding the two function rows. A scrollable body and automatic focus reveal keep the keys reachable when a compositor allocates a shorter window. `tests/qml/tst_scientific_short_window.qml` exercises the real UI at 320×460, including reaching lower keys, the angle control, flyout dismissal and continued calculation. Existing full-keypad size checks now use 632 px.
+
+The production-QML coverage in `tests/qml/tst_scientific_trigonometry.qml` exercises all 24 flyout commands and keyboard equivalents, known values in all three units, hyperbolic independence from units, toggle/dismissal semantics, angle retention, 12 domain/singularity/range scenarios and recovery, runtime translation, Settings isolation, focus, and all four function-label states in narrow/wide windows. Numerical expectations are independently known trigonometric values or pinned upstream public behavior; approximate transcendental comparisons use a stated tolerance in the test. Production values stay strings. Screenshots use `trigonometry-{light,dark}-{narrow,wide}-{0,1,2,3}.png` in the private test build directory.
+
+
+Ticket 06's branch validation passed **56/56 focused outcomes per language** (English and Simplified Chinese), using isolated offscreen/software rendering. To run the integrated trigonometry tests after the build above:
+
+```sh
+CALCULATOR_TEST_LANGUAGE=en-US CALCULATOR_TEST_THEME=light \
+  python3 tests/run-ui-isolated.py .build/calculator_ui_tests \
+  -input tests/qml/tst_scientific_trigonometry.qml
+```
+
+Repeat with `CALCULATOR_TEST_LANGUAGE=zh-CN` for Simplified Chinese. The ticket 06 branch initially used `/tmp/calc-implementation-notes/run-ui-isolated.sh` for its focused checks. Integration uses the repository launcher `python3 tests/run-ui-isolated.py` for direct checks and all CTest entries. It removes inherited display and input-method configuration and creates private settings/runtime roots and a private D-Bus before GUI startup.
+
+Ticket 05's shared appearance fallback is retained in integration: explicit preferences set the inherited application palette, while System follows native hints when supported and falls back to Light for Unknown. The ticket 06 branch's earlier isolated appearance failures are historical; full integrated validation is recorded below. Future validation stays isolated from the user's display, IME and session bus.
