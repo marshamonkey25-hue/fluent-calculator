@@ -7,16 +7,24 @@ FocusScope {
     id: page
     required property CalculationSession session
     readonly property var keySequences: ({
-        clear: ["Escape"], divide: ["/"], multiply: ["*"],
+        backspace: ["Backspace"], clearEntry: ["Delete"], reciprocal: ["R"], squareRoot: ["@"],
+        clear: ["Escape"], percent: ["%"], sign: ["F9"], square: ["Q"], divide: ["/"], multiply: ["*"],
         subtract: ["-"], add: ["+"], decimal: ["."],
         equals: ["=", "Return", "Enter"]
     })
     readonly property var commandNames: ({
-        clear: qsTr("Clear"), divide: qsTr("Divide"), multiply: qsTr("Multiply"),
+        backspace: qsTr("Backspace"), clearEntry: qsTr("Clear entry"), reciprocal: qsTr("Reciprocal"),
+        squareRoot: qsTr("Square root"), square: qsTr("Square"), sign: qsTr("Negate"),
+        percent: qsTr("Percent"), clear: qsTr("Clear"), divide: qsTr("Divide"), multiply: qsTr("Multiply"),
         subtract: qsTr("Subtract"), add: qsTr("Add"), decimal: qsTr("Decimal separator"),
         equals: qsTr("Equals")
     })
     focus: true
+    Shortcut {
+        sequence: StandardKey.Copy
+        context: Qt.WindowShortcut
+        onActivated: page.session.copyResult()
+    }
     ColumnLayout {
         anchors.fill: parent
         spacing: 4
@@ -40,6 +48,20 @@ FocusScope {
             text: page.session.display
             Accessible.role: Accessible.StaticText
             Accessible.name: page.session.error ? qsTr("Error: %1").arg(text) : qsTr("Result: %1").arg(text)
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onClicked: resultMenu.popup()
+            }
+            Menu {
+                id: resultMenu
+                objectName: "resultContextMenu"
+                MenuItem {
+                    objectName: "copyResultItem"
+                    text: qsTr("Copy")
+                    onTriggered: page.session.copyResult()
+                }
+            }
         }
         Label {
             objectName: "errorIndicator"
@@ -57,7 +79,13 @@ FocusScope {
             rowSpacing: 4
             Repeater {
                 model: [
+                    { command: "percent", label: "%", row: 0, column: 0 },
+                    { command: "clearEntry", label: "CE", row: 0, column: 1 },
                     { command: "clear", label: "C", row: 0, column: 2 },
+                    { command: "backspace", label: "⌫", row: 0, column: 3 },
+                    { command: "reciprocal", label: "1/x", row: 1, column: 0 },
+                    { command: "square", label: "x²", row: 1, column: 1 },
+                    { command: "squareRoot", label: "√x", row: 1, column: 2 },
                     { command: "divide", label: "÷", row: 1, column: 3 },
                     { command: "7", label: "7", row: 2, column: 0 },
                     { command: "8", label: "8", row: 2, column: 1 },
@@ -71,6 +99,7 @@ FocusScope {
                     { command: "2", label: "2", row: 4, column: 1 },
                     { command: "3", label: "3", row: 4, column: 2 },
                     { command: "add", label: "+", row: 4, column: 3 },
+                    { command: "sign", label: "+/−", row: 5, column: 0 },
                     { command: "0", label: "0", row: 5, column: 1 },
                     { command: "decimal", label: ".", row: 5, column: 2 },
                     { command: "equals", label: "=", row: 5, column: 3 }
@@ -89,8 +118,11 @@ FocusScope {
                     Layout.minimumWidth: 44
                     numeric: modelData.command.length === 1
                     accent: modelData.command === "equals"
+                    enabled: !page.session.error || numeric
+                             || ["clear", "clearEntry", "backspace", "decimal", "equals"].indexOf(modelData.command) !== -1
                     onClicked: page.session.send(modelData.command)
                     Shortcut {
+                        enabled: keyButton.enabled
                         sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
                         context: Qt.WindowShortcut
                         onActivated: page.session.send(keyButton.modelData.command)

@@ -12,7 +12,8 @@ Button {
     contentItem: Text {
         text: control.text
         font: control.font
-        color: control.accent ? control.palette.highlightedText : control.palette.buttonText
+        color: !control.enabled ? control.palette.placeholderText
+             : control.accent ? control.palette.highlightedText : control.palette.buttonText
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
     }

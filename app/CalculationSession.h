@@ -22,6 +22,7 @@ public:
     QString expression() const { return m_expression; }
     bool error() const { return m_error; }
     Q_INVOKABLE void send(const QString &command);
+    Q_INVOKABLE void copyResult();
 
 signals:
     void displayChanged();
