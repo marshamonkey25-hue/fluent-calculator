@@ -181,12 +181,16 @@ std::unordered_map<Unit, ConversionData, UnitHash> CurrencyRates::LoadOrderedRat
 {
     std::unordered_map<Unit, ConversionData, UnitHash> ratios;
     if (!available()) return ratios;
-    const auto units = GetOrderedUnits({});
-    for (const auto &target : units) {
-        const auto from = code(unit.id), to = code(target.id);
-        if (from == m_base && to == m_quote) ratios.emplace(target, ConversionData(m_rate, 0, false));
-        else if (from == m_quote && to == m_base && std::isfinite(1.0 / m_rate))
-            ratios.emplace(target, ConversionData(1.0 / m_rate, 0, false));
+    const bool forward = unit.id == currencyId(m_base);
+    if (!forward && unit.id != currencyId(m_quote)) return ratios;
+    const double ratio = forward ? m_rate : 1.0 / m_rate;
+    if (!std::isfinite(ratio)) return ratios;
+    const int targetId = currencyId(forward ? m_quote : m_base);
+    for (const auto &target : GetOrderedUnits({})) {
+        if (target.id == targetId) {
+            ratios.emplace(target, ConversionData(ratio, 0, false));
+            break;
+        }
     }
     return ratios;
 }

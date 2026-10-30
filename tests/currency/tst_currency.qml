@@ -415,6 +415,24 @@ Item {
             compare(control("converterValue2").text, "10")
             compare(control("currencyStatus").text, chinese ? "已更新" : "Up to date")
         }
+        function test_service_catalog_without_preferred_defaults_is_usable_data() {
+            return [
+                {tag: "alternate-pair", catalog: [{iso_code: "AUD", name: "Australian Dollar"}, {iso_code: "JPY", name: "Japanese Yen"}],
+                    base: "AUD", target: "JPY", rate: 100, expected: "200"},
+                {tag: "single-current-currency", catalog: [{iso_code: "JPY", name: "Japanese Yen"}],
+                    base: "JPY", target: "JPY", rate: 1, expected: "2"}
+            ]
+        }
+        function test_service_catalog_without_preferred_defaults_is_usable(data) {
+            testCurrencySource.setResponse("currencies", JSON.stringify(data.catalog))
+            quote(data.base, data.target, data.rate)
+            navigate("mode_currency")
+            tryCompare(control("converterUnit1"), "count", data.catalog.length)
+            verify(control("converterUnit1").currentText.indexOf(data.base) === 0)
+            verify(control("converterUnit2").currentText.indexOf(data.target) === 0)
+            keyClick("2")
+            tryCompare(control("converterValue2"), "text", data.expected)
+        }
         function test_currency_navigation_has_real_converter_input() {
             navigate("mode_currency")
             compare(control("pageTitle").text, Qt.locale().name.indexOf("zh") === 0 ? "货币" : "Currency")
