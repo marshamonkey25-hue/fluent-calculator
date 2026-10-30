@@ -53,9 +53,9 @@ public:
     QColor gridColor() const { return m_gridColor; }
     QColor backgroundColor() const { return m_backgroundColor; }
     void setCurveColor(const QColor &color) { m_curveColor = color; update(); emit colorsChanged(); emit functionsChanged(); }
-    void setAxisColor(const QColor &color) { m_axisColor = color; update(); emit colorsChanged(); }
+    void setAxisColor(const QColor &color) { m_axisColor = color; update(); emit colorsChanged(); emit functionsChanged(); }
     void setGridColor(const QColor &color) { m_gridColor = color; update(); emit colorsChanged(); }
-    void setBackgroundColor(const QColor &color) { m_backgroundColor = color; update(); emit colorsChanged(); }
+    void setBackgroundColor(const QColor &color) { m_backgroundColor = color; update(); emit colorsChanged(); emit functionsChanged(); }
     void paint(QPainter *painter) override;
 signals:
     void expressionChanged();

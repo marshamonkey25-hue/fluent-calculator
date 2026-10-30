@@ -35,8 +35,29 @@ QVariantList FunctionGraph::functions() const
 QColor FunctionGraph::colorFor(const Curve &curve) const
 {
     if (curve.id == 1) return m_curveColor;
-    return QColor::fromHsvF(std::fmod(m_curveColor.hsvHueF() + (curve.id - 1) * 0.381966, 1.0),
+    const QColor base = QColor::fromHsvF(std::fmod(m_curveColor.hsvHueF() + (curve.id - 1) * 0.381966, 1.0),
         0.75, m_curveColor.valueF());
+    if (!m_axisColor.isValid() || !m_backgroundColor.isValid()) return base;
+    const auto luminance = [](const QColor &color) {
+        const auto linear = [](double channel) {
+            return channel <= 0.04045 ? channel / 12.92 : std::pow((channel + 0.055) / 1.055, 2.4);
+        };
+        return 0.2126 * linear(color.redF()) + 0.7152 * linear(color.greenF()) + 0.0722 * linear(color.blueF());
+    };
+    const double background = luminance(m_backgroundColor);
+    // Keep every curve and its text identifier readable, including bright
+    // green on white and saturated violet on dark surfaces.
+    for (int step = 0; step <= 20; ++step) {
+        const double weight = step / 20.0;
+        const QColor color = QColor::fromRgbF(
+            base.redF() * (1 - weight) + m_axisColor.redF() * weight,
+            base.greenF() * (1 - weight) + m_axisColor.greenF() * weight,
+            base.blueF() * (1 - weight) + m_axisColor.blueF() * weight);
+        const double foreground = luminance(color);
+        if ((std::max(foreground, background) + 0.05) / (std::min(foreground, background) + 0.05) >= 4.5)
+            return color;
+    }
+    return m_axisColor;
 }
 
 void FunctionGraph::setSelectedIndex(int index)

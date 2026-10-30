@@ -208,6 +208,8 @@ Item {
                            "Selected function text keeps 4.5:1 contrast in " + theme)
                     const color = control("graphFunctionColor_" + secondId).color
                     const copy = Qt.rgba(color.r, color.g, color.b, 1)
+                    verify(contrastRatio(copy, graph.backgroundColor) >= 4.5,
+                           "Each labeled curve contrasts with the graph surface in " + theme)
                     if (!graph.visible) mouseClick(control("graphViewButton"))
                     mouseClick(control("graphZoomInButton"))
                     mouseClick(control("graphPanRightButton"))
@@ -304,19 +306,24 @@ Item {
             compare(control("graphCoordinates").text, "x: 1000000; y: 0; F1(x): 1000001")
             mouseClick(control("graphResetButton"))
         }
-        function selectedFunctionTextHasContrast(row) {
-            const image = grabImage(application.contentItem)
-            const position = row.mapToItem(application.contentItem, 0, 0)
+        function contrastRatio(first, second) {
             function luminance(color) {
                 function linear(channel) { return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4) }
                 return 0.2126 * linear(color.r) + 0.7152 * linear(color.g) + 0.0722 * linear(color.b)
             }
-            const background = luminance(image.pixel(Math.round(position.x + row.width - 12), Math.round(position.y + row.height / 2)))
+            const a = luminance(first)
+            const b = luminance(second)
+            return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+        }
+        function selectedFunctionTextHasContrast(row) {
+            const image = grabImage(application.contentItem)
+            const position = row.mapToItem(application.contentItem, 0, 0)
+            const background = image.pixel(Math.round(position.x + row.width - 12), Math.round(position.y + row.height / 2))
             // Scan the rendered short equation label, excluding swatch and focus border.
             for (let x = 24; x < 100; ++x)
                 for (let y = 8; y < row.height - 8; ++y) {
-                    const text = luminance(image.pixel(Math.round(position.x + x), Math.round(position.y + y)))
-                    if ((Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05) >= 4.5)
+                    const text = image.pixel(Math.round(position.x + x), Math.round(position.y + y))
+                    if (contrastRatio(text, background) >= 4.5)
                         return true
                 }
             return false
