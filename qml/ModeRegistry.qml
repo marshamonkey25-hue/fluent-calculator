@@ -10,6 +10,7 @@ QtObject {
         return 0
     }
     readonly property var modes: [
-        { key: "standard", title: qsTr("Standard"), source: Qt.resolvedUrl("StandardPage.qml") }
+        { key: "standard", title: qsTr("Standard"), source: Qt.resolvedUrl("StandardPage.qml") },
+        { key: "scientific", title: qsTr("Scientific"), source: Qt.resolvedUrl("ScientificPage.qml") }
     ]
 }

@@ -10,11 +10,12 @@ ApplicationWindow {
     width: 360
     height: 560
     minimumWidth: 320
-    minimumHeight: 460
+    minimumHeight: Math.max(460, currentPage ? currentPage.implicitHeight + 52 : 0)
     title: qsTr("Calculator")
     // Fluent's Fusion fallback Labels otherwise retain the native text color
     // when an application override first changes the scheme.
     palette.windowText: Application.styleHints.colorScheme === Qt.Dark ? "#ffffff" : "#1b1b1b"
+    readonly property Item currentPage: page.item as Item
     property int currentMode: 0
     property bool settingsOpen: false
     property SystemPreferences systemPreferences
@@ -22,6 +23,7 @@ ApplicationWindow {
     CalculationSession { id: calculator; language: appPreferences.effectiveLanguage }
 
     function loadMode() {
+        calculator.selectMode(ModeRegistry.modes[currentMode].key)
         page.setSource(ModeRegistry.modes[currentMode].source, { session: calculator })
     }
     onCurrentModeChanged: {
@@ -59,6 +61,7 @@ ApplicationWindow {
             currentIndex: window.settingsOpen ? 1 : 0
             Loader {
                 id: page
+                focus: true
                 Component.onCompleted: window.loadMode()
             }
             SettingsPage { preferences: appPreferences }
