@@ -3,6 +3,7 @@
 #include "LengthDataLoader.h"
 #include "TemperaturePowerAngleDataLoader.h"
 #include "MeasurementDataLoader.h"
+#include "DataConversionDataLoader.h"
 #include "EnergySpeedTimePressureDataLoader.h"
 #include <QClipboard>
 #include <QCoreApplication>
@@ -24,7 +25,7 @@ class ConverterDataLoader final : public IConverterDataLoader
         createMeasurementDataLoader(6), createEnergySpeedTimePressureDataLoader("energy"),
         createEnergySpeedTimePressureDataLoader("speed"), createEnergySpeedTimePressureDataLoader("time"),
         createEnergySpeedTimePressureDataLoader("pressure"),
-        createTemperatureDataLoader(), createPowerDataLoader(), createAngleDataLoader()
+        createTemperatureDataLoader(), createPowerDataLoader(), createAngleDataLoader(), createDataConversionDataLoader()
     };
 public:
     void LoadData() override {}
@@ -113,7 +114,7 @@ void ConversionSession::setCategory(const QString &category)
         return;
     static const QHash<QString, int> categories {
         {"length", 5}, {"volume", 4}, {"area", 9}, {"weight", 6}, {"energy", 8}, {"speed", 10}, {"time", 11}, {"pressure", 14},
-        {"temperature", 7}, {"power", 12}, {"angle", 15}
+        {"temperature", 7}, {"power", 12}, {"angle", 15}, {"data", 13}
     };
     const auto id = categories.constFind(category);
     if (id == categories.cend())
