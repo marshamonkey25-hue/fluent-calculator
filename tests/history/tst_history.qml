@@ -20,8 +20,11 @@ Item {
             tryCompare(drawer, "visible", false)
         }
         function commands(sequence) {
-            for (const command of sequence)
-                mouseClick(findChild(application.contentItem, "key_" + command))
+            for (const command of sequence) {
+                // Scientific's shared C/CE button changes with input state; Escape is always clear-all.
+                if (command === "clear") keyClick(Qt.Key_Escape)
+                else mouseClick(findChild(application.contentItem, "key_" + command))
+            }
         }
         function openHistory() {
             const button = findChild(application.contentItem, "historyButton")
