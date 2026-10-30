@@ -4,18 +4,18 @@
 
 **Blocked by:** 07: 使用程序员模式的进制与位宽。
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Spec:** Windows 11 风格跨平台计算器。
 
 **User stories:** 29, 31。
 
-- [ ] 接入固定参考版本支持的逻辑、移位及其他位操作；具体操作清单与参考按键保持一致，不把不同移位或位操作合并成错误的统一语义。
-- [ ] 位显示及参考允许的位编辑交互反映当前整数值；位变化与各进制结果互相同步。
-- [ ] 当前位宽决定可见或可操作的位、有效输入和结果范围，控件禁用状态与实际行为一致。
-- [ ] 最高位、带符号值、移位边界及结果截断采用固定参考行为；错误输入不会破坏程序员模式后续计算。
-- [ ] 位面板和新增操作在合理宽窄窗口中可使用，沿用主题、可翻译说明及参考键盘规则。
-- [ ] 通过用户操作验证逻辑组合、参考支持的移位变体、位编辑、位宽切换和边界整数，并检查显示与真实结果一致。
+- [x] 接入固定参考版本支持的逻辑、移位及其他位操作；具体操作清单与参考按键保持一致，不把不同移位或位操作合并成错误的统一语义。
+- [x] 位显示及参考允许的位编辑交互反映当前整数值；位变化与各进制结果互相同步。
+- [x] 当前位宽决定可见或可操作的位、有效输入和结果范围，控件禁用状态与实际行为一致。
+- [x] 最高位、带符号值、移位边界及结果截断采用固定参考行为；错误输入不会破坏程序员模式后续计算。
+- [x] 位面板和新增操作在合理宽窄窗口中可使用，沿用主题、可翻译说明及参考键盘规则。
+- [x] 通过用户操作验证逻辑组合、参考支持的移位变体、位编辑、位宽切换和边界整数，并检查显示与真实结果一致。
 
 ## Implementation evidence (ticket 08; merge validation pending)
 
@@ -60,3 +60,12 @@ The final corrected build passes **all 7 CTest entries** (`ctest -j2 --output-on
 The final bit-view keyboard correction additionally passes native Wayland (**3/3**, `.build-ticket08/wayland-keyboard.log`), supplementing the earlier **7/7** selected native high-bit/shift checks. Light/dark narrow/default/wide captures and final Chinese menu/bit captures were reviewed; no pixel-equivalence or three-platform validation claim is made. Final QML lint and whitespace checks pass. No tests or acceptance items were silently dropped; the initial native focus failure and timeout remain documented above.
 
 Latest `integration/calculator` tip **06ffcdfa4f0006ba36496e6210bd870b2fad2c1e** was merged/checked before the final full run and rechecked after it (already up to date). The integration tip is an ancestor; no conflicts or unrelated changes were discarded. Independent reviewer acceptance and integration merge validation remain the closure gate; **Status stays ready-for-agent**.
+
+## Merge acceptance and completion evidence
+
+- Merged source `111b6f6638986f59bde023052c30dbebc2f306f0` with `git merge --no-ff` into the initially clean root `integration/calculator` checkout; merge commit `28ad9676e8e78660b7780881d01195bb8da506aa`. CMake/header/catalog/README conflicts were combined, preserving tickets 05/06, the shared isolated launcher, all earlier translations, and the 600-second integration UI limit. Existing navigation, Scientific pages, test bootstrap/launcher and system appearance code remain byte-for-byte unchanged from pre-merge `c2a7b90`.
+- All six criteria are fulfilled by the native core commands, string-only integer/radix state, guarded bit edits and real-QML tests. Coverage includes all logical/shift variants and carry, every bit and word width, exact signed high-bit values, count boundaries, truncation/sign extension, recovery, translation, navigation/Settings shortcut isolation, focus and 320×460 / 360×560 / 900×700 layouts. All 50 Programmer translation source strings are present in the Chinese catalog.
+- Integration fixes `8688a156e24c7a4d7f0af6788b00f8844575b772` and `140d28f495fbd7c6d5a96ffa166de9dadf022380` retain readable selected Keypad/Bits text with the shared theme fallback, give both flyouts palette-backed surfaces, and keep complete popup backgrounds inside narrow windows. Actual real-QML reds reproduced dark selector contrast, light shift-menu contrast and 320-pixel popup clipping before the respective fixes; focused light/dark checks then passed **7/7 each**. Additional navigation and shift-state contrast regressions are retained; previously green checks are not claimed as new red cycles. Capture names now follow visible application colors rather than unsupported platform hints.
+- Linux x86_64 / Qt 6.12 / GCC 16.2 Debug/Make configure, `cmake --build .build-integration -j2`, and QML lint pass. Final frozen `ctest --test-dir .build-integration --output-on-failure -j2` passes **8/8 entries** in **615.16 seconds**: **298 passed / 0 failed / 0 skipped** in each main configuration, **35 / 0 / 0** in each Programmer-bit configuration, all seven restart stages (**21 QtTest outcomes**) and three isolation checks. Main configurations completed in 269.87–274.77 seconds; bit configurations in 109.29–116.05 seconds. No functionality, tests or assertions were skipped.
+- Evidence is in `.build-integration/merge08-{configure,build,build-final,build-menus}.log`, `merge08-selector-{red,green}.log`, `merge08-menu-bounds-red.log`, `merge08-menus-green-{light,dark}.log`, `merge08-ctest-accepted.log`, `Testing/Temporary/LastTest.log`, and `merge08-qmllint-menus.log`. Earlier interrupted/regression runs remain in `merge08-ctest-initial.log` and `merge08-ctest-final.log`; they are not final acceptance passes. Corrected narrow/wide light/dark and Chinese bit/menu captures were reviewed. Context7 verified Qt 6.8 ToolButton customization, palette roles and Popup margins; no documentation fallback was needed.
+- Every GUI run/capture in this merge used compose/generic/offscreen/software, private settings/cache/data/runtime roots and a private Linux D-Bus through the repository launcher before GUI construction. No active-desktop/native validation was performed. Windows/macOS and native desktop behavior remain unverified; the inherited Standard Copy warning remains with clipboard tests passing. Merger review found no remaining ticket 08 blockers; final application-wide independent review remains pending. Parent spec and other tickets are unchanged; no remote push, PR or deployment occurred.
