@@ -25,6 +25,10 @@ void CalculationSession::selectMode(const QString &mode)
 {
     if (mode == m_mode)
         return;
+    if (mode != "scientific" && mode != "standard" && mode != "programmer")
+        return;
+    if (m_mode == "scientific")
+        setScientificNotation(false);
     if (mode == QStringLiteral("scientific"))
         m_manager->SetScientificMode();
     else if (mode == QStringLiteral("standard"))
@@ -41,6 +45,28 @@ void CalculationSession::selectMode(const QString &mode)
     m_mode = mode;
     updateRadixDisplays();
     emit modeChanged();
+    emit inputChanged();
+}
+
+void CalculationSession::setScientificNotation(bool enabled)
+{
+    if (m_scientificNotation == enabled)
+        return;
+    // CEngine ignores FE while in error. Clear that state before resetting
+    // notation for a mode change so the engine and the toggle stay in sync.
+    if (m_error)
+        m_manager->SendCommand(Command::CommandCLEAR);
+    m_manager->SendCommand(Command::CommandFE);
+    m_scientificNotation = enabled;
+    emit scientificNotationChanged();
+}
+
+void CalculationSession::setSecondFunction(bool enabled)
+{
+    if (m_secondFunction == enabled)
+        return;
+    m_secondFunction = enabled;
+    emit secondFunctionChanged();
 }
 
 void CalculationSession::selectWordWidth(int width)
@@ -91,14 +117,25 @@ void CalculationSession::updateRadixDisplays()
 
 void CalculationSession::send(const QString &command)
 {
-    static const QHash<QString, Command> parenthesisCommands {
-        {"openParenthesis", Command::CommandOPENP}, {"closeParenthesis", Command::CommandCLOSEP}
-    };
-    const auto parenthesis = parenthesisCommands.constFind(command);
-    if (m_mode == QStringLiteral("scientific") && parenthesis != parenthesisCommands.cend()) {
-        m_manager->SendCommand(parenthesis.value());
+    if (command == "scientificNotation") {
+        if (m_mode == "scientific" && !m_error)
+            setScientificNotation(!m_scientificNotation);
         return;
     }
+    static const QHash<QString, Command> scientificCommands {
+        {"openParenthesis", Command::CommandOPENP}, {"closeParenthesis", Command::CommandCLOSEP},
+        {"cube", Command::CommandCUB}, {"cubeRoot", Command::CommandCUBEROOT},
+        {"power", Command::CommandPWR}, {"root", Command::CommandROOT},
+        {"powerTen", Command::CommandPOW10}, {"powerTwo", Command::CommandPOW2},
+        {"log", Command::CommandLOG}, {"logBase", Command::CommandLogBaseY},
+        {"ln", Command::CommandLN}, {"powerE", Command::CommandPOWE},
+        {"factorial", Command::CommandFAC},
+        {"pi", Command::CommandPI}, {"euler", Command::CommandEuler},
+        {"exp", Command::CommandEXP},
+        {"abs", Command::CommandAbs}, {"floor", Command::CommandFloor},
+        {"ceil", Command::CommandCeil}, {"rand", Command::CommandRand},
+        {"dms", Command::CommandDMS}, {"degrees", Command::CommandDegrees},
+    };
     static const QHash<QString, Command> commands {
         {"0", Command::Command0}, {"1", Command::Command1},
         {"2", Command::Command2}, {"3", Command::Command3},
@@ -126,20 +163,30 @@ void CalculationSession::send(const QString &command)
     }
     if (m_mode == "programmer" && command == "decimal")
         return;
-    const auto entry = commands.constFind(command);
-    if (entry == commands.cend())
-        return;
+    Command opcode;
+    const auto scientific = scientificCommands.constFind(command);
+    if (scientific != scientificCommands.cend()) {
+        if (m_mode != "scientific")
+            return;
+        opcode = scientific.value();
+    } else {
+        const auto entry = commands.constFind(command);
+        if (entry == commands.cend())
+            return;
+        opcode = entry.value();
+    }
 
     // Match StandardCalculatorViewModel.OnButtonPressed: a digit or decimal
     // restarts input after an error; other enabled keys only clear the error.
     if (m_error && m_mode != "programmer") {
         m_manager->SendCommand(Command::CommandCLEAR);
-        const auto opcode = entry.value();
         if (opcode != Command::CommandPNT
             && !(opcode >= Command::Command0 && opcode <= Command::Command9))
             return;
     }
-    m_manager->SendCommand(entry.value());
+    if (m_mode == "scientific" && (command == "clear" || command == "clearEntry"))
+        setScientificNotation(false);
+    m_manager->SendCommand(opcode);
     updateRadixDisplays();
 }
 

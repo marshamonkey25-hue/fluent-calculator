@@ -12,9 +12,28 @@ ApplicationWindow {
     minimumWidth: 320
     minimumHeight: Math.max(460, currentPage ? currentPage.implicitHeight + 52 : 0)
     title: qsTr("Calculator")
-    // Fluent's Fusion fallback Labels otherwise retain the native text color
-    // when an application override first changes the scheme.
-    palette.windowText: Application.styleHints.colorScheme === Qt.Dark ? "#ffffff" : "#1b1b1b"
+    // Resolve explicit preferences independently of platform scheme support.
+    // Every page/control inherits these Fluent semantic palette roles.
+    readonly property bool darkTheme: appPreferences.effectiveTheme === "dark"
+    readonly property color foregroundColor: darkTheme ? "#ffffff" : "#1b1b1b"
+    readonly property color accentColor: darkTheme ? "#60cdff" : "#0078d4"
+    color: palette.window
+    palette.window: darkTheme ? "#202020" : "#f3f3f3"
+    palette.windowText: window.foregroundColor
+    palette.text: window.foregroundColor
+    palette.buttonText: window.foregroundColor
+    palette.base: darkTheme ? "#202020" : "#ffffff"
+    palette.alternateBase: darkTheme ? "#252525" : "#f9f9f9"
+    palette.button: darkTheme ? "#2d2d2d" : "#f9f9f9"
+    palette.light: darkTheme ? "#404040" : "#f0f0f0"
+    palette.midlight: darkTheme ? "#353535" : "#e6e6e6"
+    palette.mid: darkTheme ? "#555555" : "#b0b0b0"
+    palette.dark: darkTheme ? "#171717" : "#808080"
+    palette.shadow: darkTheme ? "#000000" : "#606060"
+    palette.highlight: window.accentColor
+    palette.accent: window.accentColor
+    palette.highlightedText: darkTheme ? "#00364d" : "#ffffff"
+    palette.placeholderText: darkTheme ? "#a1a1a1" : "#666666"
     readonly property Item currentPage: page.item as Item
     property int currentMode: 0
     property bool settingsOpen: false

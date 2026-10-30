@@ -10,6 +10,11 @@
 #include <QStandardPaths>
 #include <QStyleHints>
 #include <QTemporaryDir>
+#include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QProcess>
+#include <cstdio>
 
 class ControlledSystemPreferences final : public SystemPreferences
 {
@@ -20,6 +25,7 @@ class ControlledSystemPreferences final : public SystemPreferences
 public:
     using SystemPreferences::SystemPreferences;
     QString language() const override { return m_language; }
+    QString theme() const override { return m_theme; }
     void applyTheme(const QString &preference) override
     {
         m_preference = preference;
@@ -34,6 +40,7 @@ public:
     {
         m_theme = theme;
         applyTheme(m_preference);
+        emit themeChanged();
     }
 };
 
@@ -84,5 +91,71 @@ public slots:
     }
 };
 
-QUICK_TEST_MAIN_WITH_SETUP(calculator_ui, CalculatorTestSetup)
+static bool hasIsolatedEnvironment()
+{
+    const auto root = qEnvironmentVariable("CALCULATOR_TEST_ISOLATION_ROOT");
+    if (root.isEmpty() || !QDir(root).exists()
+        || qEnvironmentVariable("DBUS_SYSTEM_BUS_ADDRESS") != "unix:path=" + root + "/runtime/no-system-bus"
+        || qEnvironmentVariable("QT_IM_MODULE") != "compose"
+        || qEnvironmentVariable("QT_QPA_PLATFORM") != "offscreen"
+        || qEnvironmentVariable("QT_QPA_PLATFORMTHEME") != "generic"
+        || qEnvironmentVariable("QT_QUICK_BACKEND") != "software"
+        || qEnvironmentVariable("QSG_RHI_BACKEND") != "software"
+        || qEnvironmentVariable("NO_AT_BRIDGE") != "1"
+        || qEnvironmentVariable("QT_QUICK_CONTROLS_STYLE") != "FluentWinUI3")
+        return false;
+    for (const auto name : {"DISPLAY", "WAYLAND_DISPLAY", "INPUT_METHOD", "XMODIFIERS", "GTK_IM_MODULE",
+                           "QT_IM_MODULES", "DBUS_SESSION_BUS_PID", "DBUS_STARTER_ADDRESS", "DBUS_STARTER_BUS_TYPE",
+                           "AT_SPI_BUS_ADDRESS", "QT_LINUX_ACCESSIBILITY_ALWAYS_ON", "QT_STYLE_OVERRIDE", "QT_QUICK_CONTROLS_CONF"}) {
+        if (qEnvironmentVariableIsSet(name))
+            return false;
+    }
+    for (const auto &entry : {qMakePair("XDG_RUNTIME_DIR", "/runtime"), qMakePair("XDG_CONFIG_HOME", "/config"),
+                              qMakePair("XDG_CACHE_HOME", "/cache"), qMakePair("XDG_DATA_HOME", "/data")}) {
+        if (qEnvironmentVariable(entry.first) != root + entry.second)
+            return false;
+    }
+#ifdef Q_OS_LINUX
+    if (!qEnvironmentVariable("DBUS_SESSION_BUS_ADDRESS").startsWith("unix:path=" + root + "/runtime/bus"))
+        return false;
+#endif
+    return true;
+}
+
+int main(int argc, char **argv)
+{
+    // This guard runs before setup and, crucially, before QuickTest creates
+    // QGuiApplication (where platform/IME plugins and session-bus access start).
+    if (!hasIsolatedEnvironment()) {
+        auto executable = QFileInfo(QString::fromLocal8Bit(argv[0])).absoluteFilePath();
+        if (!QFileInfo::exists(executable))
+            executable = QStandardPaths::findExecutable(QString::fromLocal8Bit(argv[0]));
+        QStringList arguments {QStringLiteral(CALCULATOR_TEST_LAUNCHER), executable};
+        for (int index = 1; index < argc; ++index)
+            arguments.append(QString::fromLocal8Bit(argv[index]));
+        QProcess launcher;
+        launcher.setProcessChannelMode(QProcess::ForwardedChannels);
+        launcher.start(QStringLiteral(CALCULATOR_TEST_PYTHON), arguments);
+        if (!launcher.waitForStarted() || !launcher.waitForFinished(-1)) {
+            std::fprintf(stderr, "Cannot start isolated UI test launcher; refusing an unisolated run.\n");
+            return 2;
+        }
+        return launcher.exitStatus() == QProcess::NormalExit ? launcher.exitCode() : 2;
+    }
+    if (argc == 2 && QByteArray(argv[1]) == "--isolation-probe") {
+        const auto result = QJsonDocument(QJsonObject {
+            {"root", qEnvironmentVariable("CALCULATOR_TEST_ISOLATION_ROOT")},
+            {"platform", qEnvironmentVariable("QT_QPA_PLATFORM")},
+            {"ime", qEnvironmentVariable("QT_IM_MODULE")},
+            {"bus", qEnvironmentVariable("DBUS_SESSION_BUS_ADDRESS")},
+            {"desktopVariablesRemoved", true}
+        }).toJson(QJsonDocument::Compact);
+        std::fwrite(result.constData(), 1, size_t(result.size()), stdout);
+        std::fputc('\n', stdout);
+        return 0;
+    }
+    QTEST_SET_MAIN_SOURCE_PATH
+    CalculatorTestSetup setup;
+    return quick_test_main_with_setup(argc, argv, "calculator_ui", QUICK_TEST_SOURCE_DIR, &setup);
+}
 #include "quicktest.moc"

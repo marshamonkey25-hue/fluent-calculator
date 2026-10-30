@@ -191,7 +191,7 @@ Item {
             }
             clickCommands(["2", "add", "3", "multiply", "4", "equals"])
             compare(findChild(application.contentItem, "resultDisplay").text, "20")
-            const scheme = Application.styleHints.colorScheme === Qt.Dark ? "dark" : "light"
+            const scheme = application.color.r < 0.5 ? "dark" : "light"
             grabImage(application.contentItem).save("standard-" + scheme + "-" + data.tag + ".png")
             application.width = 360
             application.height = 560
@@ -374,7 +374,7 @@ Item {
                 operate(command, true)
             compare(findChild(application.contentItem, "errorIndicator").visible, true)
             waitForRendering(application.contentItem)
-            const scheme = Application.styleHints.colorScheme === Qt.Dark ? "dark" : "light"
+            const scheme = application.color.r < 0.5 ? "dark" : "light"
             grabImage(application.contentItem).save("standard-" + scheme + "-error.png")
             clickCommands(["clearEntry"])
             compare(findChild(application.contentItem, "errorIndicator").visible, false)

@@ -12,9 +12,11 @@ class SystemPreferences : public QObject
 public:
     explicit SystemPreferences(QObject *parent = nullptr);
     virtual QString language() const;
+    virtual QString theme() const;
     virtual void applyTheme(const QString &preference);
 signals:
     void languageChanged();
+    void themeChanged();
 protected:
     bool eventFilter(QObject *object, QEvent *event) override;
 };

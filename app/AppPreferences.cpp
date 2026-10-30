@@ -37,6 +37,7 @@ AppPreferences::AppPreferences(QObject *parent) : QObject(parent)
     m_lastMode = settings.value("navigation/lastMode", "standard").toString();
     m_systemPreferences->applyTheme(m_theme);
     connect(m_systemPreferences, &SystemPreferences::languageChanged, this, &AppPreferences::applyLanguage);
+    connect(m_systemPreferences, &SystemPreferences::themeChanged, this, &AppPreferences::themeChanged);
     applyLanguage();
 }
 AppPreferences::~AppPreferences() { QCoreApplication::removeTranslator(&m_translator); }
@@ -54,8 +55,10 @@ void AppPreferences::setSystemPreferences(SystemPreferences *preferences)
     disconnect(m_systemPreferences, nullptr, this, nullptr);
     m_systemPreferences = preferences;
     connect(m_systemPreferences, &SystemPreferences::languageChanged, this, &AppPreferences::applyLanguage);
+    connect(m_systemPreferences, &SystemPreferences::themeChanged, this, &AppPreferences::themeChanged);
     m_systemPreferences->applyTheme(m_theme);
     applyLanguage();
+    emit themeChanged();
     emit systemPreferencesChanged();
 }
 
