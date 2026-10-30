@@ -852,29 +852,37 @@ void UnitConverter::Calculate()
             return;
         }
 
-        const unsigned int numPreDecimal = GetNumberDigitsWholeNumberPart(returnValue);
-        if (numPreDecimal > MAXIMUMDIGITSALLOWED || (returnValue != 0 && abs(returnValue) < MINIMUMDECIMALALLOWED))
+        if (m_dataLoader->IsCurrencyCategory(m_currentCategory))
         {
-            m_returnDisplay = ToScientificNumber(returnValue);
+            m_returnDisplay = RoundSignificantDigits(returnValue, MAXIMUMDIGITSALLOWED);
+            TrimTrailingZeros(m_returnDisplay);
         }
         else
         {
-            const unsigned int currentNumberSignificantDigits = GetNumberDigits(m_currentDisplay);
-            unsigned int precision;
-            if (abs(returnValue) < OPTIMALDECIMALALLOWED)
+            const unsigned int numPreDecimal = GetNumberDigitsWholeNumberPart(returnValue);
+            if (numPreDecimal > MAXIMUMDIGITSALLOWED || (returnValue != 0 && abs(returnValue) < MINIMUMDECIMALALLOWED))
             {
-                precision = MAXIMUMDIGITSALLOWED;
+                m_returnDisplay = ToScientificNumber(returnValue);
             }
             else
             {
-                // Fewer digits are needed following the decimal if the number is large,
-                // we calculate the number of decimals necessary based on the number of digits in the integer part.
-                auto numberDigits = max(OPTIMALDIGITSALLOWED, min(MAXIMUMDIGITSALLOWED, currentNumberSignificantDigits));
-                precision = numberDigits > numPreDecimal ? numberDigits - numPreDecimal : 0;
-            }
+                const unsigned int currentNumberSignificantDigits = GetNumberDigits(m_currentDisplay);
+                unsigned int precision;
+                if (abs(returnValue) < OPTIMALDECIMALALLOWED)
+                {
+                    precision = MAXIMUMDIGITSALLOWED;
+                }
+                else
+                {
+                    // Fewer digits are needed following the decimal if the number is large,
+                    // we calculate the number of decimals necessary based on the number of digits in the integer part.
+                    auto numberDigits = max(OPTIMALDIGITSALLOWED, min(MAXIMUMDIGITSALLOWED, currentNumberSignificantDigits));
+                    precision = numberDigits > numPreDecimal ? numberDigits - numPreDecimal : 0;
+                }
 
-            m_returnDisplay = RoundSignificantDigits(returnValue, precision);
-            TrimTrailingZeros(m_returnDisplay);
+                m_returnDisplay = RoundSignificantDigits(returnValue, precision);
+                TrimTrailingZeros(m_returnDisplay);
+            }
         }
         m_returnHasDecimal = (m_returnDisplay.find(L'.') != wstring::npos);
     }

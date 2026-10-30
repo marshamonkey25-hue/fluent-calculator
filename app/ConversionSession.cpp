@@ -45,6 +45,11 @@ public:
                 return loader->GetOrderedUnits(category);
         return {};
     }
+    bool IsCurrencyCategory(const Category &category) const override
+    {
+        return std::any_of(m_loaders.begin(), m_loaders.end(),
+                           [&category](const auto &loader) { return loader->IsCurrencyCategory(category); });
+    }
     bool SupportsCategory(const Category &category) override
     {
         return std::any_of(m_loaders.begin(), m_loaders.end(),

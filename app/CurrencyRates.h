@@ -27,6 +27,7 @@ public:
     void LoadData() override {}
     std::vector<UnitConversionManager::Category> GetOrderedCategories() override;
     std::vector<UnitConversionManager::Unit> GetOrderedUnits(const UnitConversionManager::Category &) override;
+    bool IsCurrencyCategory(const UnitConversionManager::Category &category) const override { return category.id == 3; }
     bool SupportsCategory(const UnitConversionManager::Category &category) override { return category.id == 3; }
     std::unordered_map<UnitConversionManager::Unit, UnitConversionManager::ConversionData, UnitConversionManager::UnitHash>
         LoadOrderedRatios(const UnitConversionManager::Unit &unit) override;

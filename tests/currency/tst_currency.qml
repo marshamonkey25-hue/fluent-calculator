@@ -433,6 +433,14 @@ Item {
             keyClick("2")
             tryCompare(control("converterValue2"), "text", data.expected)
         }
+        function test_currency_output_retains_reference_fifteen_decimal_places() {
+            quote("EUR", "USD", 0.123456789012345)
+            openCurrency()
+            mouseClick(control("converterKey_clear"))
+            keyClick("1")
+            compare(control("converterValue2").text, "0.123456789012345",
+                    "Pinned currency formatting keeps 15 decimal places before trimming trailing zeroes")
+        }
         function test_currency_navigation_has_real_converter_input() {
             navigate("mode_currency")
             compare(control("pageTitle").text, Qt.locale().name.indexOf("zh") === 0 ? "货币" : "Currency")

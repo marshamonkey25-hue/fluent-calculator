@@ -36,6 +36,7 @@ Actual TDD red→green logs are in the private `.build-ticket18` tree:
 6. `red06-unavailable-input.log` → `green06-unavailable-input.log`: unavailable result remained selectable → disabled result with a guarded input boundary.
 7. `red07-symbols.log` → `green07-symbols.log`: source-provided symbols were absent → visible symbols beside the formatted amounts.
 8. `red08-refresh-recovery.log` → `green08-refresh-recovery.log`: a usable refreshed rate retained a prior conversion error → result and status recover together.
+9. `red09-currency-format.log` → `green09-currency-format.log`: pinned-source final audit found generic seven-digit output instead of the removed currency branch (`0.123456789012345` became `0.123457`) → restored currency-specific 15 decimal places before trimming; noncurrency formatting stays unchanged.
 
 Additional full-QML regressions cover manual/automatic refresh on re-entry, current catalog/retry, out-of-order catalog/pair/same-pair refreshes, missing/wrong-pair/malformed/duplicate/invalid-date/nonpositive/nonfinite/non-numeric quotes, previous valid session observation after failure, both input sides, same-currency service response, sign/digit/decimal/backspace limits, Copy/Paste, Settings shortcut isolation, shared category input/unit preservation, contrast, visual keyboard focus, 320×640/900×640 layouts and ordinary restart preferences/fresh input. Tests replace only network responses, time and isolated settings roots; production and tests use the same application validation/conversion path.
 
