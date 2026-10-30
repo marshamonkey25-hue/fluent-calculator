@@ -30,6 +30,7 @@ Item {
         function init() {
             application.width = 900
             application.height = 700
+            navigate("mode_standard")
             navigate("mode_graphing")
         }
         function control(name) {
@@ -61,13 +62,276 @@ Item {
             application.update()
             verify(waitForRendering(application.contentItem))
         }
-        function curveNear(image, x, y) {
+        function test_multiple_functions_edit_and_delete_independently() {
+            draw("x", true)
+            mouseClick(control("addFunctionButton"))
+            draw("-x", false)
+            const swatch = control("graphFunctionColor_2").color
+            const secondColor = Qt.rgba(swatch.r, swatch.g, swatch.b, 1)
+            let image = grabImage(application.contentItem)
+            verify(curveNear(image, 3, 3), "First function remains at (3,3)")
+            verify(curveNear(image, 3, -3, secondColor), "Second function is independently evaluated")
+            mouseClick(control("selectFunction_1"))
+            compare(control("functionInput").text, "x")
+            draw("x+2", true)
+            image = grabImage(application.contentItem)
+            verify(curveNear(image, 3, 5), "Editing first updates its curve")
+            verify(!curveNear(image, 3, 3), "Previous first curve is removed")
+            verify(curveNear(image, 3, -3, secondColor), "Second curve is unchanged")
+            mouseClick(control("selectFunction_2"))
+            compare(control("functionInput").text, "-x")
+            draw("x+", true)
+            compare(control("graphStatus").text, localized("Invalid or unsupported expression. Check the syntax.", "表达式无效或不受支持。请检查语法。"))
+            verify(curveNear(grabImage(application.contentItem), 3, 5), "An invalid second function preserves the valid first")
+            mouseClick(control("deleteFunctionButton"))
+            compare(control("functionInput").text, "x+2")
+            verify(curveNear(grabImage(application.contentItem), 3, 5))
+        }
+        function test_deleting_middle_function_preserves_stable_identifiers_and_selection() {
+            draw("x", true)
+            mouseClick(control("addFunctionButton"))
+            draw("x+2", true)
+            mouseClick(control("addFunctionButton"))
+            draw("-x", true)
+            mouseClick(control("selectFunction_2"))
+            mouseClick(control("deleteFunctionButton"))
+            compare(control("functionInput").text, "-x")
+            draw("-x-2", true)
+            mouseClick(control("selectFunction_1"))
+            compare(control("functionInput").text, "x")
+            verify(waitForRendering(application.contentItem))
+            verify(curveNear(grabImage(application.contentItem), 3, 3), "First curve remains independently selectable")
+            mouseClick(control("selectFunction_3"))
+            compare(control("functionInput").text, "-x-2")
+            mouseClick(control("addFunctionButton"))
+            draw("x^2", true)
+            verify(control("selectFunction_4").checked, "A new identifier does not reuse a deleted function")
+            mouseClick(control("deleteFunctionButton"))
+            mouseClick(control("deleteFunctionButton"))
+            mouseClick(control("deleteFunctionButton"))
+            compare(control("functionInput").text, "")
+            compare(control("graphStatus").text, localized("Enter a function, then press Enter or Plot.", "输入函数，然后按回车或绘制。"))
+        }
+        function test_zoom_and_pan_update_curves_axes_and_visible_range() {
+            draw("x^2", true)
+            mouseClick(control("graphZoomInButton"))
+            compare(control("graphRange").text, "x: -5 … 5; y: -5 … 5")
+            verify(waitForRendering(application.contentItem))
+            verify(curveNear(grabImage(application.contentItem), 2, 4), "Zoom reprojects the parabola")
+            mouseClick(control("graphPanRightButton"))
+            mouseClick(control("graphPanUpButton"))
+            compare(control("graphRange").text, "x: -2.5 … 7.5; y: -2.5 … 7.5")
+            verify(waitForRendering(application.contentItem))
+            verify(curveNear(grabImage(application.contentItem), 2, 4), "Panning resamples and reprojects the curve")
+            mouseClick(control("graphResetButton"))
+            compare(control("graphRange").text, "x: -10 … 10; y: -10 … 10")
+        }
+        function test_coordinate_reading_tracks_view_selection_and_undefined_points() {
+            draw("x^2", true)
+            mouseClick(control("graphZoomInButton"))
+            mouseClick(control("graphPanRightButton"))
+            mouseClick(control("graphPanUpButton"))
             const graph = control("functionGraph")
-            const position = graph.mapToItem(application.contentItem, (x + 10) * graph.width / 20,
-                                             (10 - y) * graph.height / 20)
+            mouseClick(graph, graph.width / 2, graph.height / 2)
+            compare(control("graphCoordinates").text, "x: 2.5; y: 2.5; F1(x): 6.25")
+            mouseClick(control("addFunctionButton"))
+            draw("sqrt(-1)", true)
+            mouseClick(graph, graph.width / 2, graph.height / 2)
+            compare(control("graphCoordinates").text, localized("x: 2.5; y: 2.5; F2(x): Undefined", "x: 2.5; y: 2.5; F2(x): 无定义"))
+            mouseClick(control("selectFunction_1"))
+            compare(control("graphCoordinates").text, "x: 2.5; y: 2.5; F1(x): 6.25")
+            mouseClick(control("selectFunction_2"))
+            mouseClick(control("deleteFunctionButton"))
+            mouseClick(control("graphResetButton"))
+        }
+        function test_drag_keyboard_and_zoom_boundaries_remain_responsive() {
+            draw("x+1", true)
+            const graph = control("functionGraph")
+            mousePress(graph, graph.width / 2, graph.height / 2)
+            mouseMove(graph, graph.width * 3 / 4, graph.height * 3 / 4)
+            mouseRelease(graph, graph.width * 3 / 4, graph.height * 3 / 4)
+            const ranges = control("graphRange").text.match(/-?\d+(?:\.\d+)?/g).map(Number)
+            fuzzyCompare(ranges[0], -15, 0.04)
+            fuzzyCompare(ranges[1], 5, 0.04)
+            fuzzyCompare(ranges[2], -5, 0.04)
+            fuzzyCompare(ranges[3], 15, 0.04)
+            keyClick(Qt.Key_Home)
+            keyClick(Qt.Key_Right)
+            keyClick(Qt.Key_Down)
+            compare(control("graphRange").text, "x: -5 … 15; y: -15 … 5")
+            keyClick(Qt.Key_Home)
+            keyClick(Qt.Key_Plus)
+            compare(control("graphRange").text, "x: -5 … 5; y: -5 … 5")
+            mouseWheel(graph, graph.width / 2, graph.height / 2, 0, -120)
+            compare(control("graphRange").text, "x: -10 … 10; y: -10 … 10")
+            mouseWheel(graph, graph.width / 2, graph.height / 2, 0, 120)
+            compare(control("graphRange").text, "x: -5 … 5; y: -5 … 5")
+            keyClick(Qt.Key_Space)
+            compare(control("graphCoordinates").text, "x: 0; y: 0; F1(x): 1")
+            keyClick(Qt.Key_Home)
+            for (let step = 0; step < 30 && control("graphZoomInButton").enabled; ++step)
+                mouseClick(control("graphZoomInButton"))
+            compare(control("graphZoomInButton").enabled, false)
+            const tinyLimits = control("graphRange").text.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/g).map(Number)
+            compare(tinyLimits, [-0.0000005, 0.0000005, -0.0000005, 0.0000005])
+            mouseClick(control("graphResetButton"))
+            for (let step = 0; step < 30 && control("graphZoomOutButton").enabled; ++step)
+                mouseClick(control("graphZoomOutButton"))
+            compare(control("graphZoomOutButton").enabled, false)
+            compare(control("graphRange").text, "x: -500000 … 500000; y: -500000 … 500000")
+            mouseClick(control("graphResetButton"))
+            verify(waitForRendering(application.contentItem))
+            verify(curveNear(grabImage(application.contentItem), 2, 3), "A bounded view can return to its original curve")
+        }
+        function test_function_management_and_view_controls_translate_in_both_layouts_and_themes() {
+            for (const theme of ["light", "dark"]) {
+                navigate("settingsButton")
+                mouseClick(control("theme_" + theme))
+                mouseClick(control("language_zh-CN"))
+                navigate("mode_graphing")
+                compare(control("addFunctionButton").text, "添加函数")
+                compare(control("deleteFunctionButton").text, "删除")
+                compare(control("graphZoomInButton").Accessible.name, "放大")
+                compare(control("graphPanRightButton").Accessible.name, "向右平移")
+                compare(control("graphResetButton").Accessible.name, "重置视图")
+                for (const size of [[320, 460], [900, 700]]) {
+                    application.width = size[0]
+                    application.height = size[1]
+                    draw("x", true, true)
+                    if (!control("functionInput").visible) mouseClick(control("graphEquationsButton"))
+                    mouseClick(control("addFunctionButton"))
+                    draw("-x", true, true)
+                    const graph = control("functionGraph")
+                    const secondId = graph.functions[graph.selectedIndex].id
+                    verify(waitForRendering(application.contentItem))
+                    verify(selectedFunctionTextHasContrast(control("selectFunction_" + secondId)),
+                           "Selected function text keeps 4.5:1 contrast in " + theme)
+                    const color = control("graphFunctionColor_" + secondId).color
+                    const copy = Qt.rgba(color.r, color.g, color.b, 1)
+                    if (!graph.visible) mouseClick(control("graphViewButton"))
+                    mouseClick(control("graphZoomInButton"))
+                    mouseClick(control("graphPanRightButton"))
+                    mouseClick(graph, graph.width / 2, graph.height / 2)
+                    const coordinates = control("graphCoordinates").text
+                    const parts = coordinates.match(/x: ([^;]+); y: ([^;]+); F(\d+)\(x\): (.+)/)
+                    verify(parts !== null, coordinates)
+                    fuzzyCompare(Number(parts[1]), 2.5, 0.06)
+                    fuzzyCompare(Number(parts[2]), 0, 0.06)
+                    compare(Number(parts[3]), secondId)
+                    fuzzyCompare(Number(parts[4]), -2.5, 0.06)
+                    verify(waitForRendering(application.contentItem))
+                    const image = grabImage(application.contentItem)
+                    verify(curveNear(image, 2, 2), "First curve remains usable")
+                    verify(curveNear(image, 2, -2, copy), "Second curve remains readable")
+                    image.save("graphing-multiple-" + theme + "-" + size[0] + ".png")
+                    for (const name of ["graphZoomInButton", "graphZoomOutButton", "graphPanLeftButton", "graphPanRightButton", "graphPanUpButton", "graphPanDownButton", "graphResetButton", "graphRange", "graphCoordinates", "graphStatus"]) {
+                        const item = control(name)
+                        const position = item.mapToItem(application.contentItem, 0, 0)
+                        verify(position.x >= 0 && position.x + item.width <= application.contentItem.width,
+                               name + " fits horizontally")
+                        verify(position.y >= 0 && position.y + item.height <= application.contentItem.height,
+                               name + " fits vertically")
+                    }
+                    if (!control("functionInput").visible) mouseClick(control("graphEquationsButton"))
+                    mouseClick(control("deleteFunctionButton"))
+                    compare(control("functionInput").text, "x")
+                    mouseClick(control("graphSyntaxButton"))
+                    tryCompare(control("graphSyntaxPopup"), "opened", true)
+                    verify(control("graphNavigationHelp").text.indexOf("平移") !== -1)
+                    keyClick(Qt.Key_Escape)
+                    tryCompare(control("functionInput"), "activeFocus", true)
+                    if (!graph.visible) mouseClick(control("graphViewButton"))
+                    mouseClick(control("graphResetButton"))
+                }
+            }
+            navigate("settingsButton")
+            mouseClick(control("theme_system"))
+            mouseClick(control("language_system"))
+            navigate("mode_graphing")
+        }
+        function test_view_changes_resample_discontinuities_and_preserve_other_functions() {
+            draw("1/(x-0.123)", true)
+            mouseClick(control("addFunctionButton"))
+            draw("x+2", true)
+            const swatch = control("graphFunctionColor_2").color
+            const secondColor = Qt.rgba(swatch.r, swatch.g, swatch.b, 1)
+            for (let iteration = 0; iteration < 3; ++iteration) {
+                mouseClick(control("graphZoomInButton"))
+                mouseClick(control("graphPanRightButton"))
+                mouseClick(control("graphPanUpButton"))
+                verify(waitForRendering(application.contentItem))
+                const image = grabImage(application.contentItem)
+                verify(curveNear(image, 1.123, 1), "Positive reciprocal branch is recomputed")
+                verify(curveNear(image, -0.877, -1), "Negative reciprocal branch is recomputed")
+                verify(curveNear(image, 2, 4, secondColor), "Other function uses the changed view")
+                verify(!curveNear(image, 0.123, 0), "No false stroke across the moved pole")
+                verify(!curveNear(image, 0.123, 3), "Pole stays disconnected after view changes")
+                mouseClick(control("graphResetButton"))
+            }
+            mouseClick(control("selectFunction_1"))
+            draw("1/(x-2.5)", true)
+            mouseClick(control("graphZoomInButton"))
+            mouseClick(control("graphPanRightButton"))
+            const graph = control("functionGraph")
+            mouseClick(graph, graph.width / 2, graph.height / 2)
+            const coordinates = control("graphCoordinates").text
+            verify(coordinates.indexOf("F1(x): " + localized("Undefined", "无定义")) !== -1, coordinates)
+            verify(waitForRendering(application.contentItem))
+            const changed = grabImage(application.contentItem)
+            verify(!curveNear(changed, 2.5, 0), "Editing removes the previous sample set")
+            verify(curveNear(changed, 3.5, 1), "Edited reciprocal has its own valid branch")
+            draw("sqrt(x-2.5)", true)
+            verify(waitForRendering(application.contentItem))
+            const domain = grabImage(application.contentItem)
+            verify(curveNear(domain, 3.5, 1), "Edited domain is sampled")
+            verify(!curveNear(domain, 1.5, -1), "Undefined negative branch is removed")
+            mouseClick(control("selectFunction_2"))
+            mouseClick(control("deleteFunctionButton"))
+            mouseClick(control("graphResetButton"))
+        }
+        function test_narrow_view_keeps_distinct_limits_after_panning_and_deep_zoom() {
+            draw("x+1", true)
+            for (let step = 0; step < 30 && control("graphZoomOutButton").enabled; ++step)
+                mouseClick(control("graphZoomOutButton"))
+            for (let step = 0; step < 4; ++step) mouseClick(control("graphPanRightButton"))
+            for (let step = 0; step < 50 && control("graphZoomInButton").enabled; ++step)
+                mouseClick(control("graphZoomInButton"))
+            const limits = control("graphRange").text.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/g).map(Number)
+            verify(limits[1] > limits[0], "Displayed x limits remain distinct far from the origin")
+            fuzzyCompare(limits[1] - limits[0], 0.000001, 0.0000001)
+            const graph = control("functionGraph")
+            mouseClick(graph, graph.width / 2, graph.height / 2)
+            compare(control("graphCoordinates").text, "x: 1000000; y: 0; F1(x): 1000001")
+            mouseClick(control("graphResetButton"))
+        }
+        function selectedFunctionTextHasContrast(row) {
+            const image = grabImage(application.contentItem)
+            const position = row.mapToItem(application.contentItem, 0, 0)
+            function luminance(color) {
+                function linear(channel) { return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4) }
+                return 0.2126 * linear(color.r) + 0.7152 * linear(color.g) + 0.0722 * linear(color.b)
+            }
+            const background = luminance(image.pixel(Math.round(position.x + row.width - 12), Math.round(position.y + row.height / 2)))
+            // Scan the rendered short equation label, excluding swatch and focus border.
+            for (let x = 24; x < 100; ++x)
+                for (let y = 8; y < row.height - 8; ++y) {
+                    const text = luminance(image.pixel(Math.round(position.x + x), Math.round(position.y + y)))
+                    if ((Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05) >= 4.5)
+                        return true
+                }
+            return false
+        }
+        function curveNear(image, x, y, curveColor) {
+            const graph = control("functionGraph")
+            const minimumX = graph.minimumX
+            const maximumX = graph.maximumX
+            const minimumY = graph.minimumY
+            const maximumY = graph.maximumY
+            const position = graph.mapToItem(application.contentItem, (x - minimumX) * graph.width / (maximumX - minimumX),
+                                             (maximumY - y) * graph.height / (maximumY - minimumY))
             const px = Math.round(position.x)
             const py = Math.round(position.y)
-            const color = application.accentColor
+            const color = curveColor || application.accentColor
             for (let dx = -3; dx <= 3; ++dx)
                 for (let dy = -3; dy <= 3; ++dy) {
                     const pixel = image.pixel(px + dx, py + dy)
