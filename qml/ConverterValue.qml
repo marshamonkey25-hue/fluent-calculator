@@ -5,6 +5,7 @@ import QtQuick.Controls
 // Pinned converter values are selectable: the bold side receives the keypad.
 Button {
     id: value
+    property string displayPrefix: ""
     flat: true
     checkable: false
     signal contextRequested()
@@ -24,7 +25,7 @@ Button {
         border.color: value.palette.highlight
     }
     contentItem: Label {
-        text: value.text
+        text: value.displayPrefix === "" ? value.text : value.displayPrefix + " " + value.text
         color: value.palette.windowText
         font: value.font
         minimumPixelSize: 14

@@ -18,3 +18,27 @@
 - [ ] 记录服务及数据来源的适用条款和归属信息，避免把软件 MIT 授权直接当作所有上游数据的统一许可。
 - [ ] 页面沿用换算输入规则、主题、翻译和键盘操作；测试可替换网络响应和时间，生产与测试经过同一应用逻辑。
 - [ ] 使用固定数据验证转换、自动/手动刷新、日期显示、快速切换货币、缺失报价及无效响应。若进行真实连接检查，单独报告，不使常规测试依赖外网。
+
+
+## Ticket 18 implementation evidence (merge validation pending)
+
+Status remains `ready-for-agent`; the integration reviewer owns checklist closure.
+
+Implementation uses the application-owned shared `ConversionSession`, real Microsoft `UnitConverter`, a `CurrencyRates` data loader/validator and the asynchronous `CurrencySource` HTTPS/time boundary. `ConverterPage` retains the pinned two-value/selector and three-column keypad layout, adds currency symbols/source/date/refresh controls, and shares existing English/Chinese, theme, keyboard, clipboard and recent-mode hooks. There is no built-in quote table, JavaScript numeric calculation or durable cache. See `docs/currency-rates.md` for service/API/data-rights details and ticket 19's persistence boundary.
+
+Actual TDD red→green logs are in the private `.build-ticket18` tree:
+
+1. `red01-navigation.log` → `green01-navigation.log`: Currency navigation absent → reachable real shared converter input.
+2. `red02-online.log` → `green02-online.log`: missing Refresh control → fixed-network catalog, 10 EUR at 1.25 = 12.5 USD, source/observation date/independent UTC refresh time.
+3. `red03-catalog-time.log` → `green03-catalog-time.log`: first catalog failure omitted attempt time → visible attempt time and working retry.
+4. `red04-translation.log` → `green04-translation.log`: currency source/status stayed English → live Chinese controls and retained amount/theme behavior.
+5. `red05-overflow.log` → `green05-overflow.log`: an extreme finite rate displayed `inf` → explicit unavailable result and clear recovery.
+6. `red06-unavailable-input.log` → `green06-unavailable-input.log`: unavailable result remained selectable → disabled result with a guarded input boundary.
+7. `red07-symbols.log` → `green07-symbols.log`: source-provided symbols were absent → visible symbols beside the formatted amounts.
+8. `red08-refresh-recovery.log` → `green08-refresh-recovery.log`: a usable refreshed rate retained a prior conversion error → result and status recover together.
+
+Additional full-QML regressions cover manual/automatic refresh on re-entry, current catalog/retry, out-of-order catalog/pair/same-pair refreshes, missing/wrong-pair/malformed/duplicate/invalid-date/nonpositive/nonfinite/non-numeric quotes, previous valid session observation after failure, both input sides, same-currency service response, sign/digit/decimal/backspace limits, Copy/Paste, Settings shortcut isolation, shared category input/unit preservation, contrast, visual keyboard focus, 320×640/900×640 layouts and ordinary restart preferences/fresh input. Tests replace only network responses, time and isolated settings roots; production and tests use the same application validation/conversion path.
+
+Separate live production-QML smoke: `.build-ticket18/live-connection.log` passed 3/3 outcomes through the actual HTTPS source with the service's current catalog and EUR→USD amount **1.118**, observation **2026-10-30**, refresh **2026-10-30T16:21:39Z**. This external-network check is not registered in regular CTest and does not define deterministic expected quotes. Direct documentation/API shape probes also succeeded. Context7 verified Qt 6.8 async request/reply/timeout APIs; no fallback was necessary. UI skill's verified Fluent 2 result was applied with the existing palette/layout. No desktop window or host bus/IME was used. Windows/macOS and native rendering remain unverified.
+
+Final merge/build/lint/regression results will be appended after the frozen validation run.

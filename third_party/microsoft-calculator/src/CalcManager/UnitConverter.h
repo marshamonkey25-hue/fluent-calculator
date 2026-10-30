@@ -209,6 +209,8 @@ namespace UnitConversionManager
         void SetViewModelCallback(_In_ const std::shared_ptr<IUnitConverterVMCallback>& newCallback) override;
         void Calculate() override;
         void ResetCategoriesAndRatios() override;
+        // Reload dynamic metadata without clearing session input or unit choices.
+        void RefreshData();
         // IUnitConverter
 
         static std::vector<std::wstring> StringToVector(std::wstring_view w, std::wstring_view delimiter, bool addRemainder = false);

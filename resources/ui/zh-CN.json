@@ -22,7 +22,8 @@
     "Pressure": "压力",
     "Temperature": "温度",
     "Power": "功率",
-    "Angle": "角度"
+    "Angle": "角度",
+    "Currency": "货币"
   },
   "SettingsPage": {
     "Appearance": "外观",
@@ -387,7 +388,19 @@
     "Speed cannot be negative": "速度不能为负值",
     "Time cannot be negative": "时间不能为负值",
     "Pressure cannot be negative": "压力不能为负值",
-    "Positive negative": "正负"
+    "Positive negative": "正负",
+    "Currency amount cannot be negative": "货币金额不能为负值",
+    "Frankfurter · Daily reference rates": "Frankfurter · 每日参考汇率",
+    "No observation date": "暂无数据日期",
+    "Data date: %1": "数据日期：%1",
+    "Not refreshed yet": "尚未刷新",
+    "Last refresh: %1": "最近刷新：%1",
+    "Refreshing…": "正在刷新…",
+    "Up to date": "已更新",
+    "Refresh failed. Try again.": "刷新失败，请重试。",
+    "No valid quote for this currency pair. Try again.": "此货币对暂无有效汇率，请重试。",
+    "Rates unavailable. Refresh to try again.": "汇率不可用，请尝试刷新。",
+    "Refresh rates": "刷新汇率"
   },
   "GraphingPage": {
     "Function graph": "函数图形",

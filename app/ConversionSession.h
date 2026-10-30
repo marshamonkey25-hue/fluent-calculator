@@ -1,16 +1,19 @@
 #pragma once
 
 #include "UnitConverter.h"
+#include "CurrencyRates.h"
 #include <QObject>
 #include <QQmlEngine>
 #include <QVariantList>
 #include <memory>
 
-// One noncurrency converter session; numeric values cross QML as text only.
+// One converter session; numeric values cross QML as text only.
 class ConversionSession : public QObject, private UnitConversionManager::IUnitConverterVMCallback
 {
     Q_OBJECT
     QML_ELEMENT
+    Q_PROPERTY(CurrencySource *currencySource READ currencySource WRITE setCurrencySource NOTIFY currencySourceChanged)
+    Q_PROPERTY(CurrencyRates *currency READ currency CONSTANT)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(bool supportsNegative READ supportsNegative NOTIFY categoryChanged)
     Q_PROPERTY(QString category READ category WRITE setCategory NOTIFY categoryChanged)
@@ -23,6 +26,9 @@ class ConversionSession : public QObject, private UnitConversionManager::IUnitCo
     Q_PROPERTY(QString value2 READ value2 NOTIFY displayChanged)
 public:
     explicit ConversionSession(QObject *parent = nullptr);
+    CurrencySource *currencySource() const { return m_currencySource; }
+    void setCurrencySource(CurrencySource *source);
+    CurrencyRates *currency() const { return m_currency.get(); }
     QString language() const { return m_language; }
     void setLanguage(const QString &language);
     bool supportsNegative() const { return m_converter->GetCurrentCategory().supportsNegative; }
@@ -42,6 +48,7 @@ public:
     Q_INVOKABLE void copy();
     Q_INVOKABLE void send(const QString &command);
 signals:
+    void currencySourceChanged();
     void categoryChanged();
     void unitCatalogChanged();
     void languageChanged();
@@ -56,6 +63,8 @@ private:
     void SuggestedValueCallback(const std::vector<std::tuple<std::wstring, UnitConversionManager::Unit>> &) override {}
     void MaxDigitsReached() override;
     void setStatus(const QString &status);
+    std::shared_ptr<CurrencyRates> m_currency;
+    QPointer<CurrencySource> m_currencySource;
     QString m_category = QStringLiteral("length");
     QString m_language = QStringLiteral("en-US");
     QString m_status;
