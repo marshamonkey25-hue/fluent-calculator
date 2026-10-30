@@ -306,6 +306,25 @@ Item {
             compare(control("graphCoordinates").text, "x: 1000000; y: 0; F1(x): 1000001")
             mouseClick(control("graphResetButton"))
         }
+        function test_pan_boundary_keeps_coordinate_readout_aligned_with_visible_limits() {
+            draw("x", true)
+            for (let step = 0; step < 30 && control("graphZoomOutButton").enabled; ++step)
+                mouseClick(control("graphZoomOutButton"))
+            const graph = control("functionGraph")
+            mousePress(graph, graph.width / 2, graph.height / 2)
+            mouseMove(graph, -2000 * graph.width, graph.height / 2)
+            mouseRelease(graph, -2000 * graph.width, graph.height / 2)
+            for (let step = 0; step < 50 && control("graphZoomInButton").enabled; ++step)
+                mouseClick(control("graphZoomInButton"))
+            const limits = control("graphRange").text.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/g).map(Number)
+            verify(limits[1] > limits[0], "Pan boundary retains distinct limits")
+            fuzzyCompare((limits[0] + limits[1]) / 2, 1000000000, 0.000001)
+            fuzzyCompare(limits[1] - limits[0], 0.000001, 0.00000005)
+            mouseClick(graph, graph.width - 1, graph.height / 2)
+            const coordinate = Number(control("graphCoordinates").text.match(/x: ([^;]+)/)[1])
+            compare(coordinate, limits[1], "The last pixel agrees with the visible maximum within double precision")
+            mouseClick(control("graphResetButton"))
+        }
         function contrastRatio(first, second) {
             function luminance(color) {
                 function linear(channel) { return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4) }

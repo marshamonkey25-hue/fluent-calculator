@@ -40,6 +40,7 @@ Actual red→green cycles retained in private `.build-ticket21/red-NN.log` and `
 8. Navigation help is missing → translated scrolling help and Escape/editor focus return.
 9. Selected equation text fails rendered 4.5:1 contrast → semantic highlightedText fixes both themes.
 10. Additional labeled-curve colors fail contrast against the graph surface → blend theme-derived hues toward the semantic foreground only as needed for 4.5:1 contrast; verify actual curves still match their readable legend colors.
+11. Deep zoom at the `1e9` pan boundary halves the apparent displayed span → up to 17 significant digits and actual representable axis spans keep range labels, samples, painting and coordinate inspection aligned. The user-operation test allows `5e-8` absolute error for the `1e-6` span, accounting for double spacing at this magnitude.
 
 Additional stable-ID/middle-deletion, wheel, view-change discontinuity and existing mathematical cases are regression coverage, not claimed as separate red cycles. Early development logs also retain a failed full graph run for long-status overflow and a later exponent-format literal mismatch (`e-7` versus QString `e-07`); the final test compares numeric limits instead of irrelevant exponent spelling.
 

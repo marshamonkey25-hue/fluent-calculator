@@ -123,7 +123,7 @@ QString FunctionGraph::formatCoordinate(double value) const
 {
     if (!std::isfinite(value)) return {};
     const int precision = std::clamp(int(std::ceil(std::log10(std::max(1.0, std::abs(value)))
-        - std::log10(m_span))) + 8, 8, 16);
+        - std::log10(m_span))) + 8, 8, 17);
     return QString::number(value, 'g', precision);
 }
 
@@ -131,8 +131,8 @@ QVariantMap FunctionGraph::inspection() const
 {
     if (!m_inspectionVisible) return {};
     const auto &curve = m_curves[m_selectedIndex];
-    const double x = minimumX() + m_inspectionPosition.x() * m_span;
-    const double y = maximumY() - m_inspectionPosition.y() * m_span;
+    const double x = minimumX() + m_inspectionPosition.x() * (maximumX() - minimumX());
+    const double y = maximumY() - m_inspectionPosition.y() * (maximumY() - minimumY());
     const double value = curve.status == Empty || curve.status == Invalid
         ? std::numeric_limits<double>::quiet_NaN() : curve.function.evaluate(x);
     return {{"x", formatCoordinate(x)}, {"y", formatCoordinate(y)},
@@ -200,7 +200,7 @@ void FunctionGraph::sampleCurve(Curve &curve)
                     || std::max({a.y(), b.y(), middle.y(), probe.y()}) < minimumY()) return;
                 const double deviation = std::max(std::abs(middle.y() - (a.y() / 2 + b.y() / 2)),
                     std::abs(probe.y() - (a.y() * (1 - probeFraction) + b.y() * probeFraction)));
-                if (deviation <= m_span * 0.0001) { appendClipped(a, b); return; }
+                if (deviation <= (maximumY() - minimumY()) * 0.0001) { appendClipped(a, b); return; }
             } else {
                 omitted = true;
                 if (!std::isfinite(a.y()) && !std::isfinite(b.y())
@@ -212,7 +212,7 @@ void FunctionGraph::sampleCurve(Curve &curve)
         };
         QPointF previous = evaluate(minimumX());
         for (int index = 1; index <= intervals && evaluations < evaluationBudget; ++index) {
-            const auto next = evaluate(minimumX() + m_span * index / intervals);
+            const auto next = evaluate(minimumX() + (maximumX() - minimumX()) * index / intervals);
             sample(previous, next, 0);
             previous = next;
         }
@@ -224,8 +224,8 @@ void FunctionGraph::paint(QPainter *painter)
 {
     painter->fillRect(boundingRect(), m_backgroundColor);
     const auto point = [&](QPointF value) {
-        return QPointF((value.x() - minimumX()) * width() / m_span,
-            (maximumY() - value.y()) * height() / m_span);
+        return QPointF((value.x() - minimumX()) * width() / (maximumX() - minimumX()),
+            (maximumY() - value.y()) * height() / (maximumY() - minimumY()));
     };
     // Nice decimal tick spacing keeps labels legible and work bounded at every zoom.
     const double magnitude = std::pow(10.0, std::floor(std::log10(m_span / 8)));
@@ -271,7 +271,7 @@ void FunctionGraph::paint(QPainter *painter)
         }
     }
     if (m_inspectionVisible) {
-        const double x = minimumX() + m_inspectionPosition.x() * m_span;
+        const double x = minimumX() + m_inspectionPosition.x() * (maximumX() - minimumX());
         const auto &curve = m_curves[m_selectedIndex];
         const double y = curve.status == Empty || curve.status == Invalid
             ? std::numeric_limits<double>::quiet_NaN() : curve.function.evaluate(x);
