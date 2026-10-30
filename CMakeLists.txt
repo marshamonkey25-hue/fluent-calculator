@@ -24,6 +24,7 @@ qt_add_qml_module(calculator_ui
         qml/StandardPage.qml
         qml/SettingsPage.qml
         qml/ScientificPage.qml
+        qml/ProgrammerPage.qml
         qml/CalculatorButton.qml
         qml/ModeRegistry.qml
 )

@@ -16,6 +16,10 @@ class CalculationSession : public QObject, private ICalcDisplay
     Q_PROPERTY(QString expression READ expression NOTIFY expressionChanged)
     Q_PROPERTY(bool error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
+    Q_PROPERTY(QString mode READ mode NOTIFY modeChanged)
+    Q_PROPERTY(int radix READ radix NOTIFY radixChanged)
+    Q_PROPERTY(int wordWidth READ wordWidth NOTIFY wordWidthChanged)
+    Q_PROPERTY(QStringList radixDisplays READ radixDisplays NOTIFY radixDisplaysChanged)
 
 public:
     explicit CalculationSession(QObject *parent = nullptr);
@@ -24,12 +28,22 @@ public:
     bool error() const { return m_error; }
     QString language() const { return m_language; }
     void setLanguage(const QString &language);
+    QString mode() const { return m_mode; }
+    int radix() const { return m_radix; }
+    QStringList radixDisplays() const { return m_radixDisplays; }
+    int wordWidth() const { return m_wordWidth; }
+    Q_INVOKABLE void selectWordWidth(int width);
+    Q_INVOKABLE void selectRadix(int radix);
     Q_INVOKABLE void send(const QString &command);
     Q_INVOKABLE void copyResult();
     Q_INVOKABLE void selectMode(const QString &mode);
 
 signals:
     void languageChanged();
+    void modeChanged();
+    void radixChanged();
+    void wordWidthChanged();
+    void radixDisplaysChanged();
     void displayChanged();
     void expressionChanged();
     void errorChanged();
@@ -43,6 +57,7 @@ signals:
     void inputChanged();
 
 private:
+    void updateRadixDisplays();
     void SetPrimaryDisplay(const std::wstring &text, bool isError) override;
     void SetIsInError(bool isError) override;
     void SetExpressionDisplay(
@@ -57,6 +72,9 @@ private:
     void MemoryItemChanged(unsigned int index) override;
     void InputChanged() override;
 
+    int m_wordWidth = 64;
+    int m_radix = 10;
+    QStringList m_radixDisplays { "0", "0", "0", "0" };
     QString m_mode = QStringLiteral("standard");
     QString m_display = QStringLiteral("0");
     QString m_expression;
