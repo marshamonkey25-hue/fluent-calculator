@@ -19,7 +19,21 @@ Item {
         function test_preferences_survive_ordinary_process_restart() {
             application.requestActivate()
             tryCompare(application, "active", true)
-            if (restartStage === "write") {
+            if (restartStage === "scientific-write") {
+                navigate("mode_scientific")
+                compare(findChild(application.contentItem, "pageTitle").text, "科学")
+                for (const command of ["2", "add", "3", "multiply", "4", "equals"])
+                    mouseClick(findChild(application.contentItem, "key_" + command))
+                compare(findChild(application.contentItem, "resultDisplay").text, "14")
+            } else if (restartStage === "scientific-restore") {
+                compare(findChild(application.contentItem, "pageTitle").text, "科学")
+                compare(findChild(application.contentItem, "resultDisplay").text, "0")
+                compare(findChild(application.contentItem, "expressionDisplay").text, "")
+                verify(findChild(application.contentItem, "key_openParenthesis") !== null)
+                for (const command of ["2", "add", "3", "multiply", "4", "equals"])
+                    mouseClick(findChild(application.contentItem, "key_" + command))
+                compare(findChild(application.contentItem, "resultDisplay").text, "14")
+            } else if (restartStage === "write") {
                 navigate("settingsButton")
                 mouseClick(findChild(application.contentItem, "theme_dark"))
                 mouseClick(findChild(application.contentItem, "language_zh-CN"))

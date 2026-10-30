@@ -4,7 +4,10 @@
     "Open navigation": "打开导航",
     "Settings": "设置"
   },
-  "ModeRegistry": { "Standard": "标准" },
+  "ModeRegistry": {
+    "Standard": "标准",
+    "Scientific": "科学"
+  },
   "SettingsPage": {
     "Appearance": "外观",
     "App theme": "应用主题",
@@ -37,5 +40,20 @@
     "Result: %1": "结果：%1",
     "Error": "错误",
     "Digit %1": "数字 %1"
+  },
+  "ScientificPage": {
+    "Clear": "清除",
+    "Divide": "除",
+    "Multiply": "乘",
+    "Subtract": "减",
+    "Add": "加",
+    "Decimal separator": "小数点",
+    "Equals": "等于",
+    "Error: %1": "错误：%1",
+    "Result: %1": "结果：%1",
+    "Error": "错误",
+    "Digit %1": "数字 %1",
+    "Open parenthesis": "左括号",
+    "Close parenthesis": "右括号"
   }
 }

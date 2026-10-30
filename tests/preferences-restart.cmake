@@ -1,7 +1,7 @@
 string(RANDOM LENGTH 12 ALPHABET 0123456789abcdef run_id)
 set(data_root "${BUILD_DIR}/restart-data-${run_id}")
 file(MAKE_DIRECTORY "${data_root}")
-foreach(stage write restore invalid)
+foreach(stage write restore scientific-write scientific-restore invalid)
     execute_process(
         COMMAND "${CMAKE_COMMAND}" -E env
             "QT_QPA_PLATFORM=offscreen" "QT_QUICK_BACKEND=software" "QSG_RHI_BACKEND=software"

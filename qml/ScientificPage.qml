@@ -126,6 +126,7 @@ FocusScope {
                     accent: modelData.command === "equals"
                     onClicked: page.session.send(modelData.command)
                     Shortcut {
+                        enabled: page.visible
                         sequences: page.keySequences[keyButton.modelData.command] || [keyButton.modelData.label]
                         context: Qt.WindowShortcut
                         onActivated: page.session.send(keyButton.modelData.command)

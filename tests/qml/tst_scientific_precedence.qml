@@ -3,7 +3,7 @@ import QtTest
 import Calculator
 
 Item {
-    MainWindow { id: application }
+    MainWindow { id: application; systemPreferences: testSystemPreferences }
     TestCase {
         name: "ScientificPrecedence"
         when: windowShown && application.visible
@@ -171,9 +171,9 @@ Item {
             application.width = data.width
             application.height = data.height
             waitForRendering(application.contentItem)
-            const title = findChild(application.contentItem, "modeTitle")
+            const title = findChild(application.contentItem, "pageTitle")
             verify(title !== null, "Current mode has a visible title")
-            compare(title.text, "Scientific")
+            compare(title.text, Qt.locale().name.indexOf("zh") === 0 ? "科学" : "Scientific")
             const commands = ["clear", "openParenthesis", "closeParenthesis", "divide", "7", "8", "9", "multiply",
                               "4", "5", "6", "subtract", "1", "2", "3", "add", "0", "decimal", "equals"]
             for (const command of commands) {
@@ -185,8 +185,8 @@ Item {
                 verify(position.x + key.width <= application.width + 1)
                 verify(position.y + key.height <= application.height + 1)
             }
-            compare(button("openParenthesis").Accessible.name, "Open parenthesis")
-            compare(button("closeParenthesis").Accessible.name, "Close parenthesis")
+            compare(button("openParenthesis").Accessible.name, Qt.locale().name.indexOf("zh") === 0 ? "左括号" : "Open parenthesis")
+            compare(button("closeParenthesis").Accessible.name, Qt.locale().name.indexOf("zh") === 0 ? "右括号" : "Close parenthesis")
             button("openParenthesis").forceActiveFocus(Qt.TabFocusReason)
             keyClick(Qt.Key_Tab)
             verify(button("closeParenthesis").activeFocus)
@@ -198,6 +198,54 @@ Item {
             grabImage(application.contentItem).save("scientific-" + scheme + "-" + data.tag + ".png")
             application.width = 360
             application.height = 560
+        }
+
+        function openSettings() {
+            mouseClick(findChild(application.contentItem, "navigationButton"))
+            const drawer = findChild(application, "navigationDrawer")
+            tryCompare(drawer, "opened", true)
+            mouseClick(findChild(drawer.contentItem, "settingsButton"))
+            tryCompare(drawer, "visible", false)
+        }
+
+        function test_runtime_translation_preserves_scientific_calculation() {
+            openSettings()
+            mouseClick(findChild(application.contentItem, "language_en-US"))
+            selectMode("scientific")
+            clickCommands(["openParenthesis", "6", "multiply"])
+            openSettings()
+            mouseClick(findChild(application.contentItem, "language_zh-CN"))
+            selectMode("scientific")
+            compare(findChild(application.contentItem, "pageTitle").text, "科学")
+            compare(button("openParenthesis").Accessible.name, "左括号")
+            compare(button("closeParenthesis").Accessible.name, "右括号")
+            compare(button("clear").Accessible.name, "清除")
+            clickCommands(["7", "closeParenthesis", "equals"])
+            compare(result(), "42")
+            compare(expression(), "(6 × 7) =")
+            clickCommands(["clear", "1", "divide", "0", "equals"])
+            compare(result(), "除数不能为零")
+            compare(findChild(application.contentItem, "errorIndicator").text, "错误")
+            openSettings()
+            mouseClick(findChild(application.contentItem, "language_en-US"))
+            selectMode("scientific")
+            compare(result(), "Cannot divide by zero")
+            compare(button("openParenthesis").Accessible.name, "Open parenthesis")
+            openSettings()
+            mouseClick(findChild(application.contentItem, "language_system"))
+            selectMode("scientific")
+        }
+
+        function test_settings_keep_hidden_scientific_shortcuts_inactive() {
+            clickCommands(["6", "multiply"])
+            openSettings()
+            findChild(application.contentItem, "theme_light").forceActiveFocus(Qt.TabFocusReason)
+            for (const key of ["7", "(", ")", Qt.Key_Escape, Qt.Key_Return])
+                keyClick(key)
+            selectMode("scientific")
+            clickCommands(["7", "equals"])
+            compare(result(), "42", "Settings must preserve the pending Scientific calculation")
+            compare(expression(), "6 × 7 =")
         }
 
         function cleanupTestCase() {
