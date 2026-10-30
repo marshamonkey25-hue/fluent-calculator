@@ -281,11 +281,13 @@ Item {
             keyClick(Qt.Key_Space)
             const coordinates = control("graphCoordinates").text
             verify(coordinates.indexOf("F1(x): " + localized("Undefined", "无定义")) !== -1, coordinates)
+            application.update()
             verify(waitForRendering(application.contentItem))
             const changed = grabImage(application.contentItem)
             verify(!curveNear(changed, 2.5, 0), "Editing removes the previous sample set")
             verify(curveNear(changed, 3.5, 1), "Edited reciprocal has its own valid branch")
             draw("sqrt(x-2.5)", true)
+            application.update()
             verify(waitForRendering(application.contentItem))
             const domain = grabImage(application.contentItem)
             verify(curveNear(domain, 3.5, 1), "Edited domain is sampled")

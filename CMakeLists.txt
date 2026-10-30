@@ -45,6 +45,7 @@ qt_add_qml_module(calculator_ui
         qml/DatePage.qml
         qml/DatePicker.qml
         qml/CalculatorButton.qml
+        qml/ResultCopyMenu.qml
         qml/ModeRegistry.qml
         qml/ConverterPage.qml
         qml/ConverterValue.qml
@@ -76,6 +77,20 @@ if(BUILD_TESTING)
         QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml"
         CALCULATOR_TEST_PYTHON="${Python3_EXECUTABLE}"
         CALCULATOR_TEST_LAUNCHER="${CMAKE_CURRENT_SOURCE_DIR}/tests/run-ui-isolated.py")
+    foreach(variant light dark zh-CN zh-CN-dark)
+        add_test(NAME calculator-integrated-delivery-${variant}
+            COMMAND ${ui_test_launcher} $<TARGET_FILE:calculator_ui_tests>
+                -input ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration)
+        if(variant STREQUAL "zh-CN-dark")
+            set(delivery_test_environment "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=dark")
+        elseif(variant STREQUAL "zh-CN")
+            set(delivery_test_environment "CALCULATOR_TEST_LANGUAGE=zh-CN;CALCULATOR_TEST_THEME=light")
+        else()
+            set(delivery_test_environment "CALCULATOR_TEST_LANGUAGE=en-US;CALCULATOR_TEST_THEME=${variant}")
+        endif()
+        set_tests_properties(calculator-integrated-delivery-${variant} PROPERTIES
+            ENVIRONMENT "${delivery_test_environment}" TIMEOUT 180)
+    endforeach()
     add_test(NAME calculator-test-isolation
         COMMAND ${ui_test_launcher} "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ui_isolation.py"
             --test-executable $<TARGET_FILE:calculator_ui_tests>)

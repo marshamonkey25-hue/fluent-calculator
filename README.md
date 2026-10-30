@@ -1,6 +1,8 @@
 # Fluent Calculator
 
-A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic core. This checkout implements tickets **01–10**: Standard arithmetic, expression/result/error display, entry correction, reference error recovery, copying results, keyboard input, persistent theme/language settings, Scientific precedence, extended operations and trigonometry, Programmer integer radix/word-width operations, bitwise operations and editable bit displays, per-mode calculation history, and shared calculator memory. Additional modes are separate implementation tickets.
+A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic and conversion cores. All **18 modes** are implemented: Standard, Scientific, Graphing, Programmer, Date calculation, and Currency, Volume, Length, Weight and Mass, Temperature, Energy, Area, Speed, Time, Power, Data, Pressure and Angle conversion. History and shared memory belong to the arithmetic session; preferences/recent mode and validated daily currency observations persist across ordinary restarts.
+
+Start with the build/check commands below. The [integrated delivery report](docs/delivery-verification.md) maps all 68 user stories to actual UI checks, documents reference-layout comparison and screenshots, and distinguishes Linux verification from untested platforms. [Sources and notices](docs/third-party.md) cover Microsoft, Qt, graphing and currency data. Ticket-by-ticket notes later in this file are historical records of the incremental implementation; their older feature counts and native-desktop runs do not describe current scope or validation policy.
 
 The content follows the pinned Microsoft Standard keypad layout with Fluent controls and native system window decorations. Navigation is registered centrally in `qml/ModeRegistry.qml`. `MainWindow` owns one `CalculationSession`, which dispatches string command names to `CalculatorManager`, `CCalcEngine` and Ratpack. Arithmetic displays and expressions remain strings across C++/QML, including integers above JavaScript's safe integer range.
 
@@ -48,13 +50,13 @@ CE clears the current operand while preserving the pending calculation; C clears
 ## Checks
 
 ```sh
-ctest --test-dir .build --output-on-failure
+ctest --test-dir .build --output-on-failure -j2
 cmake --build .build --target calculator_ui_qmllint -j2
 ```
 
 Configure with `-DBUILD_TESTING=OFF` only when deliberately building without QuickTest. The normal configuration includes all current checks.
 
-The three main CTest entries run the real-QML behavior suite with controlled English/light, English/dark, and Simplified-Chinese/light system preferences. The additional `calculator-preferences-restart` entry launches three separate processes against one temporary settings root: select preferences through the UI and close normally, restart and observe their restoration with fresh calculation state, then seed invalid external settings and observe safe defaults. CTest sets offscreen/software rendering; each run isolates Qt settings, data and cache. No network calls, shared user settings or mocked calculator core are involved. The suite covers:
+The main CTest entries run the real-QML behavior suite with controlled English/light, English/dark, and Simplified-Chinese/light system preferences. Separate suites cover history/memory, date, graphing and every converter category. The four `calculator-integrated-delivery-*` entries additionally traverse all 18 modes in English and Simplified Chinese with both themes, check the pinned navigation order/focus, cross-mode state boundaries and arithmetic Copy, and capture narrow/wide content. Restart helpers launch independent processes against temporary fixture storage to verify retained preferences/rates and fresh session state. CTest invokes the isolated launcher before Qt starts; no live network requests, shared user settings or mocked calculator core are involved. The original main suite covers:
 
 - Mouse stepwise evaluation and displayed expression, keyboard decimal entry/evaluation/clear, all four arithmetic operations, decimal precision, and the core's 16-digit input limit.
 - Exact `9007199254740992 + 1 = 9007199254740993`, then subtracting `9007199254740992` to get `1`, via both mouse and keyboard.
