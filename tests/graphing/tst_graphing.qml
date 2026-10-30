@@ -325,6 +325,31 @@ Item {
             compare(coordinate, limits[1], "The last pixel agrees with the visible maximum within double precision")
             mouseClick(control("graphResetButton"))
         }
+        function test_function_list_keeps_keyboard_focus_visible_in_narrow_window() {
+            application.width = 320
+            application.height = 460
+            draw("x", true, true)
+            for (let index = 1; index <= 6; ++index) {
+                mouseClick(control("addFunctionButton"))
+                draw("x+" + index, true, true)
+            }
+            control("functionInput").forceActiveFocus(Qt.TabFocusReason)
+            let focusedRows = 0
+            for (let step = 0; step < 12; ++step) {
+                keyClick(Qt.Key_Tab)
+                verify(waitForPolish(application.contentItem))
+                for (let id = 1; id <= 7; ++id) {
+                    const row = findChild(application.contentItem, "selectFunction_" + id)
+                    if (!row || !row.activeFocus) continue
+                    ++focusedRows
+                    const list = control("functionList")
+                    const position = row.mapToItem(list, 0, 0)
+                    verify(position.y >= 0 && position.y + row.height <= list.height,
+                           "Focused function F" + id + " is fully visible")
+                }
+            }
+            verify(focusedRows > 0, "Function rows participate in keyboard navigation")
+        }
         function contrastRatio(first, second) {
             function luminance(color) {
                 function linear(channel) { return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4) }

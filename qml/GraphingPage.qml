@@ -224,6 +224,9 @@ Page {
                             + (modelData.status === FunctionGraph.Invalid ? " — " + qsTr("Invalid expression") : "")
                         Accessible.name: text
                         Accessible.selected: checked
+                        onActiveFocusChanged: {
+                            if (activeFocus) functionList.positionViewAtIndex(index, ListView.Contain)
+                        }
                         contentItem: Label {
                             text: functionRow.text
                             color: functionRow.checked ? functionRow.palette.highlightedText : functionRow.palette.buttonText
