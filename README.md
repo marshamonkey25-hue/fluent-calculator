@@ -349,3 +349,21 @@ Currency saves validated Frankfurter metadata and observations for each currency
 The cache contains currency data only. Ordinary restarts retain appearance/recent-mode preferences and cached rates, while numeric input, arithmetic histories and shared memory start fresh. See [currency storage and service notes](docs/currency-rates.md) for the file location/schema, date/refresh semantics and source terms. The currency CTest entries cover cache corruption, missing pairs, offline conversion, asynchronous responses, storage failures, English/Chinese, both themes, and four independent restart/recovery processes through `tests/run-ui-isolated.py`.
 
 Ticket 19's private Linux/Qt 6.12/GCC 16.2 Debug build and QML lint pass without warnings. The full 45-entry isolated matrix passed 44 entries in 2492.38 seconds; correcting a new Chinese test literal to match the existing translation and replaying its sole failed entry passed 1/1 in 106.07 seconds. All 45 entries have passing final results across those runs, including 60 Currency outcomes and 298 main application outcomes per theme/language, plus four currency restart stages. The [ticket evidence](.scratch/calculator/issues/19-offline-currency-cache.md) records three actual TDD cycles, logs, scope and the pending independent merge-review gate. Windows/macOS and native desktop behavior remain unverified.
+
+
+## Final integrated acceptance
+
+The parent specification and all 22 tickets are resolved after the final review fixes and one frozen root-checkout validation. All 144 ticket criteria were checked. On Linux x86_64 with Qt 6.12.0/GCC 16.2.1, configuration, Debug build and warning-free QML lint pass; **49/49 CTest entries pass in 2820.55 seconds**, with **3005 QtTest outcomes passed, zero failed/skipped**, three process-isolation checks and all 31 independent restart stages passing.
+
+The retained root build is reproducible with:
+
+```sh
+cmake -S . -B .build-integration -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build .build-integration -j2
+cmake --build .build-integration --target calculator_ui_qmllint -j2
+python3 tests/run-ui-isolated.py ctest --test-dir .build-integration --output-on-failure -j2
+```
+
+The executable is `/hdd/calc/.build-integration/calculator`; normal user launch is `./.build-integration/calculator`. Acceptance startup uses `python3 tests/run-ui-isolated.py .build-integration/calculator`. That production process remained running for three seconds without diagnostics, then its owned process group was terminated. No native visible-window observation is claimed.
+
+Fresh offscreen screenshots were visually inspected in both themes, including all 18 modes, wide converter/graph layouts, history and Copy/Paste menus. The final [delivery report](docs/delivery-verification.md) records separate Standards/Spec review results, the 144 fresh per-mode captures and local evidence paths. All 23 workflow worktrees were verified clean/merged, their useful evidence archived and checked, then removed; the root build and branch refs remain available. Windows/macOS, Qt 6.8 runtime, native desktop/hardware rendering and current live-service availability remain unverified. All UI acceptance used the repository's private compose/generic/offscreen/software launcher; no desktop input, host IME or host session bus was used.
