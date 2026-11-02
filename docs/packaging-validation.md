@@ -9,8 +9,10 @@ claim that a workflow file alone proves native Windows/macOS support.
   official Qt 6.8.3, private runtime under `/opt/fluent-calculator`.
 - `dist/fluent-calculator-0.1.0-fedora43-x86_64.rpm`: built in Fedora 43 with
   its distribution Qt.
-- The earlier Arch `dist/fluent-calculator-0.1.0-1-x86_64.pkg.tar.zst` remains
-  available with its original matching `fluent-calculator-0.1.0.tar.gz`.
+- The published Arch / Omarchy package is
+  `dist/arch-v0.1.0/fluent-calculator-0.1.0-1-x86_64.pkg.tar.zst`, with a matching
+  `fluent-calculator-0.1.0-arch-PKGBUILD`. The earlier local-only package remains
+  in `dist/` as historical output.
 - `dist/fluent-calculator-0.1.0-source.tar.gz` is the current release-source
   snapshot with the new multi-platform packaging configuration.
 
@@ -115,3 +117,36 @@ and checksum checks. Manual dispatch never publishes. A rerun may finish an
 interrupted draft, but leaves already-published releases and assets unchanged.
 The release/tag retains its original build commit; later validation-document
 updates on `main` do not move the tag or replace its assets.
+
+## Arch omission repaired and CI coverage added
+
+The initial matrix omitted Arch even though a local package existed. After the
+user reported the missing download, the published `v0.1.0` was explicitly
+supplemented with its Arch package, recipe and validation evidence:
+
+https://github.com/marshamonkey25-hue/fluent-calculator/releases/download/v0.1.0/fluent-calculator-0.1.0-1-x86_64.pkg.tar.zst
+
+This package uses the exact existing release source archive, SHA256
+`d38bc132aa497eeb740e157f318019c705eab56760f6c5d97148a5dec02eb199`.
+Its SHA256 is `446328e3188ea148c1adab79d0fde707508d1962c42da996cb75945e048f0862`.
+The attached recipe hashes to
+`9514837c750728a7ee36c8760dd348a9969ee55ab07d9979e89be772e949f2f1`,
+which also matches the package's embedded BUILDINFO recipe hash. All eight
+entries in the expanded published checksum manifest match GitHub asset digests.
+The original source tag remains at its original commit.
+
+The package was built using unprivileged makepkg in an Arch container, passed
+all four integrated-delivery configurations in 123.08 s, was installed and
+started inside that container, and also started from an extracted temporary
+copy on the actual Omarchy host. The host installation was not modified.
+
+Current `main` adds Arch as a required release job and requires `.pkg.tar.zst`
+in the artifact completeness gate. Its matching source archive and recipe
+travel together through aggregation and their source checksum is checked.
+[Manual matrix run 41396615626](https://github.com/marshamonkey25-hue/fluent-calculator/actions/runs/41396615626)
+passed all Arch, Debian, Fedora, Windows, macOS and aggregation jobs. The CI
+Arch checks passed 4/4 in 124.44 s. CI artifacts were downloaded and the
+recipe/source hash relationship independently rechecked. Subsequent version
+tags from this updated workflow automatically include Arch. The omitted
+artifact was backfilled as a separate maintenance action; ordinary reruns
+still leave published release assets untouched.
