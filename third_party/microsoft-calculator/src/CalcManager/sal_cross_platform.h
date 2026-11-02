@@ -3,6 +3,7 @@
 #if defined(_WIN32) && defined(_MSC_VER)
 
 #include <sal.h>
+#include <specstrings.h>
 
 #else
 

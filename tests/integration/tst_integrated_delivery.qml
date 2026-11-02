@@ -65,7 +65,7 @@ Item {
             tryCompare(popup, "opened", true)
             const year = findChild(popup.contentItem, "calendarYear")
             mouseClick(year)
-            keyClick(Qt.Key_A, Qt.ControlModifier)
+            keySequence(StandardKey.SelectAll)
             input(date.substring(0, 4))
             const month = findChild(popup.contentItem, "calendarMonth")
             month.forceActiveFocus(Qt.TabFocusReason)
@@ -321,29 +321,34 @@ Item {
             clipboardReceiver.text = "unchanged"
             clipboardReceiver.visible = true
             clipboardReceiver.forceActiveFocus()
-            keyClick(Qt.Key_A, Qt.ControlModifier)
-            keyClick(Qt.Key_C, Qt.ControlModifier)
+            keySequence(StandardKey.SelectAll)
+            keySequence(StandardKey.Copy)
             clipboardReceiver.visible = false
             navigate("scientific")
             keyClick(Qt.Key_Escape)
             input("9007199254740992+1=")
             compare(control("resultDisplay").text, "9,007,199,254,740,993")
-            keyClick(Qt.Key_C, Qt.ControlModifier)
+            keySequence(StandardKey.Copy)
             clipboardReceiver.text = ""
             clipboardReceiver.visible = true
             clipboardReceiver.forceActiveFocus()
-            keyClick(Qt.Key_V, Qt.ControlModifier)
+            keySequence(StandardKey.Paste)
             compare(clipboardReceiver.text, "9007199254740993", "Copy preserves exact native digits across modes")
             clipboardReceiver.visible = false
         }
         function test_standard_alternate_copy_shortcut_preserves_result() {
+            verify(testCopyBindings.length > 0, "Platform provides at least one Copy binding")
             input("6*7=")
-            keyClick(Qt.Key_Insert, Qt.ControlModifier)
-            clipboardReceiver.text = ""
-            clipboardReceiver.visible = true
-            clipboardReceiver.forceActiveFocus()
-            keyClick(Qt.Key_V, Qt.ControlModifier)
-            compare(clipboardReceiver.text, "42", "Every platform Copy binding copies the displayed result")
+            for (const binding of testCopyBindings) {
+                clipboardReceiver.visible = false
+                control("resultDisplay").forceActiveFocus()
+                keySequence(binding)
+                clipboardReceiver.text = ""
+                clipboardReceiver.visible = true
+                clipboardReceiver.forceActiveFocus()
+                keySequence(StandardKey.Paste)
+                compare(clipboardReceiver.text, "42", "Platform Copy binding copies the displayed result: " + binding)
+            }
             clipboardReceiver.visible = false
         }
         function cleanupTestCase() { application.close() }

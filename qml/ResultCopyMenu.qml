@@ -23,6 +23,10 @@ MouseArea {
     Menu {
         id: resultMenu
         objectName: "resultContextMenu"
+        // Keep this customized Fluent menu in the application window on every
+        // platform, including macOS, and restore keyboard input after dismissal.
+        popupType: Popup.Item
+        onClosed: root.forceActiveFocus(Qt.PopupFocusReason)
         background: Rectangle {
             implicitWidth: 200
             implicitHeight: 40

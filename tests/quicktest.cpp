@@ -15,6 +15,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
+#include <QKeySequence>
 #include <cstdio>
 
 class ControlledSystemPreferences final : public SystemPreferences
@@ -53,6 +54,10 @@ public slots:
     void qmlEngineAvailable(QQmlEngine *engine)
     {
         auto system = new ControlledSystemPreferences(engine);
+        QStringList copyBindings;
+        for (const auto &binding : QKeySequence::keyBindings(QKeySequence::Copy))
+            copyBindings.append(binding.toString(QKeySequence::PortableText));
+        engine->rootContext()->setContextProperty("testCopyBindings", copyBindings);
         engine->rootContext()->setContextProperty("testCurrencySource", new ControlledCurrencySource(engine));
         if (qEnvironmentVariableIsEmpty("CALCULATOR_TEST_RESTART_STAGE"))
             QSettings().clear();

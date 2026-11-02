@@ -8,8 +8,10 @@ The upstream [LICENSE](LICENSE), [NOTICE.txt](NOTICE.txt), and per-file copyrigh
 
 ## Local portability changes
 
-Nine upstream files differ from the pinned originals:
+Eleven arithmetic-core upstream files differ from the pinned originals:
 
+- `sal_cross_platform.h`: include Windows SDK `<specstrings.h>` beside `<sal.h>` on MSVC so the existing `_Frees_ptr_opt_` annotations are defined without the original forced PCH.
+- `CEngine/Number.cpp`: include `<iterator>` explicitly for `std::back_inserter`; do not rely on GCC/Clang transitive headers when compiling with MSVC.
 - `ExpressionCommandInterface.h`: directly include `<string>` for its public `std::wstring` declaration.
 - `Header Files/IHistoryDisplay.h`: directly include `<string_view>` for its public interface.
 - `CalculatorResource.h`: directly include `<string>` for its owning return type.
