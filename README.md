@@ -1,5 +1,8 @@
 # Fluent Calculator
 
+Download installers from the [latest GitHub Release](https://github.com/marshamonkey25-hue/fluent-calculator/releases/latest).
+Matching version tags automatically build, verify and publish the release.
+
 A Qt Quick desktop calculator using the real Microsoft Calculator arithmetic and conversion cores. All **18 modes** are implemented: Standard, Scientific, Graphing, Programmer, Date calculation, and Currency, Volume, Length, Weight and Mass, Temperature, Energy, Area, Speed, Time, Power, Data, Pressure and Angle conversion. History and shared memory belong to the arithmetic session; preferences/recent mode and validated daily currency observations persist across ordinary restarts.
 
 Start with the build/check commands below. The [integrated delivery report](docs/delivery-verification.md) maps all 68 user stories to actual UI checks, documents reference-layout comparison and screenshots, and distinguishes Linux verification from untested platforms. [Sources and notices](docs/third-party.md) cover Microsoft, Qt, graphing and currency data. Ticket-by-ticket notes later in this file are historical records of the incremental implementation; their older feature counts and native-desktop runs do not describe current scope or validation policy.

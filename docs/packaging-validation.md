@@ -88,6 +88,30 @@ are pinned to verified commits. All GUI checks remain offscreen/Compose with
 isolated data and no user-desktop/IME interaction. Linux uses private D-Bus;
 Linux-only D-Bus checks are not imposed on macOS/Windows.
 
-This was a manual run: no tag or GitHub Release was created. Windows remains
+That manual run did not create a tag or GitHub Release. Windows remains
 unsigned, and macOS is ad-hoc signed rather than Developer ID signed/notarized.
 A project-wide license has not been assigned on the owner's behalf.
+
+## Tag-triggered publication — v0.1.0
+
+The user subsequently authorized automatic publication from version tags.
+Annotated tag `v0.1.0` points to commit
+`dffc60e2f42ade8249c63bc48533539a83ec347b` and triggered
+[workflow 41392805235](https://github.com/marshamonkey25-hue/fluent-calculator/actions/runs/41392805235).
+Every platform build, integrated check, installer verification and final release
+job passed. The Release was automatically published by `github-actions[bot]` at
+2026-11-02 05:21:32 UTC:
+
+https://github.com/marshamonkey25-hue/fluent-calculator/releases/tag/v0.1.0
+
+The API confirms `draft=false`, `prerelease=false` and that this is the latest
+Release. Its 15 assets include the five installer/distribution formats, matching
+source, `SHA256SUMS` and eight validation reports/logs. The six binary/source
+entries in the published `SHA256SUMS` were checked against GitHub's uploaded
+asset SHA256 digests; all match and every asset state is `uploaded`.
+
+Publication requires a pushed version tag matching CMake and successful platform
+and checksum checks. Manual dispatch never publishes. A rerun may finish an
+interrupted draft, but leaves already-published releases and assets unchanged.
+The release/tag retains its original build commit; later validation-document
+updates on `main` do not move the tag or replace its assets.

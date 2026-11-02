@@ -81,16 +81,18 @@ The launcher and application-menu name are `fluent-calculator` and
    its assets are left untouched. Fix a published version with a new version/tag
    rather than moving its tag or replacing its installers.
 
-For the current version, the first release is triggered with:
+The first automatic release is [v0.1.0](https://github.com/marshamonkey25-hue/fluent-calculator/releases/tag/v0.1.0),
+published by [tag workflow 41392805235](https://github.com/marshamonkey25-hue/fluent-calculator/actions/runs/41392805235).
+For the next release, first update the CMake project version to `0.1.1` and
+commit/push that change, then push the matching annotated tag:
 
 ```sh
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
+git tag -a v0.1.1 -m "Release v0.1.1"
+git push origin v0.1.1
 ```
 
-For later releases, update the CMake project version and commit/push that change
-before creating its matching `vX.Y.Z` tag. `main` pushes alone do not publish.
-Manual workflow dispatch also never publishes, even if run against a tag ref.
+Use a new matching `vX.Y.Z` tag for each later release. `main` pushes alone do not
+publish. Manual workflow dispatch also never publishes, even against a tag ref.
 
 All third-party Actions are pinned to verified commit IDs. Workflow permissions
 are read-only except the final release job's `contents: write`. Publication
