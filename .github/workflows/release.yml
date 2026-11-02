@@ -1,0 +1,202 @@
+name: Build release installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: installers-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check project and tag versions
+        id: version
+        shell: python
+        run: |
+          import os, pathlib, re
+          text = pathlib.Path('CMakeLists.txt').read_text()
+          version = re.search(r'project\(FluentCalculator VERSION ([0-9.]+)', text)[1]
+          if os.environ['GITHUB_REF_TYPE'] == 'tag':
+              assert os.environ['GITHUB_REF_NAME'] == 'v' + version, 'Tag must match the CMake project version'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('version=' + version + '\n')
+
+  linux:
+    needs: version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        format: [deb, rpm]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build, install and smoke-test in the target distribution
+        run: bash packaging/linux/build-package.sh '${{ matrix.format }}'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installers-linux-${{ matrix.format }}
+          if-no-files-found: error
+          path: |
+            dist/*.${{ matrix.format }}
+            dist/*-validation.json
+            dist/*-tests.log
+
+  native:
+    needs: version
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            qt-host: windows
+            qt-arch: win64_msvc2022_64
+            platform: windows-x86_64
+            cmake-args: '-G "Visual Studio 17 2022" -A x64'
+            binary: stage/bin/fluent-calculator.exe
+          - os: macos-15
+            qt-host: mac
+            qt-arch: clang_64
+            platform: macos-universal2
+            cmake-args: '-G Ninja -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0'
+            binary: stage/Fluent Calculator.app/Contents/MacOS/Fluent Calculator
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: jurplel/install-qt-action@b344308e4483fc892e0d27b3cd1b173ebdd95f06 # v4
+        with:
+          version: '6.8.3'
+          host: ${{ matrix.qt-host }}
+          target: desktop
+          arch: ${{ matrix.qt-arch }}
+          modules: qtshadertools
+          cache: true
+      - name: Install Windows installer compiler
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install nsis --yes --no-progress
+          'C:\Program Files (x86)\NSIS' | Out-File -FilePath $env:GITHUB_PATH -Append
+      - name: Configure and build native application
+        shell: bash
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON \
+            -DCMAKE_INSTALL_PREFIX="$PWD/stage" -DCMAKE_INSTALL_LIBDIR=lib \
+            -DCALCULATOR_PACKAGE_PLATFORM='${{ matrix.platform }}' ${{ matrix.cmake-args }}
+          cmake --build build --config Release --parallel 2
+      - name: Exercise every mode before native deployment
+        shell: bash
+        run: ctest --test-dir build -C Release -R '^calculator-integrated-delivery-' --output-on-failure -j2
+      - name: Install and deploy the runtime
+        shell: bash
+        run: cmake --install build --config Release
+      - name: Verify universal macOS bundle and signature
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          lipo -verify_arch arm64 x86_64 'stage/Fluent Calculator.app/Contents/MacOS/Fluent Calculator'
+          codesign --verify --deep --strict 'stage/Fluent Calculator.app'
+      - name: Verify staged application without SDK search paths
+        shell: bash
+        run: |
+          python packaging/smoke-installed.py --binary '${{ matrix.binary }}' \
+            --qt-root "$QT_ROOT_DIR" --report 'dist/${{ matrix.platform }}-stage-validation.json'
+      - name: Create native installers and archives
+        shell: bash
+        run: cpack --config build/CPackConfig.cmake -C Release -B dist
+      - name: Verify actual Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = @(Get-ChildItem dist -Filter '*.exe')
+          if ($installer.Count -ne 1) { throw 'Expected one NSIS installer' }
+          $destination = Join-Path $env:RUNNER_TEMP 'fluent-calculator-installed'
+          $process = Start-Process -FilePath $installer[0].FullName -ArgumentList '/S', "/D=$destination" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
+          python packaging/smoke-installed.py --binary "$destination\bin\fluent-calculator.exe" --qt-root "$env:QT_ROOT_DIR" --report dist/windows-x86_64-installed-validation.json
+          if ($LASTEXITCODE -ne 0) { throw 'Installed application smoke check failed' }
+          $uninstaller = Join-Path $destination 'Uninstall.exe'
+          Start-Process -FilePath $uninstaller -ArgumentList '/S' -Wait
+      - name: Verify application from the actual macOS disk image
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mountpoint="$RUNNER_TEMP/fluent-calculator-dmg"
+          mkdir -p "$mountpoint"
+          hdiutil attach dist/*.dmg -readonly -nobrowse -mountpoint "$mountpoint"
+          trap 'hdiutil detach "$mountpoint"' EXIT
+          codesign --verify --deep --strict "$mountpoint/Fluent Calculator.app"
+          python packaging/smoke-installed.py --binary "$mountpoint/Fluent Calculator.app/Contents/MacOS/Fluent Calculator" \
+            --qt-root "$QT_ROOT_DIR" --report dist/macos-universal2-dmg-validation.json
+      - name: Record installer hashes
+        shell: bash
+        run: python packaging/checksums.py dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installers-${{ matrix.platform }}
+          if-no-files-found: error
+          path: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.dmg
+            dist/*-validation.json
+
+  release-draft:
+    needs: [version, linux, native]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: installers-*
+          merge-multiple: true
+          path: release
+      - name: Add matching source and checksums
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          git archive --format=tar.gz --prefix="fluent-calculator-$RELEASE_VERSION/" HEAD > "release/fluent-calculator-$RELEASE_VERSION-source.tar.gz"
+          python packaging/checksums.py release
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('release')
+          for extension in ('.deb', '.rpm', '.exe', '.zip', '.dmg'):
+              assert any(root.glob('*' + extension)), 'Missing release format: ' + extension
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-all-platforms
+          if-no-files-found: error
+          path: release/*
+      - name: Create a draft release for a version tag
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --json isDraft > /tmp/fluent-release.json 2>/dev/null; then
+            python -c 'import json; assert json.load(open("/tmp/fluent-release.json"))["isDraft"], "Refusing to change an already published release"'
+            gh release upload "$RELEASE_TAG" release/* --clobber
+          else
+            gh release create "$RELEASE_TAG" --draft --verify-tag --title "Fluent Calculator $RELEASE_TAG" \
+              --notes-file packaging/release-notes.md release/*
+          fi

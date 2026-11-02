@@ -1,6 +1,6 @@
 # Windows 11 风格跨平台计算器
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 
@@ -176,3 +176,14 @@ Status: ready-for-agent
 - 汇率建议依据 [Frankfurter 官方文档](https://frankfurter.dev/)与[许可说明](https://frankfurter.dev/license/)。调查时已完成无需凭据的公开请求；这不构成将来可用性、所有地区可访问性或统一数据更新日期的保证。
 - 当前机器已发现 Qt 6.12.0、CMake、C++ 编译器及 QML 测试能力。已有探针使用软件渲染成功，不代表已验证 GPU 效果或其他平台工具链。
 - 当前项目只有设计文档，没有应用实现、项目级测试或构建产物。后续交付应以实际运行和验证结果更新完成情况。
+
+
+## Final implementation and verification — 2026-10-31
+
+- 全部 22 个任务已解决，144 项验收条件均已核对并勾选；18 个入口使用真实计算、日期、绘图或换算逻辑。固定微软核心、授权声明、共享会话及已批准的绘图/每日参考汇率边界均保留。完整用户故事映射见 [交付验证报告](../../docs/delivery-verification.md)。
+- 最终审查修复 `9909494be79ec60c191be95fe2698f3ae7c9351a` 已通过无冲突合并 `94c9c42a0439347ee4913f1186fc5a886b707287` 集成。Standards 的两项重复逻辑问题已修复；Spec 的不可用换算结果崩溃、算术粘贴、历史快捷键及币种目录刷新四项问题均已修复并有真实 QML 回归。额外的有限次正规数换算崩溃也已修复。
+- Linux x86_64 / Qt 6.12.0 / GCC 16.2.1 / CMake 4.4.4 的最终 Debug 配置、构建和无警告 QML lint 成功。`python3 tests/run-ui-isolated.py ctest --test-dir .build-integration --output-on-failure -j2` 一次完整运行 **49/49 通过，2820.55 秒**；**3005 项 QtTest 结果通过，0 失败、0 跳过**，另有 3 项进程隔离检查。31 个独立重启阶段全部通过。
+- 构建保留在根 checkout：`.build-integration/calculator`。正常用户运行命令为 `./.build-integration/calculator`；验收启动命令为 `python3 tests/run-ui-isolated.py .build-integration/calculator`。最终生产进程在隔离环境中运行 3 秒且无诊断，随后仅终止该任务进程组；这不构成原生可见窗口观察。
+- 全部 UI 验证使用仓库隔离启动器，采用 compose/generic/offscreen/software、私有 D-Bus 与配置/数据/缓存/runtime。实际检查了两套主题的完整 18 模式联系表、宽布局、历史和 Copy/Paste 菜单；144 张模式截图及其他有用截图、日志、核对清单保留在 `.build-integration/final-acceptance/`。两个更新后的菜单截图已纳入源码。
+- 已验证 23 个本流程工作树的归属、干净状态及提交均被集成捕获；3854 份有用证据经 SHA256 校验后归档，再安全清理工作树。只保留根集成 checkout 与各分支引用。
+- Windows/macOS、其他架构、Qt 6.8 实际运行、原生桌面/硬件渲染及当前真实汇率服务可用性仍未验证。主机主题、IME、桌面输入及会话总线未用于本次验收。有限数值绘图与独立每日汇率来源的已记录边界继续适用；未削弱原有功能或测试要求。

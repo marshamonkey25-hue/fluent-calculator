@@ -1,0 +1,6 @@
+set(calculator_bundle "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/Fluent Calculator.app")
+execute_process(COMMAND codesign --force --deep --sign "@CALCULATOR_MACOS_SIGN_IDENTITY@" "${calculator_bundle}"
+    RESULT_VARIABLE calculator_sign_result ERROR_VARIABLE calculator_sign_error)
+if(NOT calculator_sign_result EQUAL 0)
+    message(FATAL_ERROR "Bundle signing failed: ${calculator_sign_error}")
+endif()

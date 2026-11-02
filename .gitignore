@@ -1,0 +1,6 @@
+# Private build trees and isolated test data
+.build*/
+.build-arch-package-run.*
+
+# Local installation packages and source archives
+/dist/
