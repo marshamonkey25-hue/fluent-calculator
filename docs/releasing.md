@@ -6,7 +6,8 @@ artifacts, and creates a **draft** Release only for a matching version tag.
 Manual runs build/upload artifacts without creating a Release. Nothing here
 creates a GitHub repository, pushes code or publishes a Release by itself.
 See [the actual packaging validation record](packaging-validation.md) for the
-difference between locally generated Linux packages and pending native jobs.
+successful native run, platform coverage and installer verification evidence.
+The public repository is https://github.com/marshamonkey25-hue/fluent-calculator .
 
 ## Artifact matrix
 
@@ -16,7 +17,7 @@ difference between locally generated Linux packages and pending native jobs.
 | Debian 13 x86_64 | Debian 13 container | `.deb` | Private official Qt 6.8.3 under `/opt/fluent-calculator` |
 | Fedora 43 x86_64 | Fedora 43 container | `.rpm` | Fedora Qt; ELF and QML dependencies recorded |
 | Windows x86_64 | `windows-2022`, MSVC 2022 | NSIS `.exe`, portable `.zip` | Qt 6.8.3, QML/plugins and compiler runtime deployed by Qt |
-| macOS arm64 + x86_64 | `macos-15`, universal build | `.dmg` containing `.app` | Qt 6.8.3 frameworks/QML/plugins deployed inside the app |
+| macOS arm64 + x86_64 | `macos-15`, universal build | `.dmg` containing `FluentCalculator.app` | Qt 6.8.3 frameworks/QML/plugins deployed inside the app |
 
 A package for Debian 13 or Fedora 43 is not claimed compatible with every
 Debian/RPM distribution or older glibc. Windows/macOS outputs are only real
@@ -63,8 +64,8 @@ The launcher and application-menu name are `fluent-calculator` and
 ## GitHub procedure
 
 1. Commit the complete source and packaging files, including `.github`, and
-   push them to your intended GitHub repository. A repository/remote has not
-   been chosen by this packaging work.
+   push them to the intended GitHub repository. This checkout's `origin` is
+   https://github.com/marshamonkey25-hue/fluent-calculator ; `main` is pushed.
 2. In Actions, enable **Build release installers** and run it manually first.
    Check all Debian, Fedora, Windows and macOS jobs. Download the combined
    `release-all-platforms` artifact to inspect every installer, matching source,

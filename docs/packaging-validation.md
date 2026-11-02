@@ -44,16 +44,50 @@ passing coverage across the run and reruns, not one all-green nine-entry run.
 Evidence remains in `.build-release-packages/qt612-selection-regression.log`
 and `.build-release-packages/currency-serial/`.
 
-## GitHub/native platforms
+## GitHub/native platforms — verified 2026-11-02
 
-`actionlint` v1.7.12 validates `.github/workflows/release.yml`; all external
-Actions are pinned to verified full commit hashes. Bash/Python syntax checks,
-desktop entry validation and Git whitespace checks pass. Windows/macOS have
-no locally generated installers yet. Their jobs must actually execute on
-native GitHub runners to validate compiler compatibility, deployment, NSIS/DMG
-creation, signatures, actual installed/image executable startup and mode tests.
+Repository: https://github.com/marshamonkey25-hue/fluent-calculator . The complete
+manual run [41385170513](https://github.com/marshamonkey25-hue/fluent-calculator/actions/runs/41385170513)
+passed on source commit `908526a2ab10bbe3299841d8dfa290edafe5689a`. All four
+platform jobs and the combined-artifact job succeeded. This is executed CI
+evidence, not a configuration-only claim.
 
-The workflow prepares draft releases only. A GitHub remote has not been
-configured or pushed. Windows signing and macOS Developer ID/notarization are
-not configured; macOS uses ad-hoc signing. The project owner still needs to
-choose a project-wide license before publishing as open source.
+- Windows Server 2022 runner / MSVC: the native x86_64 build, isolation bootstrap,
+  menu/clipboard regressions and four integrated mode configurations pass. Qt
+  deployment and runtime DLL checks pass. The NSIS installer was actually
+  installed silently into a temporary directory, the installed program started
+  with SDK search paths removed, and its uninstaller was invoked. Both `.exe`
+  and deployed `.zip` were produced.
+- macOS 15 Apple Silicon runner: native universal build, bootstrap/clipboard
+  regressions and all four mode configurations pass. `lipo` verifies arm64 and
+  x86_64 slices. Deployment, strict ad-hoc signature verification, staged app
+  startup, DMG generation, read-only image mounting and startup from the actual
+  image all pass. Execution was on arm64; Intel execution and hardware/native
+  desktop rendering are not claimed.
+- Debian 13 and Fedora 43 jobs also passed their four configurations, native
+  package installation and isolated installed-program smoke checks in this run.
+- The `release-all-platforms` artifact contains `.deb`, `.rpm`, `.exe`, `.zip`,
+  `.dmg`, the matching source archive, validation JSON/logs and `SHA256SUMS`.
+  The local download directory is `dist/release-0.1.0/`.
+
+Real native runs found and fixed missing MSVC SAL/iterator headers, Windows
+path-separator validation and recursive test-launch behavior, and macOS menu
+focus/clipboard routing. The menus use application-window popups, editable
+text retains its own clipboard commands, and navigation restores input focus.
+Tests query actual platform key bindings rather than assuming Ctrl+Insert is
+available everywhere. The isolation guard fails closed after one unsuccessful
+repair launch. Regression assertions were retained, not skipped.
+
+Qt 6.8 deployment scripts do not quote a spaced app filename, so the physical
+bundle is `FluentCalculator.app` while its display name remains Fluent
+Calculator. The architecture check uses `lipo <binary> -verify_arch arm64 x86_64`.
+DMG notices remain inside the app instead of an interactive disk-image SLA.
+
+`actionlint` v1.7.12 and source syntax/whitespace checks pass; external Actions
+are pinned to verified commits. All GUI checks remain offscreen/Compose with
+isolated data and no user-desktop/IME interaction. Linux uses private D-Bus;
+Linux-only D-Bus checks are not imposed on macOS/Windows.
+
+This was a manual run: no tag or GitHub Release was created. Windows remains
+unsigned, and macOS is ad-hoc signed rather than Developer ID signed/notarized.
+A project-wide license has not been assigned on the owner's behalf.

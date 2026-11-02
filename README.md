@@ -14,6 +14,9 @@ Linux packages build and install in their own Docker distributions. Windows and
 macOS run on native GitHub runners and deploy the matching Qt runtime. A version
 tag creates a draft Release after all builds pass; manual runs upload artifacts.
 See [release targets, local builds, verification and GitHub steps](docs/releasing.md).
+Native Windows/macOS builds and real installer/image checks have now passed
+alongside Debian/Fedora; the [validation record](docs/packaging-validation.md)
+links the successful GitHub run and states the exact coverage and signing limits.
 
 ## Arch / Omarchy installation package
 
