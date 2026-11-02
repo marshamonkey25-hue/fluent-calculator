@@ -16,7 +16,7 @@ set(CALCULATOR_PACKAGE_CONTACT "Fluent Calculator contributors"
 if(APPLE)
     set_target_properties(calculator PROPERTIES
         MACOSX_BUNDLE TRUE
-        OUTPUT_NAME "Fluent Calculator"
+        OUTPUT_NAME "FluentCalculator"
         MACOSX_BUNDLE_BUNDLE_NAME "Fluent Calculator"
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.fluentcalculator.Calculator"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
@@ -45,8 +45,8 @@ if(APPLE OR WIN32 OR CALCULATOR_BUNDLE_QT)
         include(InstallRequiredSystemLibraries)
     endif()
     if(APPLE)
-        set(calculator_docs "Fluent Calculator.app/Contents/Resources/doc")
-        set(calculator_license_dir "Fluent Calculator.app/Contents/Resources/licenses")
+        set(calculator_docs "FluentCalculator.app/Contents/Resources/doc")
+        set(calculator_license_dir "FluentCalculator.app/Contents/Resources/licenses")
     else()
         set(calculator_docs "${CMAKE_INSTALL_DATADIR}/doc/fluent-calculator")
         set(calculator_license_dir "${CMAKE_INSTALL_DATADIR}/licenses/fluent-calculator")
@@ -111,6 +111,8 @@ set(CPACK_MONOLITHIC_INSTALL ON)
 if(APPLE)
     set(CPACK_GENERATOR DragNDrop)
     set(CPACK_DMG_VOLUME_NAME "Fluent Calculator ${PROJECT_VERSION}")
+    # Notices are inside the app; keep mounting/verifying the image unattended.
+    set(CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE OFF)
     set(CPACK_PACKAGING_INSTALL_PREFIX "/")
 elseif(WIN32)
     set(CPACK_GENERATOR "NSIS;ZIP")

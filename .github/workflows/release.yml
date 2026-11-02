@@ -72,7 +72,7 @@ jobs:
             qt-arch: clang_64
             platform: macos-universal2
             cmake-args: '-G Ninja -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0'
-            binary: stage/Fluent Calculator.app/Contents/MacOS/Fluent Calculator
+            binary: stage/FluentCalculator.app/Contents/MacOS/FluentCalculator
             test-binary: build/calculator_ui_tests
     runs-on: ${{ matrix.os }}
     steps:
@@ -136,8 +136,8 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          lipo -verify_arch arm64 x86_64 'stage/Fluent Calculator.app/Contents/MacOS/Fluent Calculator'
-          codesign --verify --deep --strict 'stage/Fluent Calculator.app'
+          lipo -verify_arch arm64 x86_64 'stage/FluentCalculator.app/Contents/MacOS/FluentCalculator'
+          codesign --verify --deep --strict 'stage/FluentCalculator.app'
       - name: Verify staged application without SDK search paths
         shell: bash
         run: |
@@ -168,8 +168,8 @@ jobs:
           mkdir -p "$mountpoint"
           hdiutil attach dist/*.dmg -readonly -nobrowse -mountpoint "$mountpoint"
           trap 'hdiutil detach "$mountpoint"' EXIT
-          codesign --verify --deep --strict "$mountpoint/Fluent Calculator.app"
-          python packaging/smoke-installed.py --binary "$mountpoint/Fluent Calculator.app/Contents/MacOS/Fluent Calculator" \
+          codesign --verify --deep --strict "$mountpoint/FluentCalculator.app"
+          python packaging/smoke-installed.py --binary "$mountpoint/FluentCalculator.app/Contents/MacOS/FluentCalculator" \
             --qt-root "$QT_ROOT_DIR" --report dist/macos-universal2-dmg-validation.json
       - name: Record installer hashes
         shell: bash
