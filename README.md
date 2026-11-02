@@ -11,8 +11,8 @@ The content follows the pinned Microsoft Standard keypad layout with Fluent cont
 
 ## Cross-platform release installers
 
-Debian `.deb`, Fedora `.rpm`, Windows NSIS `.exe`/portable `.zip`, and macOS
-universal `.dmg` are configured in the [release workflow](.github/workflows/release.yml).
+Arch `.pkg.tar.zst`, Debian `.deb`, Fedora `.rpm`, Windows NSIS `.exe`/portable
+`.zip`, and macOS universal `.dmg` are configured in the [release workflow](.github/workflows/release.yml).
 Linux packages build and install in their own Docker distributions. Windows and
 macOS run on native GitHub runners and deploy the matching Qt runtime. A version
 tag automatically publishes a GitHub Release after every platform and checksum

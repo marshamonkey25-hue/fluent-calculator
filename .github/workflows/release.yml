@@ -53,6 +53,26 @@ jobs:
             dist/*-validation.json
             dist/*-tests.log
 
+  arch:
+    needs: version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build, test and install the native Arch package
+        run: bash packaging/arch/build-in-container.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installers-linux-arch
+          if-no-files-found: error
+          path: |
+            dist/arch/*.pkg.tar.zst
+            dist/arch/*-arch-PKGBUILD
+            dist/arch/*-source.tar.gz
+            dist/arch/*-validation.json
+            dist/arch/*-tests.log
+            dist/arch/*-metadata.json
+
   native:
     needs: version
     timeout-minutes: 90
@@ -185,7 +205,7 @@ jobs:
             dist/*-validation.json
 
   release:
-    needs: [version, linux, native]
+    needs: [version, linux, arch, native]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -200,14 +220,22 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.version.outputs.version }}
         run: |
-          git archive --format=tar.gz --prefix="fluent-calculator-$RELEASE_VERSION/" HEAD > "release/fluent-calculator-$RELEASE_VERSION-source.tar.gz"
+          source="release/fluent-calculator-$RELEASE_VERSION-source.tar.gz"
+          if [[ ! -f "$source" ]]; then
+            git archive --format=tar.gz --prefix="fluent-calculator-$RELEASE_VERSION/" HEAD > "$source"
+          fi
           python packaging/checksums.py release
           python - <<'PY'
-          import hashlib
+          import hashlib, os, re
           from pathlib import Path
           root = Path('release')
-          for extension in ('.deb', '.rpm', '.exe', '.zip', '.dmg'):
+          for extension in ('.deb', '.rpm', '.pkg.tar.zst', '.exe', '.zip', '.dmg'):
               assert any(root.glob('*' + extension)), 'Missing release format: ' + extension
+          recipes = list(root.glob('*-arch-PKGBUILD'))
+          assert len(recipes) == 1, 'Missing or ambiguous Arch recipe'
+          source = root / ('fluent-calculator-' + os.environ['RELEASE_VERSION'] + '-source.tar.gz')
+          expected_source = re.search(r"sha256sums=\('([0-9a-f]{64})'\)", recipes[0].read_text())[1]
+          assert hashlib.sha256(source.read_bytes()).hexdigest() == expected_source, 'Arch recipe/source mismatch'
           for line in (root / 'SHA256SUMS').read_text().splitlines():
               expected, name = line.split('  ', 1)
               assert Path(name).name == name, 'Invalid checksum filename'

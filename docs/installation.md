@@ -4,6 +4,16 @@ The local x86_64 package is `dist/fluent-calculator-0.1.0-1-x86_64.pkg.tar.zst`.
 It installs the `fluent-calculator` command, an English/Chinese desktop menu
 entry, PNG/SVG icons, documentation and the applicable Microsoft notices.
 It dynamically links the system Qt installation rather than bundling Qt.
+The tag workflow also builds this format in an Arch container and includes the
+package and its matching PKGBUILD in GitHub Release assets. For a containerized
+build on any Docker-capable Linux host, run:
+
+```sh
+bash packaging/arch/build-in-container.sh
+```
+
+Those artifacts and check reports are written to `dist/arch/`. The container
+installs nothing on the host.
 
 ## Install and remove
 
@@ -32,7 +42,7 @@ Qt settings/data locations. Removing the package does not erase user data.
 ## Build a new local package
 
 Required tools: Arch `base-devel`, `cmake`, `qt6-base`, `qt6-declarative`,
-`pkgconf`, `python` and Git. Qt must be at least 6.8 and provide FluentWinUI3.
+`pkgconf`, `python`, `dbus` and Git. Qt must be at least 6.8 and provide FluentWinUI3.
 
 ```sh
 bash packaging/arch/build-package.sh
@@ -41,8 +51,8 @@ bash packaging/arch/build-package.sh
 The script snapshots the current source, including intentional uncommitted
 files, into a local source archive; build trees, Git internals, ticket files
 and previous package artifacts are excluded. It generates a checksummed
-PKGBUILD, builds from that archive with testing disabled, and writes the
-native package, matching source archive, PKGBUILD and `SHA256SUMS` to `dist/`.
+PKGBUILD, builds from that archive, runs the four integrated-delivery checks,
+and writes the native package, matching source archive, PKGBUILD and `SHA256SUMS` to `dist/`.
 The dedicated workspace is `.build-arch-package/`. No network source fetch
 is required. Existing build dependencies must already be installed.
 

@@ -5,7 +5,7 @@ import hashlib
 import sys
 
 folder = Path(sys.argv[1]).resolve()
-suffixes = ('.deb', '.rpm', '.dmg', '.exe', '.zip', '.tar.gz', '.pkg.tar.zst')
+suffixes = ('.deb', '.rpm', '.dmg', '.exe', '.zip', '.tar.gz', '.pkg.tar.zst', '-arch-PKGBUILD')
 lines = []
 for path in sorted(folder.iterdir()):
     if not path.is_file() or not path.name.endswith(suffixes):

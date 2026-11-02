@@ -13,7 +13,7 @@ The public repository is https://github.com/marshamonkey25-hue/fluent-calculator
 
 | Target | Build environment | Output | Qt runtime |
 | --- | --- | --- | --- |
-| Arch / Omarchy x86_64 | Local Arch packaging script | `.pkg.tar.zst` | System Qt; actual build version in dependencies |
+| Arch / Omarchy x86_64 | Arch Linux container; unprivileged `makepkg` | `.pkg.tar.zst`, matching PKGBUILD | System Qt; actual build version in dependencies |
 | Debian 13 x86_64 | Debian 13 container | `.deb` | Private official Qt 6.8.3 under `/opt/fluent-calculator` |
 | Fedora 43 x86_64 | Fedora 43 container | `.rpm` | Fedora Qt; ELF and QML dependencies recorded |
 | Windows x86_64 | `windows-2022`, MSVC 2022 | NSIS `.exe`, portable `.zip` | Qt 6.8.3, QML/plugins and compiler runtime deployed by Qt |
@@ -38,11 +38,20 @@ resulting package **inside disposable containers**, not on the host:
 ```sh
 bash packaging/linux/build-package.sh deb
 bash packaging/linux/build-package.sh rpm
+bash packaging/arch/build-in-container.sh
+# Alternatively, directly on Arch with the build/check dependencies installed:
 bash packaging/arch/build-package.sh
 ```
 
 Artifacts, source snapshots, checksums and platform validation JSON files are
-written to `dist/`. The two Dockerfiles pin the target distribution major
+written to `dist/` (containerized Arch outputs are in `dist/arch/`). Arch runs
+`makepkg` as an unprivileged build user, checks all 18 modes, then installs and
+smoke-tests the package inside its disposable container. The generated Arch
+PKGBUILD and source archive are included in the combined release; publication
+checks that the recipe's SHA256 matches that exact archive. An absent Arch
+package fails the release gate just like any other required format.
+
+The two Dockerfiles pin the target distribution major
 version; Debian also pins Qt 6.8.3 and aqtinstall 3.3.0. Native Linux packages
 are installed with `dpkg`/`rpm` and smoke-tested before being copied out. The
 build/validation container has no network access after dependencies/SDK have
@@ -60,6 +69,11 @@ sudo dnf install ./fluent-calculator-0.1.0-fedora43-x86_64.rpm
 The launcher and application-menu name are `fluent-calculator` and
 **Fluent Calculator / Fluent 计算器**. See the Arch-specific instructions in
 [installation.md](installation.md).
+
+All source/recipe artifacts supplied by the Arch job are kept together during
+aggregation. The release job uses that archive rather than regenerating one
+with a potentially different compressed checksum. Tagged recipes point to the
+matching release source URL; manual build recipes use the supplied local archive.
 
 ## GitHub procedure
 

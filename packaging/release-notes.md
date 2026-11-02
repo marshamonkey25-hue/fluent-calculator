@@ -1,5 +1,6 @@
 ## Installers
 
+- Arch Linux / Omarchy x86_64: `.pkg.tar.zst` and the matching PKGBUILD.
 - Debian 13 x86_64: `.deb`, with private Qt 6.8.3 libraries and FluentWinUI3 under `/opt/fluent-calculator`.
 - Fedora 43 x86_64: `.rpm`, using Fedora's Qt packages.
 - Windows x86_64: NSIS `.exe` installer and deployed portable `.zip`.
