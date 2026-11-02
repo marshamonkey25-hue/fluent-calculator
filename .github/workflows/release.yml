@@ -184,7 +184,7 @@ jobs:
             dist/*.dmg
             dist/*-validation.json
 
-  release-draft:
+  release:
     needs: [version, linux, native]
     runs-on: ubuntu-24.04
     permissions:
@@ -203,27 +203,39 @@ jobs:
           git archive --format=tar.gz --prefix="fluent-calculator-$RELEASE_VERSION/" HEAD > "release/fluent-calculator-$RELEASE_VERSION-source.tar.gz"
           python packaging/checksums.py release
           python - <<'PY'
+          import hashlib
           from pathlib import Path
           root = Path('release')
           for extension in ('.deb', '.rpm', '.exe', '.zip', '.dmg'):
               assert any(root.glob('*' + extension)), 'Missing release format: ' + extension
+          for line in (root / 'SHA256SUMS').read_text().splitlines():
+              expected, name = line.split('  ', 1)
+              assert Path(name).name == name, 'Invalid checksum filename'
+              assert hashlib.sha256((root / name).read_bytes()).hexdigest() == expected, 'Checksum mismatch: ' + name
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-all-platforms
           if-no-files-found: error
           path: release/*
-      - name: Create a draft release for a version tag
-        if: github.ref_type == 'tag'
+      - name: Publish validated installers for a version tag
+        if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          if gh release view "$RELEASE_TAG" --json isDraft > /tmp/fluent-release.json 2>/dev/null; then
-            python -c 'import json; assert json.load(open("/tmp/fluent-release.json"))["isDraft"], "Refusing to change an already published release"'
-            gh release upload "$RELEASE_TAG" release/* --clobber
+          if gh release view "$RELEASE_TAG" --json isDraft,url > /tmp/fluent-release.json 2>/dev/null; then
+            if python -c 'import json,sys; sys.exit(0 if json.load(open("/tmp/fluent-release.json"))["isDraft"] else 1)'; then
+              gh release upload "$RELEASE_TAG" release/* --clobber
+              gh release edit "$RELEASE_TAG" --draft=false --verify-tag \
+                --title "Fluent Calculator $RELEASE_TAG" --notes-file packaging/release-notes.md
+            else
+              echo 'Release is already published; keeping its existing assets.'
+              gh release view "$RELEASE_TAG" --json url --jq .url
+            fi
           else
-            gh release create "$RELEASE_TAG" --draft --verify-tag --title "Fluent Calculator $RELEASE_TAG" \
+            # gh stages the files in a draft and publishes after uploads succeed.
+            gh release create "$RELEASE_TAG" --verify-tag --title "Fluent Calculator $RELEASE_TAG" \
               --notes-file packaging/release-notes.md release/*
           fi

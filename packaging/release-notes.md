@@ -11,11 +11,12 @@ Build/install smoke reports accompany the artifacts. UI validation runs offscree
 with Compose input and isolated settings/session buses.
 
 The Windows installer is unsigned. The macOS application has an ad-hoc signature,
-not an Apple Developer ID signature or notarization. A draft release is created
-for review; this workflow does not publish it automatically.
+not an Apple Developer ID signature or notarization. This release is automatically
+published after the matching version tag passes all platform builds, installer
+checks and checksum validation.
 
 Graphing covers explicit `y=f(x)` functions. Currency conversion uses independent
 daily reference data and cached observations, not real-time transaction quotes.
 See the bundled notices and source documentation. Project-authored code currently
-has no separately declared project-wide distribution license; select and record
-that license before publishing the draft as an open-source release.
+has no separately declared project-wide distribution license. Publishing this
+release does not assign one; dependency notices remain independently applicable.

@@ -1,10 +1,10 @@
-# Build installers and prepare a GitHub Release
+# Build installers and publish a GitHub Release
 
 The workflow is `.github/workflows/release.yml`. It builds actual native
 artifacts, verifies installed/deployed applications, uploads them as Actions
-artifacts, and creates a **draft** Release only for a matching version tag.
-Manual runs build/upload artifacts without creating a Release. Nothing here
-creates a GitHub repository, pushes code or publishes a Release by itself.
+artifacts, verifies checksums and automatically publishes a GitHub Release for a
+matching pushed version tag. Manual runs build/upload artifacts without creating
+or publishing a Release. Failed builds or validation stop publication.
 See [the actual packaging validation record](packaging-validation.md) for the
 successful native run, platform coverage and installer verification evidence.
 The public repository is https://github.com/marshamonkey25-hue/fluent-calculator .
@@ -73,15 +73,28 @@ The launcher and application-menu name are `fluent-calculator` and
 3. Set the version in CMake to the intended release version. Commit it, then
    create and push the matching tag, for example `v0.1.0`. The workflow rejects
    a tag whose version does not match CMake.
-4. The tag build creates a draft GitHub Release only after every platform
-   succeeds. Review its notes, installers, license metadata and signatures,
-   then publish the draft yourself. Rerunning a draft replaces its assets;
-   an already published release is intentionally left untouched.
+4. After every platform succeeds, the tag build automatically publishes a
+   GitHub Release containing all installers, the matching source archive,
+   validation evidence and `SHA256SUMS`. GitHub CLI stages uploads before
+   publication, so interrupted uploads can leave a recoverable draft. Rerunning
+   the workflow completes an existing draft; an already published release and
+   its assets are left untouched. Fix a published version with a new version/tag
+   rather than moving its tag or replacing its installers.
+
+For the current version, the first release is triggered with:
+
+```sh
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin v0.1.0
+```
+
+For later releases, update the CMake project version and commit/push that change
+before creating its matching `vX.Y.Z` tag. `main` pushes alone do not publish.
+Manual workflow dispatch also never publishes, even if run against a tag ref.
 
 All third-party Actions are pinned to verified commit IDs. Workflow permissions
-are read-only except the final draft-Release job's `contents: write`. Draft
-creation uses the repository's standard `GITHUB_TOKEN`; no personal token is
-needed. If organization policy blocks write tokens or third-party Actions,
+are read-only except the final release job's `contents: write`. Publication
+uses the repository's standard `GITHUB_TOKEN`; no personal token is needed. If organization policy blocks write tokens or third-party Actions,
 allow those specific capabilities in repository settings before running.
 
 ## Runtime and installer checks

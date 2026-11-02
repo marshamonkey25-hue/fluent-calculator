@@ -12,7 +12,8 @@ Debian `.deb`, Fedora `.rpm`, Windows NSIS `.exe`/portable `.zip`, and macOS
 universal `.dmg` are configured in the [release workflow](.github/workflows/release.yml).
 Linux packages build and install in their own Docker distributions. Windows and
 macOS run on native GitHub runners and deploy the matching Qt runtime. A version
-tag creates a draft Release after all builds pass; manual runs upload artifacts.
+tag automatically publishes a GitHub Release after every platform and checksum
+check passes; manual runs upload artifacts without publishing.
 See [release targets, local builds, verification and GitHub steps](docs/releasing.md).
 Native Windows/macOS builds and real installer/image checks have now passed
 alongside Debian/Fedora; the [validation record](docs/packaging-validation.md)
