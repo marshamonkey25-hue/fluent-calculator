@@ -336,6 +336,24 @@ Item {
             compare(clipboardReceiver.text, "9007199254740993", "Copy preserves exact native digits across modes")
             clipboardReceiver.visible = false
         }
+        function test_text_editor_clipboard_does_not_change_calculator_input() {
+            input("6*7=")
+            compare(control("resultDisplay").text, "42")
+            clipboardReceiver.text = "123"
+            clipboardReceiver.visible = true
+            clipboardReceiver.forceActiveFocus()
+            tryCompare(clipboardReceiver, "activeFocus", true)
+            keySequence(StandardKey.SelectAll)
+            keySequence(StandardKey.Copy)
+            clipboardReceiver.text = ""
+            keySequence(StandardKey.Paste)
+            compare(clipboardReceiver.text, "123", "Text input owns its standard clipboard commands")
+            compare(control("resultDisplay").text, "42", "Editing text does not paste into the calculator")
+            clipboardReceiver.visible = false
+            navigate("scientific")
+            input("8+1=")
+            compare(control("resultDisplay").text, "9", "Navigation restores calculator keyboard focus")
+        }
         function test_standard_alternate_copy_shortcut_preserves_result() {
             verify(testCopyBindings.length > 0, "Platform provides at least one Copy binding")
             input("6*7=")

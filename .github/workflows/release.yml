@@ -66,12 +66,14 @@ jobs:
             platform: windows-x86_64
             cmake-args: '-G "Visual Studio 17 2022" -A x64'
             binary: stage/bin/fluent-calculator.exe
+            test-binary: build/Release/calculator_ui_tests.exe
           - os: macos-15
             qt-host: mac
             qt-arch: clang_64
             platform: macos-universal2
             cmake-args: '-G Ninja -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0'
             binary: stage/Fluent Calculator.app/Contents/MacOS/Fluent Calculator
+            test-binary: build/calculator_ui_tests
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -99,9 +101,34 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$PWD/stage" -DCMAKE_INSTALL_LIBDIR=lib \
             -DCALCULATOR_PACKAGE_PLATFORM='${{ matrix.platform }}' ${{ matrix.cmake-args }}
           cmake --build build --config Release --parallel 2
-      - name: Exercise every mode before native deployment
+      - name: Verify native isolation bootstrap
+        timeout-minutes: 2
         shell: bash
-        run: ctest --test-dir build -C Release -R '^calculator-integrated-delivery-' --output-on-failure -j2
+        run: |
+          python tests/run-ui-isolated.py python tests/test_ui_isolation.py \
+            --test-executable '${{ matrix.test-binary }}'
+      - name: Verify native menu and clipboard regressions
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          python tests/run-ui-isolated.py '${{ matrix.test-binary }}' -input tests/integration \
+            IntegratedDelivery::test_scientific_copy_menu_escape_keeps_pending_calculation \
+            IntegratedDelivery::test_scientific_result_can_be_copied_without_precision_loss \
+            IntegratedDelivery::test_standard_alternate_copy_shortcut_preserves_result \
+            IntegratedDelivery::test_text_editor_clipboard_does_not_change_calculator_input
+      - name: Exercise every mode before native deployment
+        timeout-minutes: 10
+        shell: bash
+        run: ctest --test-dir build -C Release -R '^calculator-integrated-delivery-' --output-on-failure -V -j2
+      - name: Retain native test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-test-logs-${{ matrix.platform }}
+          if-no-files-found: ignore
+          path: |
+            build/Testing/Temporary/*.log
+            build/Testing/Temporary/*.txt
       - name: Install and deploy the runtime
         shell: bash
         run: cmake --install build --config Release

@@ -141,7 +141,7 @@ ApplicationWindow {
                     enabled: !navigation.visible && !historyDrawer.visible && !memoryDrawer.visible
                     Component.onCompleted: window.loadMode()
                 }
-                SettingsPage { preferences: appPreferences }
+                SettingsPage { id: settingsPage; preferences: appPreferences }
             }
             ColumnLayout {
                 visible: window.sidebarVisible
@@ -264,6 +264,12 @@ ApplicationWindow {
         width: Math.min(window.width - 40, 280)
         height: window.height
         onOpened: navigationList.revealFocusedMode()
+        onClosed: {
+            if (window.settingsOpen)
+                settingsPage.forceActiveFocus(Qt.OtherFocusReason)
+            else
+                page.forceActiveFocus(Qt.OtherFocusReason)
+        }
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 12

@@ -15,6 +15,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
+#include <QProcessEnvironment>
 #include <QKeySequence>
 #include <cstdio>
 
@@ -99,9 +100,9 @@ public slots:
 
 static bool hasIsolatedEnvironment()
 {
-    const auto root = qEnvironmentVariable("CALCULATOR_TEST_ISOLATION_ROOT");
+    const auto root = QDir::fromNativeSeparators(qEnvironmentVariable("CALCULATOR_TEST_ISOLATION_ROOT"));
     if (root.isEmpty() || !QDir(root).exists()
-        || qEnvironmentVariable("DBUS_SYSTEM_BUS_ADDRESS") != "unix:path=" + root + "/runtime/no-system-bus"
+        || QDir::fromNativeSeparators(qEnvironmentVariable("DBUS_SYSTEM_BUS_ADDRESS")) != "unix:path=" + root + "/runtime/no-system-bus"
         || qEnvironmentVariable("QT_IM_MODULE") != "compose"
         || qEnvironmentVariable("QT_QPA_PLATFORM") != "offscreen"
         || qEnvironmentVariable("QT_QPA_PLATFORMTHEME") != "generic"
@@ -118,7 +119,7 @@ static bool hasIsolatedEnvironment()
     }
     for (const auto &entry : {qMakePair("XDG_RUNTIME_DIR", "/runtime"), qMakePair("XDG_CONFIG_HOME", "/config"),
                               qMakePair("XDG_CACHE_HOME", "/cache"), qMakePair("XDG_DATA_HOME", "/data")}) {
-        if (qEnvironmentVariable(entry.first) != root + entry.second)
+        if (QDir::fromNativeSeparators(qEnvironmentVariable(entry.first)) != root + entry.second)
             return false;
     }
 #ifdef Q_OS_LINUX
@@ -133,6 +134,10 @@ int main(int argc, char **argv)
     // This guard runs before setup and, crucially, before QuickTest creates
     // QGuiApplication (where platform/IME plugins and session-bus access start).
     if (!hasIsolatedEnvironment()) {
+        if (qEnvironmentVariable("CALCULATOR_TEST_RELAUNCH_ATTEMPT") == "1") {
+            std::fprintf(stderr, "Isolation validation failed after relaunch; refusing repeated launch.\n");
+            return 2;
+        }
         auto executable = QFileInfo(QString::fromLocal8Bit(argv[0])).absoluteFilePath();
         if (!QFileInfo::exists(executable))
             executable = QStandardPaths::findExecutable(QString::fromLocal8Bit(argv[0]));
@@ -140,6 +145,9 @@ int main(int argc, char **argv)
         for (int index = 1; index < argc; ++index)
             arguments.append(QString::fromLocal8Bit(argv[index]));
         QProcess launcher;
+        auto environment = QProcessEnvironment::systemEnvironment();
+        environment.insert("CALCULATOR_TEST_RELAUNCH_ATTEMPT", "1");
+        launcher.setProcessEnvironment(environment);
         launcher.setProcessChannelMode(QProcess::ForwardedChannels);
         launcher.start(QStringLiteral(CALCULATOR_TEST_PYTHON), arguments);
         if (!launcher.waitForStarted() || !launcher.waitForFinished(-1)) {

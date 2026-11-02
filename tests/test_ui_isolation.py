@@ -72,6 +72,16 @@ class UiIsolation(unittest.TestCase):
             if sys.platform.startswith("linux"):
                 self.assertTrue(state["bus"].startswith("unix:path=" + state["root"] + "/runtime/bus"))
 
+    def test_failed_isolation_relaunch_refuses_recursion_before_creating_gui(self):
+        self.assertIsNotNone(TEST_EXECUTABLE)
+        environment = os.environ.copy()
+        environment["CALCULATOR_TEST_RELAUNCH_ATTEMPT"] = "1"
+        environment["QT_IM_MODULE"] = "invalid-isolation-fixture"
+        child = subprocess.run([TEST_EXECUTABLE, "--isolation-probe"], env=environment,
+                               text=True, capture_output=True, timeout=10)
+        self.assertEqual(child.returncode, 2, child.stdout + child.stderr)
+        self.assertIn("refusing repeated launch", child.stderr)
+
     @unittest.skipUnless(sys.platform.startswith("linux"), "Private D-Bus is a Linux launcher requirement")
     def test_missing_dbus_refuses_to_launch_the_child(self):
         with tempfile.TemporaryDirectory(prefix="missing-bus-fixture-", dir=Path.cwd()) as fixture:

@@ -5,17 +5,21 @@ MouseArea {
     id: root
     required property CalculationSession session
     readonly property bool popupOpen: resultMenu.visible
+    readonly property bool textEditorFocused: {
+        const active = root.Window.window ? root.Window.window.activeFocusItem : null
+        return active instanceof TextInput || active instanceof TextEdit
+    }
     acceptedButtons: Qt.RightButton
     onClicked: mouse => resultMenu.popup(root, mouse.x, mouse.y)
 
     Shortcut {
-        enabled: root.visible && root.enabled
+        enabled: root.visible && root.enabled && !root.textEditorFocused
         sequences: [StandardKey.Copy]
         context: Qt.WindowShortcut
         onActivated: root.session.copyResult()
     }
     Shortcut {
-        enabled: root.visible && root.enabled
+        enabled: root.visible && root.enabled && !root.textEditorFocused
         sequences: [StandardKey.Paste]
         context: Qt.WindowShortcut
         onActivated: root.session.paste()
