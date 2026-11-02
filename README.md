@@ -6,6 +6,25 @@ Start with the build/check commands below. The [integrated delivery report](docs
 
 The content follows the pinned Microsoft Standard keypad layout with Fluent controls and native system window decorations. Navigation is registered centrally in `qml/ModeRegistry.qml`. `MainWindow` owns one `CalculationSession`, which dispatches string command names to `CalculatorManager`, `CCalcEngine` and Ratpack. Arithmetic displays and expressions remain strings across C++/QML, including integers above JavaScript's safe integer range.
 
+## Cross-platform release installers
+
+Debian `.deb`, Fedora `.rpm`, Windows NSIS `.exe`/portable `.zip`, and macOS
+universal `.dmg` are configured in the [release workflow](.github/workflows/release.yml).
+Linux packages build and install in their own Docker distributions. Windows and
+macOS run on native GitHub runners and deploy the matching Qt runtime. A version
+tag creates a draft Release after all builds pass; manual runs upload artifacts.
+See [release targets, local builds, verification and GitHub steps](docs/releasing.md).
+
+## Arch / Omarchy installation package
+
+Build a native x86_64 package with `bash packaging/arch/build-package.sh`.
+Outputs are placed in `dist/`, including the `.pkg.tar.zst`, matching source
+archive, PKGBUILD and checksums. Install with
+`sudo pacman -U ./dist/fluent-calculator-0.1.0-1-x86_64.pkg.tar.zst`, then run
+`fluent-calculator` or open **Fluent Calculator / Fluent 计算器** from the
+application menu. Building the package does not install it. See
+[installation, removal and packaging validation](docs/installation.md).
+
 ## Dependencies
 
 - CMake **3.21+**, a Make-compatible build tool, and a C++17 compiler with support for the upstream trailing-array extension.

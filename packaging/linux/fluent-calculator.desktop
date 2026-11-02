@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Fluent Calculator
+Name[zh_CN]=Fluent 计算器
+Comment=Scientific, programmer and everyday calculations and conversions
+Comment[zh_CN]=标准、科学、程序员计算及单位换算
+Exec=fluent-calculator
+TryExec=fluent-calculator
+Icon=fluent-calculator
+Terminal=false
+Categories=Utility;Calculator;
+Keywords=calculator;scientific;programmer;conversion;
+StartupNotify=true

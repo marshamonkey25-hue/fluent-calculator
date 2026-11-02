@@ -3,6 +3,9 @@ project(FluentCalculator VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
 find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Network)
 qt_standard_project_setup(REQUIRES 6.8)
 include(CTest)
@@ -68,6 +71,13 @@ qt_add_resources(calculator_ui engine_resources
 
 qt_add_executable(calculator app/main.cpp)
 target_link_libraries(calculator PRIVATE calculator_ui calculator_uiplugin)
+qt_add_resources(calculator app_icon
+    PREFIX /icons
+    BASE packaging/linux
+    FILES packaging/linux/fluent-calculator.png
+)
+
+include(packaging/Packaging.cmake)
 
 if(BUILD_TESTING)
     find_package(Qt6 6.8 REQUIRED COMPONENTS QuickTest)

@@ -1,0 +1,16 @@
+Project-authored code in this source snapshot has no separately declared
+project-wide distribution license. This package does not assign one on the
+project owner's behalf and does not claim that all included source is MIT.
+
+Reused Microsoft Calculator material retains its MIT license and third-party
+notices in the microsoft-calculator subdirectory.
+
+Arch and Fedora packages use system Qt packages. Debian, Windows and macOS
+release packages deploy private Qt runtimes; the accompanying qt-licenses
+folder contains Qt license texts and SDK notices where supplied. Qt and other
+runtime components retain their separate applicable licenses. The matching
+application source snapshot accompanies the release; Qt 6.8.3 source is
+available from https://download.qt.io/archive/qt/6.8/6.8.3/ and the corresponding
+qt/qtbase and qt/qtdeclarative v6.8.3 source tags.
+
+Currency data attribution and terms are documented in the installed docs.

@@ -1,0 +1,6 @@
+FROM fedora:43
+RUN dnf install -y cmake ninja-build gcc-c++ pkgconf-pkg-config rpm-build file binutils \
+    qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtwayland \
+    dbus-daemon python3 dejavu-sans-fonts mesa-libGL mesa-libEGL mesa-dri-drivers \
+    && dnf clean all
+WORKDIR /build

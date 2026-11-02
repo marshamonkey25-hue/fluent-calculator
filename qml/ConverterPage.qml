@@ -10,6 +10,15 @@ FocusScope {
     focus: true
     required property ConversionSession converter
     readonly property string category: page.converter.category
+    // currentValue is read-only in Qt 6.8; keep the selection binding on currentIndex.
+    function unitIndex(unitId: int): int {
+        const units = page.converter.units
+        for (let index = 0; index < units.length; ++index) {
+            if (units[index].id === unitId)
+                return index
+        }
+        return -1
+    }
     readonly property string negativeInputMessage: category === "currency" ? qsTr("Currency amount cannot be negative")
         : category === "energy" ? qsTr("Energy cannot be negative")
         : category === "speed" ? qsTr("Speed cannot be negative")
@@ -83,7 +92,7 @@ FocusScope {
                 model: page.converter.units
                 textRole: "name"
                 valueRole: "id"
-                currentValue: page.converter.unit1
+                currentIndex: page.unitIndex(page.converter.unit1)
                 Accessible.name: qsTr("First unit")
                 onActivated: page.converter.unit1 = currentValue
             }
@@ -108,7 +117,7 @@ FocusScope {
                 model: page.converter.units
                 textRole: "name"
                 valueRole: "id"
-                currentValue: page.converter.unit2
+                currentIndex: page.unitIndex(page.converter.unit2)
                 Accessible.name: qsTr("Second unit")
                 onActivated: page.converter.unit2 = currentValue
             }

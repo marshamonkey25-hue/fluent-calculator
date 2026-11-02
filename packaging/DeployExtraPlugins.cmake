@@ -1,0 +1,33 @@
+# Qt's default deployment chooses a desktop QPA plugin, not the offscreen
+# backend used by isolated installer checks. Ship that matching SDK plugin too.
+if(NOT TARGET Qt6::QOffscreenIntegrationPlugin)
+    message(FATAL_ERROR "The release Qt SDK must provide its offscreen platform plugin")
+endif()
+if(APPLE)
+    set(calculator_platform_dir "Fluent Calculator.app/Contents/PlugIns/platforms")
+else()
+    set(calculator_platform_dir "plugins/platforms")
+endif()
+install(FILES "$<TARGET_FILE:Qt6::QOffscreenIntegrationPlugin>"
+    DESTINATION "${calculator_platform_dir}")
+
+if(CALCULATOR_BUNDLE_QT)
+    get_filename_component(calculator_qt_prefix "${Qt6_DIR}/../../.." ABSOLUTE)
+    set(calculator_extra_plugins "$<TARGET_FILE:Qt6::QOffscreenIntegrationPlugin>")
+    file(GLOB calculator_wayland_platforms "${calculator_qt_prefix}/plugins/platforms/*wayland*.so")
+    if(calculator_wayland_platforms)
+        install(FILES ${calculator_wayland_platforms} DESTINATION plugins/platforms)
+        list(APPEND calculator_extra_plugins ${calculator_wayland_platforms})
+    endif()
+    foreach(plugin_type wayland-decoration-client wayland-graphics-integration-client wayland-shell-integration)
+        file(GLOB calculator_wayland_plugins "${calculator_qt_prefix}/plugins/${plugin_type}/*.so")
+        if(calculator_wayland_plugins)
+            install(FILES ${calculator_wayland_plugins} DESTINATION "plugins/${plugin_type}")
+            list(APPEND calculator_extra_plugins ${calculator_wayland_plugins})
+        endif()
+    endforeach()
+    string(REPLACE ";" "\" \"" calculator_extra_arguments "${calculator_extra_plugins}")
+    qt_generate_deploy_script(TARGET calculator OUTPUT_SCRIPT calculator_extra_deploy
+        CONTENT "qt_deploy_runtime_dependencies(\n    EXECUTABLE \"${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:calculator>\"\n    ADDITIONAL_MODULES \"${calculator_extra_arguments}\"\n    GENERATE_QT_CONF\n)")
+    install(SCRIPT "${calculator_extra_deploy}")
+endif()
