@@ -44,6 +44,20 @@ captures at 1084 × 1486 physical pixels, matching the reported app capture size
 - [Chinese/dark, HEX](screenshots/keypad-programmer-v0.1.1-zh_CN-dark.png)
 - [English/light, DEC](screenshots/keypad-programmer-v0.1.1-en_US-light.png)
 
+## Cross-platform release verification
+
+[v0.1.1](https://github.com/marshamonkey25-hue/fluent-calculator/releases/tag/v0.1.1)
+was automatically published by
+[workflow 41568403745](https://github.com/marshamonkey25-hue/fluent-calculator/actions/runs/41568403745)
+from commit `ed93c005a24d5558e19f994ae1c33ff01818645a`. Arch, Debian, Fedora,
+Windows, macOS and the final aggregation/publication job all passed. The four
+native integrated configurations include both the existing operation tests
+and all eight new geometry cases. For example, each macOS configuration reports
+41 passing outcomes with no failures/skips. Installed Windows, Arch/Linux and
+mounted-DMG smoke checks pass. All eight published artifact/source/recipe
+SHA256 entries were independently checked against GitHub's asset digests, and
+the downloaded Arch package also matches its published checksum.
+
 These images substantiate this cell-sizing correction; they do not establish
 pixel identity for unrelated toolbar arrangement, fonts, decorations or theme
 assets against an unspecified Microsoft Store version.
