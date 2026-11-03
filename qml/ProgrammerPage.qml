@@ -328,6 +328,8 @@ FocusScope {
                 Layout.fillHeight: true
                 columns: 5
                 rows: 6
+                uniformCellWidths: true
+                uniformCellHeights: true
                 columnSpacing: 4
                 rowSpacing: 4
                 Repeater {

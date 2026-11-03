@@ -3,10 +3,12 @@
 #include <QtQuickTest/quicktest.h>
 #include <QDir>
 #include <QGuiApplication>
+#include <QImage>
 #include <QLocale>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickStyle>
+#include <QQuickWindow>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QStyleHints>
@@ -51,10 +53,19 @@ class CalculatorTestSetup : public QObject
 {
     Q_OBJECT
     QTemporaryDir m_dataRoot { QDir::currentPath() + "/calculator-test-data-XXXXXX" };
+public:
+    Q_INVOKABLE bool saveWindow(QQuickWindow *window, const QString &path)
+    {
+        if (!window)
+            return false;
+        const auto image = window->grabWindow();
+        return !image.isNull() && image.save(path);
+    }
 public slots:
     void qmlEngineAvailable(QQmlEngine *engine)
     {
         auto system = new ControlledSystemPreferences(engine);
+        engine->rootContext()->setContextProperty("testWindowCapture", this);
         QStringList copyBindings;
         for (const auto &binding : QKeySequence::keyBindings(QKeySequence::Copy))
             copyBindings.append(binding.toString(QKeySequence::PortableText));

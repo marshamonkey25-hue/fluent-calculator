@@ -1,3 +1,9 @@
+## Changes
+
+- Make programmer, standard and unit-conversion keypad cells equal in width and height.
+- Keep cell dimensions independent of button labels, enabled digits and radix selection.
+- Add geometry regressions for window resizing, themes/languages and high-DPI captures.
+
 ## Installers
 
 - Arch Linux / Omarchy x86_64: `.pkg.tar.zst` and the matching PKGBUILD.
