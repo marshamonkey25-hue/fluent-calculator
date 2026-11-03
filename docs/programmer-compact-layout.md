@@ -48,6 +48,19 @@ settings/runtime/D-Bus. Fresh complete-window captures at display scale 2 are:
 - [Chinese/dark, 804×1264](screenshots/programmer-compact-v0.1.2-zh_CN-dark.png)
 - [English/light, 804×1264](screenshots/programmer-compact-v0.1.2-en_US-light.png)
 
+## Native release verification
+
+[v0.1.2](https://github.com/marshamonkey25-hue/fluent-calculator/releases/tag/v0.1.2)
+was published automatically from commit
+`2435b05a7efdae08637c4f2e252ffe1ffe266694` by
+[workflow 41594582067](https://github.com/marshamonkey25-hue/fluent-calculator/actions/runs/41594582067).
+All Arch, Debian, Fedora, Windows, macOS and final publication jobs passed.
+Every platform's integrated matrix includes the four compact-window visibility
+cases, the previous equal-cell checks and the existing 18-mode operation tests.
+Installed/image startup checks pass; all eight published binary/source/recipe
+entries match GitHub's asset digests, and the downloaded Arch file matches its
+published checksum. The Release is public, non-draft and latest.
+
 The user's original screenshot is not included in the repository. Original
 failure logs and focused corrected-memory evidence are retained under
 `.build-programmer-compact/` rather than counted as a single frozen all-green run.

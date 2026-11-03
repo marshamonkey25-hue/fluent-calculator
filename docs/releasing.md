@@ -97,12 +97,12 @@ matching release source URL; manual build recipes use the supplied local archive
 
 The first automatic release is [v0.1.0](https://github.com/marshamonkey25-hue/fluent-calculator/releases/tag/v0.1.0),
 published by [tag workflow 41392805235](https://github.com/marshamonkey25-hue/fluent-calculator/actions/runs/41392805235).
-For the next release, first update the CMake project version to `0.1.2` and
+For the next release, first update the CMake project version to `0.1.3` and
 commit/push that change, then push the matching annotated tag:
 
 ```sh
-git tag -a v0.1.2 -m "Release v0.1.2"
-git push origin v0.1.2
+git tag -a v0.1.3 -m "Release v0.1.3"
+git push origin v0.1.3
 ```
 
 Use a new matching `vX.Y.Z` tag for each later release. `main` pushes alone do not
