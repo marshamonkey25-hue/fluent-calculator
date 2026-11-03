@@ -398,7 +398,7 @@ Item {
                 item(name).forceActiveFocus(Qt.TabFocusReason)
                 waitForRendering(application.contentItem, 100)
                 verifyFits(item(name))
-                verify(item(name).width >= 44 && item(name).height >= 44)
+                verify(item(name).width >= 44 && item(name).height >= 28)
             }
             click("bitShiftButton")
             tryCompare(item("bitShiftPopup"), "opened", true)

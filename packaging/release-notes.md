@@ -1,8 +1,9 @@
 ## Changes
 
-- Make programmer, standard and unit-conversion keypad cells equal in width and height.
-- Keep cell dimensions independent of button labels, enabled digits and radix selection.
-- Add geometry regressions for window resizing, themes/languages and high-DPI captures.
+- Keep the complete programmer keypad visible in compact windows, including 320×460 and 402×632.
+- Combine keypad/bit view, word width and memory actions into one compact toolbar.
+- Balance display, radix and keypad regions using the reference layout's proportions.
+- Retain equal keypad cells and add full-visibility/toolbar bounds regressions.
 
 ## Installers
 

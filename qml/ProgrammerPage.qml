@@ -7,7 +7,7 @@ FocusScope {
     id: page
     required property CalculationSession session
     signal memoryRequested()
-    function focusMemoryInput() { memoryBar.focusInput() }
+    function focusMemoryInput() { memorySaveButton.forceActiveFocus(Qt.TabFocusReason) }
     property bool bitPanelVisible: false
     property string shiftMode: "arithmetic"
     readonly property var shiftModes: [
@@ -68,7 +68,7 @@ FocusScope {
     })
     focus: true
     function revealControl(control: Item) {
-        const viewport = scroll.contentItem as Flickable
+        const viewport = scroll
         if (!viewport)
             return
         const top = control.mapToItem(viewport.contentItem, 0, 0).y
@@ -77,27 +77,40 @@ FocusScope {
         else if (top + control.height > viewport.contentY + viewport.height)
             viewport.contentY = top + control.height - viewport.height
     }
-    ScrollView {
+    Flickable {
         id: scroll
         objectName: "programmerScroll"
         anchors.fill: parent
-        contentWidth: availableWidth
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        flickableDirection: Flickable.VerticalFlick
+        contentWidth: width
+        contentHeight: programmerContent.height
+        ScrollBar.vertical: ScrollBar {}
         ColumnLayout {
-            width: scroll.availableWidth
-            height: Math.max(implicitHeight, scroll.availableHeight)
+            id: programmerContent
+            width: scroll.width
+            height: Math.max(Layout.minimumHeight, scroll.height)
             spacing: 4
             Label {
                 objectName: "expressionDisplay"
                 Layout.fillWidth: true
-                Layout.minimumHeight: 24
+                Layout.minimumHeight: 0
+                Layout.preferredHeight: 22
+                Layout.maximumHeight: 28
+                Layout.fillHeight: true
                 horizontalAlignment: Text.AlignRight
                 text: page.session.expression
             }
             Label {
                 objectName: "resultDisplay"
                 Layout.fillWidth: true
-                Layout.minimumHeight: 64
+                Layout.minimumHeight: 42
+                Layout.preferredHeight: 72
+                Layout.maximumHeight: 112
+                Layout.fillHeight: true
                 horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 40
                 minimumPixelSize: 16
                 fontSizeMode: Text.Fit
@@ -107,117 +120,172 @@ FocusScope {
                 ResultCopyMenu { anchors.fill: parent; session: page.session }
             }
             Label {
+                id: errorLabel
                 objectName: "errorIndicator"
                 visible: page.session.error
                 text: qsTr("Error")
             }
-            Repeater {
-                model: [
-                    { radix: 16, label: "HEX", name: qsTr("Hexadecimal") },
-                    { radix: 10, label: "DEC", name: qsTr("Decimal") },
-                    { radix: 8, label: "OCT", name: qsTr("Octal") },
-                    { radix: 2, label: "BIN", name: qsTr("Binary") }
-                ]
-                delegate: Button {
-                    id: radixButton
-                    required property var modelData
-                    required property int index
-                    objectName: "radix_" + modelData.radix
-                    Layout.fillWidth: true
-                    Layout.minimumHeight: 36
-                    checkable: true
-                    checked: page.session.radix === modelData.radix
-                    enabled: !page.session.error
-                    Accessible.name: qsTr("%1: %2").arg(modelData.name).arg(page.session.radixDisplays[index])
-                    background: Rectangle {
-                        radius: 4
-                        color: radixButton.down ? radixButton.palette.midlight
-                             : radixButton.hovered ? radixButton.palette.light : "transparent"
-                        border.width: radixButton.visualFocus ? 2 : 0
-                        border.color: radixButton.palette.highlight
-                        Rectangle {
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 3
-                            height: 16
-                            radius: 1
-                            color: radixButton.palette.highlight
-                            visible: radixButton.checked
+            ColumnLayout {
+                id: radixRows
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.minimumHeight: Math.max(96, implicitHeight)
+                Layout.preferredHeight: 96
+                Layout.maximumHeight: 244
+                spacing: 0
+                Repeater {
+                    model: [
+                        { radix: 16, label: "HEX", name: qsTr("Hexadecimal") },
+                        { radix: 10, label: "DEC", name: qsTr("Decimal") },
+                        { radix: 8, label: "OCT", name: qsTr("Octal") },
+                        { radix: 2, label: "BIN", name: qsTr("Binary") }
+                    ]
+                    delegate: Button {
+                        id: radixButton
+                        required property var modelData
+                        required property int index
+                        objectName: "radix_" + modelData.radix
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: Math.max(20, radixValue.implicitHeight + 4)
+                        Layout.preferredHeight: 1
+                        Layout.maximumHeight: Math.max(60, Layout.minimumHeight)
+                        leftPadding: 12
+                        rightPadding: 4
+                        topPadding: 2
+                        bottomPadding: 2
+                        checkable: true
+                        checked: page.session.radix === modelData.radix
+                        enabled: !page.session.error
+                        Accessible.name: qsTr("%1: %2").arg(modelData.name).arg(page.session.radixDisplays[index])
+                        background: Rectangle {
+                            radius: 4
+                            color: radixButton.down ? radixButton.palette.midlight
+                                 : radixButton.hovered ? radixButton.palette.light : "transparent"
+                            border.width: radixButton.visualFocus ? 2 : 0
+                            border.color: radixButton.palette.highlight
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 3
+                                height: 16
+                                radius: 1
+                                color: radixButton.palette.highlight
+                                visible: radixButton.checked
+                            }
                         }
-                    }
-                    contentItem: RowLayout {
-                        Label { text: radixButton.modelData.label; font.bold: radixButton.checked; Layout.preferredWidth: 40 }
-                        Label {
-                            objectName: "radixValue_" + radixButton.modelData.radix
-                            text: page.session.radixDisplays[radixButton.index]
-                            Layout.fillWidth: true
-                            wrapMode: Text.WrapAnywhere
-                            font.pixelSize: 12
+                        contentItem: RowLayout {
+                            Label { text: radixButton.modelData.label; font.pixelSize: 12; Layout.preferredWidth: 40 }
+                            Label {
+                                id: radixValue
+                                objectName: "radixValue_" + radixButton.modelData.radix
+                                text: page.session.radixDisplays[radixButton.index]
+                                Layout.fillWidth: true
+                                wrapMode: Text.WrapAnywhere
+                                font.pixelSize: 12
+                            }
                         }
-                    }
-                    onActiveFocusChanged: if (activeFocus) page.revealControl(radixButton)
-                    onClicked: page.session.selectRadix(modelData.radix)
-                    Shortcut {
-                        sequence: ({16: "F5", 10: "F6", 8: "F7", 2: "F8"})[radixButton.modelData.radix]
-                        enabled: page.visible && radixButton.enabled
-                        onActivated: page.session.selectRadix(radixButton.modelData.radix)
+                        onActiveFocusChanged: if (activeFocus) page.revealControl(radixButton)
+                        onClicked: page.session.selectRadix(modelData.radix)
+                        Shortcut {
+                            sequence: ({16: "F5", 10: "F6", 8: "F7", 2: "F8"})[radixButton.modelData.radix]
+                            enabled: page.visible && radixButton.enabled
+                            onActivated: page.session.selectRadix(radixButton.modelData.radix)
+                        }
                     }
                 }
             }
-            MemoryBar {
-                id: memoryBar
-                session: page.session
-                onListRequested: page.memoryRequested()
-                onControlFocused: control => page.revealControl(control)
+            GridLayout {
                 Layout.fillWidth: true
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                ToolButton {
+                Layout.fillHeight: true
+                Layout.minimumHeight: 28
+                Layout.preferredHeight: 32
+                Layout.maximumHeight: 44
+                columns: 5
+                uniformCellWidths: true
+                columnSpacing: 0
+                rowSpacing: 0
+                ProgrammerViewButton {
                     id: fullKeypadButton
                     objectName: "fullKeypadButton"
                     text: qsTr("Keypad")
                     Accessible.name: qsTr("Full keypad")
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 28
+                    Layout.preferredWidth: 1
                     checkable: true
                     autoExclusive: true
                     checked: !page.bitPanelVisible
-                    contentItem: Text {
-                        text: fullKeypadButton.text
-                        font: fullKeypadButton.font
-                        color: fullKeypadButton.checked ? fullKeypadButton.palette.highlightedText : fullKeypadButton.palette.buttonText
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
                     onActiveFocusChanged: if (activeFocus) page.revealControl(fullKeypadButton)
                     onClicked: page.bitPanelVisible = false
                 }
-                ToolButton {
+                ProgrammerViewButton {
                     id: bitPanelButton
                     objectName: "bitPanelButton"
                     text: qsTr("Bits")
                     Accessible.name: qsTr("Bit toggling keypad")
+                    bitsView: true
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 28
+                    Layout.preferredWidth: 1
                     checkable: true
                     autoExclusive: true
                     checked: page.bitPanelVisible
-                    contentItem: Text {
-                        text: bitPanelButton.text
-                        font: bitPanelButton.font
-                        color: bitPanelButton.checked ? bitPanelButton.palette.highlightedText : bitPanelButton.palette.buttonText
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
                     onActiveFocusChanged: if (activeFocus) page.revealControl(bitPanelButton)
                     onClicked: page.bitPanelVisible = true
                 }
-                Item { Layout.fillWidth: true }
                 ToolButton {
                     id: wordWidthButton
                     objectName: "wordWidthButton"
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 28
+                    Layout.minimumHeight: 24
+                    Layout.preferredWidth: 1
+                    font.pixelSize: 12
                     text: ({64: "QWORD", 32: "DWORD", 16: "WORD", 8: "BYTE"})[page.session.wordWidth]
                     Accessible.name: qsTr("Word size: %1 bits").arg(page.session.wordWidth)
                     enabled: !page.session.error
                     onActiveFocusChanged: if (activeFocus) page.revealControl(wordWidthButton)
                     onClicked: page.session.selectWordWidth(({64: 32, 32: 16, 16: 8, 8: 64})[page.session.wordWidth])
+                }
+                ToolButton {
+                    id: memorySaveButton
+                    objectName: "memory_save"
+                    text: "MS"
+                    font.pixelSize: 12
+                    Accessible.name: qsTranslate("MemoryBar", "Memory store")
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 28
+                    Layout.minimumHeight: 28
+                    Layout.preferredWidth: 1
+                    enabled: !page.session.error
+                    onActiveFocusChanged: if (activeFocus) page.revealControl(memorySaveButton)
+                    onClicked: page.session.memoryAction("save")
+                    Shortcut {
+                        sequence: "Ctrl+M"
+                        enabled: page.visible && page.enabled && memorySaveButton.enabled
+                        onActivated: page.session.memoryAction("save")
+                    }
+                }
+                ToolButton {
+                    id: memoryListButton
+                    objectName: "memory_list"
+                    text: "M▾"
+                    font.pixelSize: 12
+                    Accessible.name: qsTranslate("MemoryBar", "Show memory")
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 28
+                    Layout.minimumHeight: 28
+                    Layout.preferredWidth: 1
+                    visible: page.Window.window && page.Window.window.width < 560
+                    enabled: page.session.memory.length > 0
+                    onActiveFocusChanged: if (activeFocus) page.revealControl(memoryListButton)
+                    onClicked: page.memoryRequested()
                 }
             }
             Instantiator {
@@ -234,10 +302,17 @@ FocusScope {
             }
             RowLayout {
                 Layout.fillWidth: true
+                Layout.minimumHeight: 24
+                Layout.preferredHeight: 28
+                Layout.maximumHeight: 36
+                Layout.fillHeight: true
                 visible: !page.bitPanelVisible
                 ToolButton {
                     id: bitwiseButton
                     objectName: "bitwiseButton"
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 24
+                    font.pixelSize: 12
                     text: qsTr("Bitwise") + " ▾"
                     enabled: !page.session.error
                     onActiveFocusChanged: if (activeFocus) page.revealControl(bitwiseButton)
@@ -279,6 +354,9 @@ FocusScope {
                 ToolButton {
                     id: bitShiftButton
                     objectName: "bitShiftButton"
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 24
+                    font.pixelSize: 12
                     text: qsTr("Bit shift") + " ▾"
                     enabled: !page.session.error
                     onActiveFocusChanged: if (activeFocus) page.revealControl(bitShiftButton)
@@ -316,16 +394,18 @@ FocusScope {
                 Item { Layout.fillWidth: true }
             }
             ProgrammerBitPanel {
+                id: bitPanel
                 visible: page.bitPanelVisible
                 Layout.fillWidth: true
                 session: page.session
                 onRevealControl: control => page.revealControl(control)
             }
-            Item { Layout.fillHeight: true }
             GridLayout {
                 visible: !page.bitPanelVisible
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.minimumHeight: 6 * 28 + 5 * rowSpacing
+                Layout.preferredHeight: 236
                 columns: 5
                 rows: 6
                 uniformCellWidths: true
@@ -380,7 +460,7 @@ FocusScope {
                         Layout.column: modelData.column
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        Layout.minimumHeight: 44
+                        Layout.minimumHeight: 28
                         Layout.minimumWidth: 44
                         numeric: modelData.command.length === 1
                         enabled: modelData.command !== "decimal" && (numeric ? "0123456789ABCDEF".indexOf(modelData.command) < page.session.radix

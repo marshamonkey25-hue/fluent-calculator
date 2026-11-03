@@ -55,7 +55,7 @@ Item {
             tryCompare(drawer, "visible", false)
             verify(waitForPolish(application.contentItem))
         }
-        function verifyCells(rows, prefix) {
+        function verifyCells(rows, prefix, minimumHeight = 44) {
             const firstName = rows[0].find(name => name !== null)
             const first = control(prefix + firstName)
             const columnPositions = {}
@@ -73,7 +73,7 @@ Item {
                            key + " width " + button.width + " differs from first key " + first.width)
                     verify(Math.abs(button.height - first.height) <= 1,
                            key + " height " + button.height + " differs from first key " + first.height)
-                    verify(button.width >= 44 && button.height >= 44, key + " remains usable at the minimum size")
+                    verify(button.width >= 44 && button.height >= minimumHeight, key + " remains usable at the minimum size")
                     if (columnPositions[column] !== undefined)
                         verify(Math.abs(position.x - columnPositions[column]) <= 1, "Keys align in column " + column)
                     else
@@ -107,10 +107,53 @@ Item {
             for (const radix of [10, 16]) {
                 mouseClick(control("radix_" + radix))
                 verify(waitForPolish(application.contentItem))
-                verifyCells(programmerRows, "key_")
+                verifyCells(programmerRows, "key_", 28)
                 verify(waitForRendering(application.contentItem))
                 verify(testWindowCapture.saveWindow(application, "keypad-programmer-" + data.tag + "-base" + radix + "-" + Qt.locale().name + "-" + (application.darkTheme ? "dark" : "light") + ".png"))
             }
+        }
+        function test_programmer_compact_window_shows_whole_keypad_data() {
+            return [
+                {tag: "minimum", width: 320, height: 460},
+                {tag: "reported-crop", width: 402, height: 632},
+                {tag: "medium", width: 422, height: 600},
+                {tag: "tall", width: 542, height: 743}
+            ]
+        }
+        function test_programmer_compact_window_shows_whole_keypad(data) {
+            navigate("programmer")
+            keyClick(Qt.Key_Escape)
+            application.width = data.width
+            application.height = data.height
+            tryCompare(application.contentItem, "height", application.height)
+            verify(waitForPolish(application.contentItem))
+            tryVerify(function() {
+                const last = control("key_equals")
+                const point = last.mapToItem(application.contentItem, 0, 0)
+                return point.y + last.height <= application.height + 1
+            }, 5000, "The complete keypad fits after window relayout")
+            for (const row of programmerRows) {
+                for (const name of row) {
+                    const button = control("key_" + name)
+                    const position = button.mapToItem(application.contentItem, 0, 0)
+                    verify(position.y >= 0 && position.y + button.height <= application.height + 1,
+                           name + " must be visible without scrolling: bottom " + (position.y + button.height) + ", window " + application.height)
+                }
+            }
+            verifyCells(programmerRows, "key_", 28)
+            const toolbar = ["fullKeypadButton", "bitPanelButton", "wordWidthButton", "memory_save", "memory_list"]
+            const toolbarY = control(toolbar[0]).mapToItem(application.contentItem, 0, 0).y
+            for (const name of toolbar) {
+                const item = control(name)
+                if (item.visible) {
+                    const point = item.mapToItem(application.contentItem, 0, 0)
+                    verify(item.width >= 28 && item.height >= 24, name + " retains a usable toolbar target")
+                    verify(point.x >= 0 && point.x + item.width <= application.width + 1, name + " fits horizontally")
+                    verify(Math.abs(point.y - toolbarY) <= 1,
+                           name + " belongs on the shared programmer toolbar row")
+                }
+            }
+            verify(testWindowCapture.saveWindow(application, "programmer-compact-" + data.tag + "-" + Qt.locale().name + "-" + (application.darkTheme ? "dark" : "light") + ".png"))
         }
         function test_other_regular_keypads_have_equal_cells_data() {
             return [

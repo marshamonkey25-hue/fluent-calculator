@@ -282,7 +282,7 @@ Item {
             grabImage(application.contentItem).save("programmer-" + scheme + "-" + data.tag + "-keypad.png")
             const scroll = item("programmerScroll")
             mouseWheel(scroll, scroll.width / 2, scroll.height / 2, 0, 2400)
-            tryCompare(scroll.contentItem, "contentY", 0)
+            tryCompare(scroll, "contentY", 0)
             waitForRendering(application.contentItem)
             grabImage(application.contentItem).save("programmer-" + scheme + "-" + data.tag + "-radices.png")
         }
